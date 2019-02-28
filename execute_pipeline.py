@@ -2,7 +2,7 @@ from experimenter.database_communication import PipelineDB
 from experimenter.pipeline.run_pipeline import RunPipeline
 
 
-def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir, pipeline_path=""):
+def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
     # Attempt to run the pipeline
     print("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
@@ -10,7 +10,7 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir, pipeli
     if mongo_db.has_duplicate_pipeline_run(problem, pipe.to_json_structure()):
         print("Already ran. Skipping")
         return
-    run_pipeline = RunPipeline(datasets_dir, volumes_dir, pipeline_path, problem)
+    run_pipeline = RunPipeline(datasets_dir, volumes_dir, problem)
     results = run_pipeline.run(problem, pipe)[0]
     score = results[0]
     # fit_pipeline_run = results[1]

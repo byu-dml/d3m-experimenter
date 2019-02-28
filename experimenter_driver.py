@@ -15,11 +15,10 @@ except Exception as E:
 
 class ExperimenterDriver:
 
-    def __init__(self, datasets_dir: str, volumes_dir: str, pipeline_path: str, run_type: str ="all",
+    def __init__(self, datasets_dir: str, volumes_dir: str, run_type: str ="all",
                  stored_pipeline_loc=None, distributed=False):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
-        self.pipeline_path = pipeline_path
         self.run_type = run_type
         self.distributed = distributed
 
@@ -102,13 +101,13 @@ class ExperimenterDriver:
                 raise NotADirectoryError
             else:
                 pipes = self.get_pipelines_from_path(self.pipeline_location)
-                experimenter = Experimenter(self.datasets_dir, self.volumes_dir, self.pipeline_path,
+                experimenter = Experimenter(self.datasets_dir, self.volumes_dir,
                                             generate_pipelines=False, generate_problems=True)
                 problems = experimenter.problems
         # run type is pipelines from mongodb or "all"
         else:
             # generating the pipelines has already been taken care of
-            experimenter = Experimenter(self.datasets_dir, self.volumes_dir, self.pipeline_path,
+            experimenter = Experimenter(self.datasets_dir, self.volumes_dir,
                                         generate_problems=True, generate_pipelines=False)
             print("\n Gathering pipelines from database...")
             problems: dict = experimenter.problems
@@ -135,10 +134,9 @@ class ExperimenterDriver:
                             # if we are trying to distribute, add to the RQ
                             if self.distributed:
                                 async_results = self.queue.enqueue(execute_pipeline_on_problem, pipe, problem,
-                                                                   self.datasets_dir, self.volumes_dir, self.pipeline_path, timeout=-1)
+                                                                   self.datasets_dir, self.volumes_dir, timeout=-1)
                             else:
-                                execute_pipeline_on_problem(pipe, problem, self.datasets_dir, self.volumes_dir,
-                                                            self.pipeline_path)
+                                execute_pipeline_on_problem(pipe, problem, self.datasets_dir, self.volumes_dir)
 
                         except Exception as e:
                             # pipeline didn't work.  Try the next one
@@ -164,9 +162,6 @@ python3 experimenter.py -r execute -f other_folder/ (takes pipelines from "other
 
 python3 experimenter_driver.py -r distribute (takes pipelines from the database and adds jobs to the RQ queue)
 
-python3 experimenter.py -r pipeline_path -f default (takes pipelines from default folder "experimenter/created_pipelines/")
-python3 experimenter.py -r pipeline_path -f other_folder/ (takes pipelines from default folder "other_folder/")
-
 python3 experimenter.py -r generate (creates pipelines and stores them in mongodb)
 python3 experimenter.py -r generate -f default (creates pipelines in default folder "experimenter/created_pipelines/")
 python3 experimenter.py -r generate -f other_folder/ (creates pipelines and stores them in "other_folder/")
@@ -176,7 +171,6 @@ def main(run_type, pipeline_folder):
 
     datasets_dir = '/datasets'
     volumes_dir = '/volumes'
-    pipeline_path = './pipe.yml'
 
     # annoyed with D3M namespace warnings
     import logging.config
@@ -189,23 +183,23 @@ def main(run_type, pipeline_folder):
         if args.run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
             print("Generating pipelines...")
-            experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True)
+            experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True)
 
         elif args.run_type == "generate":
             print("Only generating pipelines...")
-            experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True,
+            experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
                                         location=pipeline_folder)
             return
 
         if args.run_type == "distribute":
-            experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
+            experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
                                                      run_type=run_type, stored_pipeline_loc=pipeline_folder,
                                                      distributed=True)
             experimenter_driver.run()
 
             return
 
-        experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
+        experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
                                                  run_type=run_type, stored_pipeline_loc=pipeline_folder)
         experimenter_driver.run()
 
@@ -213,10 +207,9 @@ def main(run_type, pipeline_folder):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-type", '-r', help="How to run the driver.  'all' generates and executes, 'execute' "
-                                                 "only executes pipelines from the database, 'pipeline_path' "
-                                                 "executes pipelines from a specific folder and 'generate' only "
+                                                 "only executes pipelines from the database, and 'generate' only "
                                                  "creates pipelines and stores them in the database",
-                        choices=["all", "execute", "generate", "pipeline_path", "distribute"], default="all")
+                        choices=["all", "execute", "generate", "distribute"], default="all")
     parser.add_argument("--pipeline-folder", '-f', help="The path of the folder containing/to receive the pipelines")
     args = parser.parse_args()
     main(args.run_type, args.pipeline_folder)

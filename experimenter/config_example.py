@@ -1,4 +1,5 @@
 # TODO: move to top-level
+# TODO: these variable names could be more descriptive
 default_mongo_port = 27017  # TODO: is this needed?
 lab_hostname = 'name of lab machine'
 docker_hostname = 'mongodb'
