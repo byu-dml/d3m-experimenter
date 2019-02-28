@@ -1,0 +1,52 @@
+id: c8ed65df-aa68-4ee0-bbb5-c5f76a40bcf8
+schema: https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json
+source:
+  name: Mitar
+created: "2018-07-27T19:39:00.676949Z"
+context: TESTING
+name: K-fold split of tabular datasets
+description: |
+  K-fold split of tabular datasets for cross-validation.
+inputs:
+  - name: folds
+  - name: full dataset
+outputs:
+  - name: train datasets
+    data: steps.0.produce
+  - name: test datasets
+    data: steps.1.produce
+  - name: score datasets
+    data: steps.0.produce_score_data
+steps:
+  # Step 0.
+  - type: PRIMITIVE
+    primitive:
+      id: bfedaf3a-6dd0-4a83-ad83-3a50fe882bf8
+      version: 0.1.0
+      python_path: d3m.primitives.evaluation.KFoldDatasetSplit
+      name: K-fold cross-validation tabular dataset splits
+      digest: 1a26000ad4b8d22366cc935ea03e9dbdb822aba1df9bae7aa4b3a6bd22bebda3
+    arguments:
+      inputs:
+        type: CONTAINER
+        data: inputs.0
+      dataset:
+        type: CONTAINER
+        data: inputs.1
+    outputs:
+      - id: produce
+      - id: produce_score_data
+  # Step 1.
+  - type: PRIMITIVE
+    primitive:
+      id: 744c4090-e2f6-489e-8efc-8b1e051bfad6
+      version: 0.1.0
+      python_path: d3m.primitives.evaluation.RedactTargets
+      name: Redact targets for evaluation
+      digest: 1a26000ad4b8d22366cc935ea03e9dbdb822aba1df9bae7aa4b3a6bd22bebda3
+    arguments:
+      inputs:
+        type: CONTAINER
+        data: steps.0.produce_score_data
+    outputs:
+      - id: produce

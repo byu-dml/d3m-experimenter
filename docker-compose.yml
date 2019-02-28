@@ -1,0 +1,16 @@
+version: '3.3'
+services:
+  d3m:
+    build: .
+    container_name: experimenter
+    stdin_open: true
+    tty: true
+    entrypoint: /bin/bash
+    volumes:
+      - ${VOLUMES}:/volumes
+      - ${DATASETS}:/datasets
+      - ${EXPERIMENTER}:/d3m-experimenter
+
+networks:
+  host:
+    external: true
