@@ -181,7 +181,7 @@ class Experimenter:
         problems_list = {"classification": [], "regression": []}
         for problem_directory in self.problem_directories:
             datasets_suffix = problem_directory
-            datasets_dir = self.datasets_dir + datasets_suffix
+            datasets_dir = os.path.join(self.datasets_dir, datasets_suffix)
             for problem_name in os.listdir(datasets_dir):
                 problem_description_path = datasets_dir + problem_name + "/" + problem_name + "_problem"
                 filenames_match = glob.glob(problem_description_path + '*/problemDoc.json')
@@ -197,9 +197,6 @@ class Experimenter:
 
     def generate_pipelines(self, preprocessors: List[str], models: dict):
         preprocessors = list(set(preprocessors))
-        classification = list(set(models["classification"]))
-        regression = list(set(models["regression"]))
-
 
         generated_pipelines = {"classification": [], "regression": []}
         for type_name, model_list in models.items():

@@ -9,18 +9,19 @@ class PipelineGenerationTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.datasets_dir = sys.argv[1]  # TODO: move to .env
-        cls.seed_problem_directory = ['/seed_datasets_current/']
+        cls.seed_problem_directory = ['seed_datasets_current']
 
     # @classmethod
     def setUp(self):
         volumes_dir = '/volumes'
         pipeline_path = './pipe.yml'
         meta_file_path = './.meta'
-        classifiers = ['d3m.primitives.sklearn_wrap.SKGaussianNB']
+        models = {'classification': ['d3m.primitives.classification.gaussian_naive_bayes.SKlearn']}
         preprocessors = []  # give no preprocessors
         self.experimenter_driver = Experimenter(
-            self.datasets_dir, volumes_dir, pipeline_path, meta_file_path,
-            self.seed_problem_directory, classifiers, preprocessors
+            self.datasets_dir, volumes_dir, pipeline_path,
+            self.seed_problem_directory, models, preprocessors,
+            generate_problems=True
         )
 
     def test_get_classification_problems(self):
