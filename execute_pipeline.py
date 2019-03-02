@@ -1,6 +1,6 @@
 from experimenter.database_communication import PipelineDB
 from experimenter.pipeline.run_pipeline import RunPipeline
-
+import traceback
 
 def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir, pipeline_path=""):
     # Attempt to run the pipeline
@@ -10,7 +10,11 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir, pipeli
     if mongo_db.has_duplicate_pipeline_run(problem, pipe.to_json_structure()):
         print("Already ran. Skipping")
         return
-    run_pipeline = RunPipeline(datasets_dir, volumes_dir, pipeline_path, problem)
+    try:
+        run_pipeline = RunPipeline(datasets_dir, volumes_dir, pipeline_path, problem)
+    except Exception as e:
+        print("Error in pipeline run: {}, {}".format(e, traceback.format_exc()))
+
     results = run_pipeline.run(problem, pipe)[0]
     score = results[0]
     # fit_pipeline_run = results[1]

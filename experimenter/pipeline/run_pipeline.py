@@ -44,7 +44,7 @@ class RunPipeline:
             memory_map=True,
         )
 
-        # Code from 2067 of Runtime.py - used in command line interface.  See for more details
+        # Code from line 2067 of Runtime.py - used in the runtime command line interface.  See for more details
         data_params = {}
         data_params['primary_index_values'] = json.dumps(
             list(split_file.loc[split_file['type'] == 'TEST']['d3mIndex']))
@@ -66,6 +66,7 @@ class RunPipeline:
             scoring_pipeline = pipeline_module.Pipeline.from_yaml(string_or_file=file)
 
         results_list = ""
+
         results_list = evaluate(
             pipeline_to_run, data_pipeline, scoring_pipeline, problem_description, [dataset], data_params, metrics,
             context=metadata_base.Context.TESTING, random_seed=random_seed,
@@ -73,5 +74,7 @@ class RunPipeline:
             scoring_random_seed=random_seed,
             volumes_dir="/volumes",  # TODO: make variable
         )
+
+        print(results_list)
 
         return results_list

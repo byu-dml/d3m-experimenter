@@ -23,7 +23,7 @@ class ExperimenterDriver:
         self.run_type = run_type
         self.distributed = distributed
 
-        if run_type == "pipelines_path":
+        if run_type == "pipeline_path":
             if stored_pipeline_loc is None:
                 self.pipeline_location = "created_pipelines/"
             else:
@@ -96,7 +96,7 @@ class ExperimenterDriver:
 
 
     def run(self):
-        if self.run_type == "pipelines_path":
+        if self.run_type == "pipeline_path":
             print("Executing pipelines found in {}".format(self.pipeline_location))
             if self.pipeline_location is None:
                 raise NotADirectoryError
@@ -141,6 +141,7 @@ class ExperimenterDriver:
                                                             self.pipeline_path)
 
                         except Exception as e:
+                            print("Error in pipeline run: \n {}".format(e))
                             # pipeline didn't work.  Try the next one
                             continue
 
