@@ -67,30 +67,37 @@ class Experimenter:
                 print("Exporting pipelines to {}".format(location))
                 self.output_values_to_folder(location)
 
-
+    """
+    Pretty prints a JSON object to make it readable
+    """
     def _pretty_print_json(self, json):
         import pprint
         pp = pprint.PrettyPrinter(indent=2)
         pp.pprint(json)
 
+    """
+    :param pipeline_description: an empty pipeline object that we can add steps to.
+    :param step_counter: a integer representing the number of the next step we are on.
+    :return pipeline_description: a Pipeline object that contains the initial steps to being a pipeline
+    """
     def _add_initial_steps(self, pipeline_description: Pipeline, step_counter):
 
         # Creating pipeline
         pipeline_description.add_input(name='inputs')
 
-        # Step 0: Denormalize - not required
-        denormalizer: PrimitiveBase = index.get_primitive("d3m.primitives.data_transformation.denormalize.Common")
-        step_0 = PrimitiveStep(primitive_description=denormalizer.metadata.query())
-        step_0.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='inputs.0')
-        step_0.add_output('produce')
-        pipeline_description.add_step(step_0)
-        step_counter += 1
+        # TODO: decide when to use this
+        # # Step 0: Denormalize - not required
+        # denormalizer: PrimitiveBase = index.get_primitive("d3m.primitives.data_transformation.denormalize.Common")
+        # step_0 = PrimitiveStep(primitive_description=denormalizer.metadata.query())
+        # step_0.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.{}.produce'.format(step_counter - 1))
+        # step_0.add_output('produce')
+        # pipeline_description.add_step(step_0)
+        # step_counter += 1
 
         # Step 1: dataset_to_dataframe
         step_1 = PrimitiveStep(
             primitive=index.get_primitive('d3m.primitives.data_transformation.dataset_to_dataframe.Common'))
-        step_1.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER,
-                            data_reference='steps.{}.produce'.format(max(0, step_counter - 1)))
+        step_1.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='inputs.0')
         step_1.add_output('produce')
         pipeline_description.add_step(step_1)
         step_counter += 1
@@ -104,13 +111,11 @@ class Experimenter:
         pipeline_description.add_step(step_2)
         step_counter += 1
 
-        # Step 3: SKImputer
-        sk_imputer: PrimitiveBase = index.get_primitive("d3m.primitives.data_cleaning.imputer.SKlearn")
+        # Step 3: Imputer
+        sk_imputer: PrimitiveBase = index.get_primitive("d3m.primitives.data_preprocessing.random_sampling_imputer.BYU")
         step_3 = PrimitiveStep(primitive_description=sk_imputer.metadata.query())
         step_3.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER,
-                            data_reference='steps.{}.produce'.format(step_counter - 1))
-        step_3.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
-        step_3.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
+                            data_reference = 'steps.{}.produce'.format(step_counter - 1))
         step_3.add_output('produce')
         pipeline_description.add_step(step_3)
         step_counter += 1
@@ -142,8 +147,6 @@ class Experimenter:
 
         # Creating Pipeline
         pipeline_description = Pipeline(context=Context.TESTING)
-        pipeline_description.add_input(name='inputs')
-
 
         step_counter = self._add_initial_steps(pipeline_description, step_counter)
 
@@ -161,7 +164,7 @@ class Experimenter:
 
         # Step 5: Classifier
         step_5 = PrimitiveStep(primitive_description=classifier.metadata.query())
-        for arg in self._get_required_args(classifier):
+        for index, arg in enumerate(self._get_required_args(classifier)):
             step_5.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
                                 data_reference='steps.{}.produce'.format(step_counter - 1))
         step_5.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
