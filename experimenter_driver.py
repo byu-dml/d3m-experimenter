@@ -121,6 +121,8 @@ class ExperimenterDriver:
             if type_name in ["classification", "regression"]:
                 print("\n Starting to execute ####{}#### problems".format(type_name))
                 for index, problem in enumerate(problems[type_name]):
+                    if not index:
+                        continue
                     sys.stdout.write('\r')
                     percent = 100 / len(problems[type_name])
                     sys.stdout.write("[%-20s] %d%%" % ('=' * index, percent * index))
