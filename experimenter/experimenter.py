@@ -147,8 +147,6 @@ class Experimenter:
 
         # Creating Pipeline
         pipeline_description = Pipeline(context=Context.TESTING)
-        pipeline_description.add_input(name='inputs')
-
 
         step_counter = self._add_initial_steps(pipeline_description, step_counter)
 
