@@ -10,6 +10,7 @@ services:
       - ${VOLUMES}:/volumes
       - ${DATASETS}:/datasets
       - ${EXPERIMENTER}:/d3m-experimenter
+      - ${D3M}:/d3m
 
 networks:
   host:

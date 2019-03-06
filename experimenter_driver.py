@@ -22,12 +22,10 @@ class ExperimenterDriver:
         self.pipeline_path = pipeline_path
         self.run_type = run_type
         self.distributed = distributed
-
-        if run_type == "pipeline_path":
-            if stored_pipeline_loc is None:
-                self.pipeline_location = "created_pipelines/"
-            else:
-                self.pipeline_location = stored_pipeline_loc
+        if stored_pipeline_loc == "default":
+            self.pipeline_location = "created_pipelines/"
+        elif stored_pipeline_loc is not None:
+            self.pipeline_location = stored_pipeline_loc
         else:
             self.pipeline_location = None
 
@@ -96,7 +94,7 @@ class ExperimenterDriver:
 
 
     def run(self):
-        if self.run_type == "pipeline_path":
+        if self.run_type == "pipeline_path" or self.pipeline_location is not None:
             print("Executing pipelines found in {}".format(self.pipeline_location))
             if self.pipeline_location is None:
                 raise NotADirectoryError
@@ -182,35 +180,35 @@ def main(run_type, pipeline_folder):
     pipeline_path = './pipe.yml'
 
     # annoyed with D3M namespace warnings
-    import logging.config
-    logging.config.dictConfig({
-        'version': 1,
-        'disable_existing_loggers': True,
-    })
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore")
-        if args.run_type == "all":
-            # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
-            print("Generating pipelines...")
-            experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True)
+    # import logging.config
+    # logging.config.dictConfig({
+    #     'version': 1,
+    #     'disable_existing_loggers': True,
+    # })
+    # # with warnings.catch_warnings():
+    #     warnings.filterwarnings("ignore")
+    if args.run_type == "all":
+        # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
+        print("Generating pipelines...")
+        experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True)
 
-        elif args.run_type == "generate":
-            print("Only generating pipelines...")
-            experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True,
-                                        location=pipeline_folder)
-            return
+    elif args.run_type == "generate":
+        print("Only generating pipelines...")
+        experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True,
+                                    location=pipeline_folder)
+        return
 
-        if args.run_type == "distribute":
-            experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
-                                                     run_type=run_type, stored_pipeline_loc=pipeline_folder,
-                                                     distributed=True)
-            experimenter_driver.run()
-
-            return
-
+    if args.run_type == "distribute":
         experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
-                                                 run_type=run_type, stored_pipeline_loc=pipeline_folder)
+                                                 run_type=run_type, stored_pipeline_loc=pipeline_folder,
+                                                 distributed=True)
         experimenter_driver.run()
+
+        return
+
+    experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
+                                             run_type=run_type, stored_pipeline_loc=pipeline_folder)
+    experimenter_driver.run()
 
 
 if __name__ == "__main__":
