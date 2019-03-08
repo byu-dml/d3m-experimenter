@@ -53,7 +53,7 @@ class Experimenter:
 
         if generate_pipelines:
             tree = "d3m.primitives.classification.random_forest.SKlearn"
-            self.generated_pipelines: dict = self.generate_k_ensembles(2, 1, model=tree)
+            self.generated_pipelines: dict = self.generate_k_ensembles(4, 1, model=tree)
 
             # self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors,
                                                                               # self.models)
@@ -399,7 +399,7 @@ class Experimenter:
         # concatenate k - 2 times since we did the first above
         for concat_num in range(k-2):
             prev_concat = step_counter - 1
-            next_output = init_step_counter + (p + 2) * (2 + concat_num)
+            next_output = (init_step_counter - 1) + (p + 2) * (3 + concat_num)
             steps_list = [prev_concat, next_output]
             step_6 = PrimitiveStep(primitive_description=concatenator.metadata.query())
             for arg_index, arg in enumerate(self._get_required_args(concatenator)):

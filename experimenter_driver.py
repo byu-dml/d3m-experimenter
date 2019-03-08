@@ -1,11 +1,15 @@
 from experimenter.experimenter import Experimenter
 import os, json, pdb, traceback, sys
-from experimenter.pipeline.run_pipeline import RunPipeline
+from d3m import utils
+from d3m import index as d3m_index
 from d3m.metadata.pipeline import Pipeline
 from experimenter.database_communication import PipelineDB
 import warnings, argparse
 import redis
 from rq import Queue
+from dsbox.datapostprocessing import EnsembleVoting as EnsembleVotingPrimitive
+from dsbox.datapostprocessing import EnsembleVotingHyperparams
+
 from execute_pipeline import execute_pipeline_on_problem
 try:
     from experimenter.config import redis_host, redis_port
@@ -42,6 +46,9 @@ class ExperimenterDriver:
             except:
                 raise ConnectionRefusedError
 
+        with utils.silence():
+            d3m_index.register_primitive('d3m.primitives.data_preprocessing.EnsembleVoting.DSBOX',
+                                         EnsembleVotingPrimitive)
 
     def primitive_list_from_pipeline_object(self, pipeline):
         primitives = []
