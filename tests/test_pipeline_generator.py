@@ -8,7 +8,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.datasets_dir = sys.argv[1]  # TODO: move to .env
+        cls.datasets_dir = '/datasets'
         cls.seed_problem_directory = ['seed_datasets_current']
 
     # @classmethod
