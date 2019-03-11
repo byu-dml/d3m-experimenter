@@ -26,29 +26,29 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     def test_get_classification_problems(self):
         
-        seed_classification_problems = [
-            '/datasets//seed_datasets_current/4550_MiceProtein',
-            '/datasets//seed_datasets_current/1491_one_hundred_plants_margin',
-            '/datasets//seed_datasets_current/LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction',
-            '/datasets//seed_datasets_current/LL0_1100_popularkids',
-            '/datasets//seed_datasets_current/LL0_acled_reduced',
-            '/datasets//seed_datasets_current/313_spectrometer',
-            '/datasets//seed_datasets_current/uu4_SPECT',
-            '/datasets//seed_datasets_current/66_chlorineConcentration',
-            '/datasets//seed_datasets_current/LL0_acled',
-            '/datasets//seed_datasets_current/185_baseball',
-            '/datasets//seed_datasets_current/LL0_186_braziltourism',
-            '/datasets//seed_datasets_current/27_wordLevels',
-            '/datasets//seed_datasets_current/1567_poker_hand',
-            '/datasets//seed_datasets_current/38_sick',
-            '/datasets//seed_datasets_current/57_hypothyroid',
-            '/datasets//seed_datasets_current/32_wikiqa'
-        ]
+        known_seed_classification_problems = set([
+            '/datasets/seed_datasets_current/4550_MiceProtein',
+            '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
+            '/datasets/seed_datasets_current/LL0_1100_popularkids',
+            '/datasets/seed_datasets_current/LL0_acled_reduced',
+            '/datasets/seed_datasets_current/313_spectrometer',
+            '/datasets/seed_datasets_current/uu4_SPECT',
+            '/datasets/seed_datasets_current/LL0_acled',
+            '/datasets/seed_datasets_current/uu5_heartstatlog',
+            '/datasets/seed_datasets_current/185_baseball',
+            '/datasets/seed_datasets_current/27_wordLevels',
+            '/datasets/seed_datasets_current/38_sick',
+            '/datasets/seed_datasets_current/57_hypothyroid',
+            '/datasets/seed_datasets_current/32_wikiqa'
+        ])
 
-        self.assertEqual(
-            self.experimenter_driver.problems, seed_classification_problems,
-            'Not all seed classification problems fetched correctly'
-        )
+        found_problems = set(self.experimenter_driver.problems['classification'])
+
+        for known_problem in known_seed_classification_problems:
+            self.assertTrue(
+                known_problem in found_problems,
+                'known problem {} not found'.format(known_problem)
+            )
     
     def test_basic_pipeline_structure(self):
 

@@ -186,16 +186,10 @@ class Experimenter:
             datasets_suffix = problem_directory
             datasets_dir = os.path.join(self.datasets_dir, datasets_suffix)
             for problem_name in os.listdir(datasets_dir):
-                problem_description_path = datasets_dir + problem_name + "/" + problem_name + "_problem"
-                filenames_match = glob.glob(problem_description_path + '*/problemDoc.json')
-                if len(filenames_match):
-                    type = self.get_problem_type(problem_name, filenames_match)
-                    if type == "classification":
-                        problems_list["classification"].append(datasets_dir + problem_name)
-                    elif type == "regression":
-                        problems_list["regression"].append(datasets_dir + problem_name)
-
-
+                problem_description_path = os.path.join(datasets_dir, problem_name, problem_name + "_problem", 'problemDoc.json')
+                problem_type = self.get_problem_type(problem_name, [problem_description_path])
+                if problem_type in problems_list:
+                    problems_list[problem_type].append(os.path.join(datasets_dir, problem_name))
         return problems_list
 
     def generate_pipelines(self, preprocessors: List[str], models: dict):
