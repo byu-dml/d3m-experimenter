@@ -17,6 +17,8 @@ import json
 import sys
 from .database_communication import PipelineDB
 
+from experimenter import utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -183,26 +185,16 @@ class Experimenter:
     def get_possible_problems(self):
         problems_list = {"classification": [], "regression": []}
         for problem_directory in self.problem_directories:
-            datasets_suffix = problem_directory
-            datasets_dir = self.datasets_dir + datasets_suffix
-            for problem_name in os.listdir(datasets_dir):
-                problem_description_path = datasets_dir + problem_name + "/" + problem_name + "_problem"
-                filenames_match = glob.glob(problem_description_path + '*/problemDoc.json')
-                if len(filenames_match):
-                    type = self.get_problem_type(problem_name, filenames_match)
-                    if type == "classification":
-                        problems_list["classification"].append(datasets_dir + problem_name)
-                    elif type == "regression":
-                        problems_list["regression"].append(datasets_dir + problem_name)
-
-
+            datasets_dir = os.path.join(self.datasets_dir, problem_directory)
+            for dataset_name in os.listdir(datasets_dir):
+                problem_description_path = utils.get_problem_path(dataset_name, datasets_dir)
+                problem_type = self.get_problem_type(dataset_name, [problem_description_path])
+                if problem_type in problems_list:
+                    problems_list[problem_type].append(os.path.join(datasets_dir, dataset_name))
         return problems_list
 
     def generate_pipelines(self, preprocessors: List[str], models: dict):
         preprocessors = list(set(preprocessors))
-        classification = list(set(models["classification"]))
-        regression = list(set(models["regression"]))
-
 
         generated_pipelines = {"classification": [], "regression": []}
         for type_name, model_list in models.items():
