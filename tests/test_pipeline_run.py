@@ -35,7 +35,7 @@ class TestExecutingPipelines(unittest.TestCase):
         self.run_d3m(problem_name)
 
         # get results from d3m output file
-        with open('test_results.yml', 'r') as file:
+        with open('tests/test_results.yml', 'r') as file:
             # grab the second document, containing the scores
             d3m_score = list(yaml.load_all(file))
             # get the F1-Macro from the first document
@@ -61,7 +61,7 @@ class TestExecutingPipelines(unittest.TestCase):
                          format(problem_name, problem_name),
                      '-i', '/datasets/seed_datasets_current/{}/{}_dataset/datasetDoc.json'.
                          format(problem_name, problem_name),
-                     '-O', 'test_results.yml']
+                     '-O', 'tests/test_results.yml']
 
         arguments = parser.parse_args(args=test_args)
         handler(arguments, parser)
