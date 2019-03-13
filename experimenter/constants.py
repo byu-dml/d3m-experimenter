@@ -4,7 +4,7 @@ preprocessors = [
     "d3m.primitives.data_transformation.kernel_pca.SKlearn",
     "d3m.primitives.data_transformation.pca.SKlearn",
     "d3m.primitives.data_transformation.fast_ica.SKlearn",
-    "d3m.primitives.data_preprocessing.select_fwe.SKlearn",
+    "d3m.primitives.feature_selection.select_fwe.SKlearn",
     "d3m.primitives.feature_selection.select_percentile.SKlearn",
     "d3m.primitives.data_preprocessing.min_max_scaler.SKlearn",
     "d3m.primitives.data_preprocessing.nystroem.SKlearn",
@@ -72,9 +72,16 @@ blacklist_non_tabular_data = [
     "LL1_3476_HMDB_actio_recognition",
     "uu1_datasmash",
     "30_personae",
-
+    "LL1_crime_chicago",
+    "LL0_186_braziltourism",
+    "22_handgeometry",
+    "uu2_gp_hyperparameter_estimation"
+    "uu2_gp_hyperparameter_estimation_v2",
+    "LL0_1220_click_prediction_small",
     "LL1_336_MS_Geolife_transport_mode_prediction",  # too long
-    "1567_poker_hand"  # too long: ERROR: BSON document too large (19826399 bytes)
-    "LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon"  # too long
-    "LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction"  # GPS data in another file
+    "1567_poker_hand",  # too long: ERROR: BSON document too large (19826399 bytes)
+    "LL0_1569_poker_hand", # Memory error in NP dot product
+    "LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon",  # too long
+    "LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction", # GPS data in another file
+    "66_chlorineConcentration",
 ]

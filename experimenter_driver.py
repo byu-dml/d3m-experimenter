@@ -22,7 +22,7 @@ class ExperimenterDriver:
         self.run_type = run_type
         self.distributed = distributed
 
-        if run_type == "pipelines_path":
+        if run_type == "pipeline_path":
             if stored_pipeline_loc is None:
                 self.pipeline_location = "created_pipelines/"
             else:
@@ -95,7 +95,7 @@ class ExperimenterDriver:
 
 
     def run(self):
-        if self.run_type == "pipelines_path":
+        if self.run_type == "pipeline_path":
             print("Executing pipelines found in {}".format(self.pipeline_location))
             if self.pipeline_location is None:
                 raise NotADirectoryError
@@ -120,6 +120,8 @@ class ExperimenterDriver:
             if type_name in ["classification", "regression"]:
                 print("\n Starting to execute ####{}#### problems".format(type_name))
                 for index, problem in enumerate(problems[type_name]):
+                    if not index:
+                        continue
                     sys.stdout.write('\r')
                     percent = 100 / len(problems[type_name])
                     sys.stdout.write("[%-20s] %d%%" % ('=' * index, percent * index))
