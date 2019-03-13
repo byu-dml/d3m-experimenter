@@ -40,7 +40,7 @@ class RunPipeline:
                              format(self.problem_path, self.problem_name)],
                          "context": metadata_base.Context.TESTING
                          }
-        
+
     """
     This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
     Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
@@ -93,7 +93,6 @@ class RunPipeline:
             )
             for input_uri in arguments['inputs']
         ]
-
 
         data_params = {}
 

@@ -188,8 +188,8 @@ def main(run_type, pipeline_folder):
         warnings.filterwarnings("ignore")
         if args.run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
-            print("Generating pipelines...")
-            experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True)
+            experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True,
+                                        generate_problems=True)
 
         elif args.run_type == "generate":
             print("Only generating pipelines...")

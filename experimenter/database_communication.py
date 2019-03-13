@@ -28,7 +28,7 @@ class PipelineDB:
             print("Cannot connect to the Mongo Client at port {}. Error is {}".format(self.mongo_port, e))
 
     def export_pipeline_runs_to_folder(self, folder_directory='~/database/',
-                                       collection_names=["pipeline_runs", "pipelines"]):
+                                       collection_names=["pipeline_runs", "pipelines", "datasets", "problems"]):
         """
         This function will create or find the directory given and export all pipeline runs from the database to
         the folder.  The pipeline runs are saved as JSON files.
@@ -56,11 +56,24 @@ class PipelineDB:
                     location, problem_name = self._get_location_of_dataset(doc)
                     file_path = os.path.join(output_directory, "{}_{}_{}{}".format(location, problem_name,
                                                                                    doc['id'], '.json'))
-                else:
+                elif collection_name == "pipelines":
                     predictor_model = doc['steps'][-2]['primitive']['python_path'].split('.')[-2]
-                    type = doc['steps'][-2]['primitive']['python_path'].split('.')[-3]
+                    try:
+                        type = doc['steps'][-2]['primitive']['python_path'].split('.')[-3]
+                    except Exception as e:
+                        type = "unknown"
                     file_path = os.path.join(output_directory, "{}_{}_{}_{}{}".format(type, predictor_model, doc['id'],
                                                                                    "pipeline", '.json'))
+                elif collection_name == "problems":
+                    file_path = os.path.join(output_directory, "{}".format(doc["problemID"]))
+
+                elif collection_name == "datasets":
+                    file_path = os.path.join(output_directory, "{}".format(doc["datasetID"]))
+
+                else:
+                    print("ERROR: Not a valid collection name")
+                    raise Exception
+
                 if not os.path.isfile(file_path):
                     with open(file_path, 'w') as f:
                         json.dump(doc, f, indent=2, default=json_util.default)
@@ -163,10 +176,12 @@ class PipelineDB:
         for index in range(3):
             try:
                 path = doc["steps"][0]["method_calls"][index]["metadata"]["produce"][0]["metadata"]['location_uris'][0]
+                # get the third to last folder name -> it's the name of the problem.
+                problem_name = path.split("/")[-3]
             except Exception:
-                pass
-        # get the third to last folder name -> it's the name of the problem.
-        problem_name = path.split("/")[-3]
+                print("WARNING: could not get the URI")
+                return "unknown", "unknown"
+
         # search for the first one of these. The first one to appear is which folder it is in.
         seed = path.find(enum_of_paths[0])
         LL0 = path.find(enum_of_paths[1])
@@ -195,4 +210,42 @@ class PipelineDB:
             pipelines[predictor_model].append(Pipeline.from_json(json.dumps(pipeline, sort_keys=True, indent=4,
                                                                             default=json_util.default)))
         return pipelines, len(pipelines["regression"]) + len(pipelines["classification"])
+
+    def add_to_problems(self, problem_doc):
+        """
+        A function for adding to the problems collection
+        :param problem_doc: the problem document
+        :return: bool indicating whether or not the document was inserted
+        """
+        db = self.mongo_client.metalearning
+        collection = db.problems
+        id = problem_doc["problemID"]
+
+        if collection.find({"problemID": id}).count():
+            return False
+
+        pipeline_id = collection.insert_one(problem_doc).inserted_id
+        print("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
+        return True
+
+    def add_to_datasets(self, dataset_doc):
+        """
+        A function for adding to the problems collection
+        :param dataset_doc: the dataset document describing the dataset
+        :return: bool indicating whether or not the document was inserted
+        """
+        db = self.mongo_client.metalearning
+        collection = db.datasets
+        id = dataset_doc["datasetID"]
+        digest = dataset_doc["digest"]
+
+        if collection.find({"digest": digest}).count():
+            return False
+
+        if collection.find({"datasetID": id}).count():
+            return False
+
+        pipeline_id = collection.insert_one(dataset_doc).inserted_id
+        print("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
+        return True
 

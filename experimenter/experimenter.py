@@ -48,12 +48,14 @@ class Experimenter:
         self.incorrect_problem_types = {}
 
         if generate_problems:
+            print("Generating problems...")
             self.problems = self.get_possible_problems()
             self.num_problems = len(self.problems["classification"]) + len(self.problems["regression"])
 
             print("There are {} problems".format(self.num_problems))
 
         if generate_pipelines:
+            print("Generating pipelines...")
             self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors,
                                                                                self.models)
             self.num_pipelines = len(self.generated_pipelines["classification"]) + \
@@ -185,9 +187,19 @@ class Experimenter:
     def get_possible_problems(self):
         problems_list = {"classification": [], "regression": []}
         for problem_directory in self.problem_directories:
+            print(self.datasets_dir)
             datasets_dir = os.path.join(self.datasets_dir, problem_directory)
+            print(datasets_dir)
             for dataset_name in os.listdir(datasets_dir):
                 problem_description_path = utils.get_problem_path(dataset_name, datasets_dir)
+                try:
+                    print("Adding dataset doc")
+                    # add to dataset collection if it hasn't been already
+                    dataset_doc = utils.get_dataset_doc(dataset_name, datasets_dir)
+                    self.mongo_database.add_to_datasets(dataset_doc)
+                except Exception as e:
+                    print("ERROR: failed to get dataset document")
+
                 problem_type = self.get_problem_type(dataset_name, [problem_description_path])
                 if problem_type in problems_list:
                     problems_list[problem_type].append(os.path.join(datasets_dir, dataset_name))
@@ -195,6 +207,8 @@ class Experimenter:
 
     def generate_pipelines(self, preprocessors: List[str], models: dict):
         preprocessors = list(set(preprocessors))
+        classification = list(set(models["classification"]))
+        regression = list(set(models["regression"]))
 
         generated_pipelines = {"classification": [], "regression": []}
         for type_name, model_list in models.items():
@@ -225,8 +239,11 @@ class Experimenter:
                 with open(path, 'r') as file:
                     problem_doc = json.load(file)
                     if problem_doc['about']['taskType'] == 'classification':
+                        # add the problem doc to the database if it hasn't already
+                        self.mongo_database.add_to_problems(problem_doc)
                         return "classification"
                     elif problem_doc['about']['taskType'] == 'regression':
+                        self.mongo_database.add_to_problems(problem_doc)
                         return "regression"
                     else:
                         try:
