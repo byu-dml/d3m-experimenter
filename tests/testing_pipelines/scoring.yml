@@ -19,9 +19,8 @@ steps:
     primitive:
       id: 799802fb-2e11-4ab7-9c5e-dda09eb52a70
       version: 0.1.0
-      python_path: d3m.primitives.evaluation.ComputeScores
+      python_path: d3m.primitives.evaluation.compute_scores.Common
       name: Compute scores given the metrics to use
-      digest: 1a26000ad4b8d22366cc935ea03e9dbdb822aba1df9bae7aa4b3a6bd22bebda3
     arguments:
       inputs:
         type: CONTAINER

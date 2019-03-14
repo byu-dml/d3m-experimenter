@@ -1,11 +1,33 @@
 import argparse
 import os
+import typing
 import unittest
 import yaml
-from d3m.runtime import handler, configure_parser
+
+from d3m import runtime as runtime_module
+from d3m.runtime import get_pipeline, handler, configure_parser
 from d3m.metadata import pipeline as pipeline_module
 from experimenter.pipeline.run_pipeline import RunPipeline
 
+def get_pipeline(
+    pipeline_path: str, *, strict_resolving: bool = False,
+    strict_digest: bool = False,
+    pipeline_search_paths: typing.Sequence[str] = None,
+    respect_environment_variable: bool = True,
+    load_all_primitives: bool = False,
+    resolver_class: typing.Type[pipeline_module.Resolver] = pipeline_module.Resolver,
+    pipeline_class: typing.Type[pipeline_module.Pipeline] = pipeline_module.Pipeline,
+):
+    return runtime_module.get_pipeline(
+        pipeline_path=pipeline_path,
+        strict_resolving=strict_resolving,
+        strict_digest=strict_digest,
+        pipeline_search_paths=pipeline_search_paths,
+        respect_environment_variable=respect_environment_variable,
+        load_all_primitives=load_all_primitives,
+        resolver_class=resolver_class,
+        pipeline_class=pipeline_class,
+    )
 
 class TestExecutingPipelines(unittest.TestCase):
 
@@ -74,7 +96,8 @@ class TestExecutingPipelines(unittest.TestCase):
                      '-O', self.TEST_RESULTS_PATH]
 
         arguments = parser.parse_args(args=test_args)
-        handler(arguments, parser)
+
+        handler(arguments, parser, pipeline_resolver=get_pipeline)
 
     def run_experimenter_from_file(self, problem_path):
         # load pipeline
