@@ -57,30 +57,32 @@ class RunPipeline:
 
         runtime_environment = RuntimeEnvironment()
 
-        pipeline_resolver = get_pipeline
         dataset_resolver = get_dataset
 
         context = metadata_base.Context[arguments["context"]]
 
         if type(pipeline) != Pipeline:
-            pipeline = pipeline_resolver(
+            pipeline = get_pipeline(
                 arguments["pipeline"],
                 strict_resolving=False,
                 strict_digest=False,
-                pipeline_search_paths=[]
+                pipeline_search_paths=[],
+                load_all_primitives=False
             )
 
-        data_pipeline = pipeline_resolver(
+        data_pipeline = get_pipeline(
             arguments["data_pipeline"],
             strict_resolving=False,
             strict_digest= False,
-            pipeline_search_paths=[]
+            pipeline_search_paths=[],
+            load_all_primitives=False
         )
-        scoring_pipeline = pipeline_resolver(
+        scoring_pipeline = get_pipeline(
             arguments["scoring_pipeline"],
             strict_resolving=False,
             strict_digest=False,
-            pipeline_search_paths=[]
+            pipeline_search_paths=[],
+            load_all_primitives=False
         )
 
         problem_description = base_problem.parse_problem_description(arguments["problem"])
