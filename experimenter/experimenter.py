@@ -34,12 +34,11 @@ class Experimenter:
     learning models
     """
 
-    def __init__(self, datasets_dir: str, volumes_dir: str, pipeline_path: str, input_problem_directory=None,
+    def __init__(self, datasets_dir: str, volumes_dir: str, input_problem_directory=None,
                  input_models=None, input_preprocessors=None, generate_pipelines=True,
                  location=None, generate_problems=False, generate_automl_pipelines=False):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
-        self.pipeline_path = pipeline_path
         self.mongo_database = PipelineDB()
 
         # If we want to run automl systems, don't run regular pipelines

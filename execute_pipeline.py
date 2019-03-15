@@ -17,9 +17,8 @@ pipeline and dataset has been executed before, run the pipeline, and record the 
 :param problem: the path to the problemDoc of the particular dataset
 :param datasets_dir: a string containing the main directory of datasets
 :param volumes_dir: a string containing the path to the volumes directory
-:param pipeline_path: a path to the pipeline file to be executed
 """
-def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir, pipeline_path=""):
+def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
     # Attempt to run the pipeline
     print("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
@@ -29,7 +28,7 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir, pipeli
     if mongo_db.has_duplicate_pipeline_run(problem, pipe.to_json_structure(), collection_name):
         print("Already ran. Skipping")
         return
-    run_pipeline = RunPipeline(datasets_dir, volumes_dir, pipeline_path, problem)
+    run_pipeline = RunPipeline(datasets_dir, volumes_dir, problem)
     try:
         results = run_pipeline.run(pipeline=pipe)[0]
     except Exception as e:
