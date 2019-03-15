@@ -1,17 +1,49 @@
 import argparse
+import os
+import typing
 import unittest
 import yaml
-from d3m.runtime import handler, configure_parser
+
+from d3m import runtime as runtime_module
+from d3m.runtime import get_pipeline, handler, configure_parser
 from d3m.metadata import pipeline as pipeline_module
 from experimenter.pipeline.run_pipeline import RunPipeline
 
+def get_pipeline(
+    pipeline_path: str, *, strict_resolving: bool = False,
+    strict_digest: bool = False,
+    pipeline_search_paths: typing.Sequence[str] = None,
+    respect_environment_variable: bool = True,
+    load_all_primitives: bool = False,
+    resolver_class: typing.Type[pipeline_module.Resolver] = pipeline_module.Resolver,
+    pipeline_class: typing.Type[pipeline_module.Pipeline] = pipeline_module.Pipeline,
+):
+    return runtime_module.get_pipeline(
+        pipeline_path=pipeline_path,
+        strict_resolving=strict_resolving,
+        strict_digest=strict_digest,
+        pipeline_search_paths=pipeline_search_paths,
+        respect_environment_variable=respect_environment_variable,
+        load_all_primitives=load_all_primitives,
+        resolver_class=resolver_class,
+        pipeline_class=pipeline_class,
+    )
 
 class TestExecutingPipelines(unittest.TestCase):
+
+    TEST_RESULTS_PATH = './test_results.yml'
 
     def setUp(self):
         self.datasets_dir = "/datasets"
         self.volumes_dir = "/volumes"
         self.pipeline_path = 'tests/testing_pipelines/test_bagging_classification.json'
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            os.remove(cls.TEST_RESULTS_PATH)
+        except OSError:
+            pass
 
     def test_d3m_runtime_works(self):
         problem_path = "/datasets/seed_datasets_current/185_baseball"
@@ -35,7 +67,7 @@ class TestExecutingPipelines(unittest.TestCase):
         self.run_d3m(problem_name)
 
         # get results from d3m output file
-        with open('tests/test_results.yml', 'r') as file:
+        with open(self.TEST_RESULTS_PATH, 'r') as file:
             # grab the second document, containing the scores
             d3m_score = list(yaml.load_all(file))
             # get the F1-Macro from the first document
@@ -61,10 +93,11 @@ class TestExecutingPipelines(unittest.TestCase):
                          format(problem_name, problem_name),
                      '-i', '/datasets/seed_datasets_current/{}/{}_dataset/datasetDoc.json'.
                          format(problem_name, problem_name),
-                     '-O', 'tests/test_results.yml']
+                     '-O', self.TEST_RESULTS_PATH]
 
         arguments = parser.parse_args(args=test_args)
-        handler(arguments, parser)
+
+        handler(arguments, parser, pipeline_resolver=get_pipeline)
 
     def run_experimenter_from_file(self, problem_path):
         # load pipeline
