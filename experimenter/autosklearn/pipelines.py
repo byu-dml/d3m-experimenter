@@ -4,7 +4,7 @@ from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 
 from .primitives import AutoSklearnClassifierPrimitive
 
-def get_classification_pipeline():
+def get_classification_pipeline(time_limit=20):
     pipeline_description = Pipeline(context=metadata_base.Context.TESTING)
     pipeline_description.add_input(name='inputs')
 
@@ -97,6 +97,10 @@ def get_classification_pipeline():
     step_6.add_argument(
         name='outputs', argument_type=metadata_base.ArgumentType.CONTAINER,
         data_reference='steps.5.produce'
+    )
+    step_6.add_hyperparameter(
+        name='time_left_for_this_task', argument_type=metadata_base.ArgumentType.VALUE,
+        data=time_limit
     )
     step_6.add_output('produce')
     pipeline_description.add_step(step_6)

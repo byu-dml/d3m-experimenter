@@ -1,8 +1,5 @@
-import argparse
-import collections
-import warnings
-
-from bson import json_util
+from experimenter.autosklearn.primitives import AutoSklearnClassifierPrimitive, Hyperparams
+from d3m import index as d3m_index, runtime as runtime_module, utils as d3m_utils
 from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data, not_working_preprocessors
 from d3m import index
 from d3m.primitive_interfaces.base import PrimitiveBase
@@ -11,16 +8,22 @@ from d3m.metadata.base import Context, ArgumentType
 from typing import List
 import logging
 from d3m.metadata.pipeline import Pipeline
-import glob
 import os
 import json
-import sys
 from .database_communication import PipelineDB
+from experimenter.autosklearn.pipelines import get_classification_pipeline
 
 from experimenter import utils
 
 logger = logging.getLogger(__name__)
 
+
+def register_primitives():
+    with d3m_utils.silence():
+        d3m_index.register_primitive(
+            AutoSklearnClassifierPrimitive.metadata.query()['python_path'],
+            AutoSklearnClassifierPrimitive
+        )
 
 class Experimenter:
     """
@@ -33,11 +36,15 @@ class Experimenter:
 
     def __init__(self, datasets_dir: str, volumes_dir: str, pipeline_path: str, input_problem_directory=None,
                  input_models=None, input_preprocessors=None, generate_pipelines=True,
-                 location=None, generate_problems=False):
+                 location=None, generate_problems=False, generate_automl_pipelines=False):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.pipeline_path = pipeline_path
         self.mongo_database = PipelineDB()
+
+        # If we want to run automl systems, don't run regular pipelines
+        if generate_automl_pipelines:
+            generate_pipelines = False
 
         # set up the primitives according to parameters
         self.preprocessors = preprocessors if input_preprocessors is None else input_preprocessors
@@ -70,6 +77,12 @@ class Experimenter:
             else:
                 print("Exporting pipelines to {}".format(location))
                 self.output_values_to_folder(location)
+
+        if generate_automl_pipelines:
+            self.generated_pipelines = self.generate_baseline_pipelines()
+            self.num_pipelines = len(self.generated_pipelines["classification"])
+            self.output_automl_pipelines_to_mongodb()
+
 
     """
     Pretty prints a JSON object to make it readable
@@ -275,3 +288,18 @@ class Experimenter:
 
         print("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                self.num_pipelines - added_pipeline_sum))
+
+    def generate_baseline_pipelines(self):
+        register_primitives()
+        autosklearn_pipeline = get_classification_pipeline(time_limit=60)
+        # TODO: get other baseline primitives here
+        return {"classification": [autosklearn_pipeline]}
+
+    def output_automl_pipelines_to_mongodb(self):
+        added_pipeline_sum = 0
+        for pipeline_type in self.generated_pipelines:
+            for pipe in self.generated_pipelines[pipeline_type]:
+                added_pipeline_sum += self.mongo_database.add_to_automl_pipelines(pipe)
+
+        print("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
+                                                                                           self.num_pipelines - added_pipeline_sum))

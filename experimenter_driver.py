@@ -1,4 +1,4 @@
-from experimenter.experimenter import Experimenter
+from experimenter.experimenter import Experimenter, register_primitives
 import os, json, pdb, traceback, sys
 from experimenter.pipeline.run_pipeline import RunPipeline
 from d3m.metadata.pipeline import Pipeline
@@ -16,12 +16,13 @@ except Exception as E:
 class ExperimenterDriver:
 
     def __init__(self, datasets_dir: str, volumes_dir: str, pipeline_path: str, run_type: str ="all",
-                 stored_pipeline_loc=None, distributed=False):
+                 stored_pipeline_loc=None, distributed=False, generate_automl_pipelines=False):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.pipeline_path = pipeline_path
         self.run_type = run_type
         self.distributed = distributed
+        self.run_automl = generate_automl_pipelines
 
         if run_type == "pipeline_path":
             if stored_pipeline_loc is None:
@@ -112,7 +113,7 @@ class ExperimenterDriver:
                                         generate_problems=True, generate_pipelines=False)
             print("\n Gathering pipelines from database...")
             problems: dict = experimenter.problems
-            pipes, num_pipes = self.mongo_db.get_all_pipelines()
+            pipes, num_pipes = self.mongo_db.get_all_pipelines(baselines=self.run_automl)
             print("There are {} pipelines to be executed".format(num_pipes))
 
         print("\nExecuting pipelines now")
@@ -126,7 +127,9 @@ class ExperimenterDriver:
                     sys.stdout.write("[%-20s] %d%%" % ('=' * index, percent * index))
                     sys.stdout.flush()
                     for pipe in pipeline_list:
-                        if self.mongo_db.has_duplicate_pipeline_run(problem, pipe.to_json_structure()):
+                        if self.mongo_db.has_duplicate_pipeline_run(problem, pipe.to_json_structure(),
+                                                                    collection_name= "automl_pipeline_runs" if
+                                                                    self.run_automl else "pipeline_runs"):
                             print("\n SKIPPING. Pipeline already run.")
                             self.print_pipeline_and_problem(pipe, problem)
                             continue
@@ -172,11 +175,14 @@ python3 experimenter.py -r generate -f default (creates pipelines in default fol
 python3 experimenter.py -r generate -f other_folder/ (creates pipelines and stores them in "other_folder/")
 
 """
-def main(run_type, pipeline_folder):
+def main(run_type, pipeline_folder, run_baselines):
 
     datasets_dir = '/datasets'
     volumes_dir = '/volumes'
     pipeline_path = './pipe.yml'
+
+    if run_baselines:
+        register_primitives()
 
     # annoyed with D3M namespace warnings
     import logging.config
@@ -186,27 +192,28 @@ def main(run_type, pipeline_folder):
     })
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
-        if args.run_type == "all":
+        if run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
             experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True,
-                                        generate_problems=True)
+                                        generate_problems=True, generate_automl_pipelines=run_baselines)
 
-        elif args.run_type == "generate":
+        elif run_type == "generate":
             print("Only generating pipelines...")
             experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True,
-                                        location=pipeline_folder)
+                                        location=pipeline_folder, generate_automl_pipelines=run_baselines)
             return
 
-        if args.run_type == "distribute":
+        elif run_type == "distribute":
             experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
                                                      run_type=run_type, stored_pipeline_loc=pipeline_folder,
-                                                     distributed=True)
+                                                     distributed=True, generate_automl_pipelines=run_baselines)
             experimenter_driver.run()
 
             return
 
         experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
-                                                 run_type=run_type, stored_pipeline_loc=pipeline_folder)
+                                                 run_type=run_type, stored_pipeline_loc=pipeline_folder,
+                                                 generate_automl_pipelines=run_baselines)
         experimenter_driver.run()
 
 
@@ -216,7 +223,9 @@ if __name__ == "__main__":
                                                  "only executes pipelines from the database, 'pipeline_path' "
                                                  "executes pipelines from a specific folder and 'generate' only "
                                                  "creates pipelines and stores them in the database",
-                        choices=["all", "execute", "generate", "pipeline_path", "distribute"], default="all")
+                        choices=["all", "execute", "generate", "pipeline_path", "distribute", "baselines"], default="all")
     parser.add_argument("--pipeline-folder", '-f', help="The path of the folder containing/to receive the pipelines")
+    parser.add_argument("--run-baselines", '-b', help="Whether or not to exclusively run automl system pipelines",
+                        action='store_true')
     args = parser.parse_args()
-    main(args.run_type, args.pipeline_folder)
+    main(args.run_type, args.pipeline_folder, args.run_baselines)
