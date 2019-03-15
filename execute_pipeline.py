@@ -51,7 +51,7 @@ def handle_successful_pipeline_run(pipeline_run, pipeline, score, problem, mongo
         return
     problem_name = problem.split("/")[-1]
     print_successful_pipeline_run(pipeline, score)
-    write_to_mongo(mongo_db, pipeline_run)
+    write_to_mongo_pipeline_run(mongo_db, pipeline_run)
 
 
 """
@@ -72,7 +72,7 @@ A function to write a pipeline_run document to a database.  A wrapper for the fu
 :param mongo_db: the database connection
 :param pipeline_run: the json object to be written to the database
 """
-def write_to_mongo(mongo_db, pipeline_run):
+def write_to_mongo_pipeline_run(mongo_db, pipeline_run):
     mongo_db.add_to_pipeline_runs_mongo(pipeline_run)
 
 
