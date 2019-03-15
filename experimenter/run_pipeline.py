@@ -20,8 +20,8 @@ class RunPipeline:
     :param output_path: an optional parameter specifying the location to place the finished pipeline_run file.  If it
         is empty no output path is used.
     """
-    def __init__(self, datasets_dir: str, volumes_dir: str, pipeline_path: str,
-                 problem_path: str, output_path: str=None):
+    def __init__(self, datasets_dir: str, volumes_dir: str, problem_path: str, output_path: str=None,
+                 pipeline_path: str = ""):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.pipeline_path = pipeline_path

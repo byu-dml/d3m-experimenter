@@ -15,11 +15,10 @@ except Exception as E:
 
 class ExperimenterDriver:
 
-    def __init__(self, datasets_dir: str, volumes_dir: str, pipeline_path: str, run_type: str ="all",
+    def __init__(self, datasets_dir: str, volumes_dir: str, run_type: str ="all",
                  stored_pipeline_loc=None, distributed=False, generate_automl_pipelines=False):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
-        self.pipeline_path = pipeline_path
         self.run_type = run_type
         self.distributed = distributed
         self.run_automl = generate_automl_pipelines
@@ -103,13 +102,13 @@ class ExperimenterDriver:
                 raise NotADirectoryError
             else:
                 pipes = self.get_pipelines_from_path(self.pipeline_location)
-                experimenter = Experimenter(self.datasets_dir, self.volumes_dir, self.pipeline_path,
+                experimenter = Experimenter(self.datasets_dir, self.volumes_dir,
                                             generate_pipelines=False, generate_problems=True)
                 problems = experimenter.problems
         # run type is pipelines from mongodb or "all"
         else:
             # generating the pipelines has already been taken care of
-            experimenter = Experimenter(self.datasets_dir, self.volumes_dir, self.pipeline_path,
+            experimenter = Experimenter(self.datasets_dir, self.volumes_dir,
                                         generate_problems=True, generate_pipelines=False)
             print("\n Gathering pipelines from database...")
             problems: dict = experimenter.problems
@@ -138,14 +137,14 @@ class ExperimenterDriver:
                             # if we are trying to distribute, add to the RQ
                             if self.distributed:
                                 async_results = self.queue.enqueue(execute_pipeline_on_problem, pipe, problem,
-                                                                   self.datasets_dir, self.volumes_dir, self.pipeline_path, timeout=-1)
+                                                                   self.datasets_dir, self.volumes_dir, timeout=-1)
                             else:
-                                execute_pipeline_on_problem(pipe, problem, self.datasets_dir, self.volumes_dir,
-                                                            self.pipeline_path)
+                                execute_pipeline_on_problem(pipe, problem, self.datasets_dir, self.volumes_dir)
 
                         except Exception as e:
+                            print("Pipeline execution failed. See {}".format(e))
                             # pipeline didn't work.  Try the next one
-                            continue
+                            raise e
 
         self.pretty_print_json(experimenter.incorrect_problem_types)  # For debugging purposes
 
@@ -179,7 +178,6 @@ def main(run_type, pipeline_folder, run_baselines):
 
     datasets_dir = '/datasets'
     volumes_dir = '/volumes'
-    pipeline_path = './pipe.yml'
 
     if run_baselines:
         register_primitives()
@@ -194,24 +192,24 @@ def main(run_type, pipeline_folder, run_baselines):
         warnings.filterwarnings("ignore")
         if run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
-            experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True,
+            experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
                                         generate_problems=True, generate_automl_pipelines=run_baselines)
 
         elif run_type == "generate":
             print("Only generating pipelines...")
-            experimenter = Experimenter(datasets_dir, volumes_dir, pipeline_path, generate_pipelines=True,
+            experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
                                         location=pipeline_folder, generate_automl_pipelines=run_baselines)
             return
 
         elif run_type == "distribute":
-            experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
+            experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
                                                      run_type=run_type, stored_pipeline_loc=pipeline_folder,
                                                      distributed=True, generate_automl_pipelines=run_baselines)
             experimenter_driver.run()
 
             return
 
-        experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, pipeline_path,
+        experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
                                                  run_type=run_type, stored_pipeline_loc=pipeline_folder,
                                                  generate_automl_pipelines=run_baselines)
         experimenter_driver.run()

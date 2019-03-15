@@ -101,21 +101,23 @@ class TestExecutingPipelines(unittest.TestCase):
 
         handler(arguments, parser, pipeline_resolver=get_pipeline)
 
-    def run_experimenter_from_file(self, problem_path):
+    def run_experimenter_from_pipeline(self, problem_path):
         # load pipeline
         with open(self.pipeline_path, 'r') as file:
             pipeline_to_run = pipeline_module.Pipeline.from_json(string_or_file=file)
 
         # run our system
-        run_pipeline = RunPipeline(self.datasets_dir, self.volumes_dir, self.pipeline_path, problem_path)
+        run_pipeline = RunPipeline(datasets_dir=self.datasets_dir, volumes_dir=self.volumes_dir,
+                                   pipeline_path=self.pipeline_path, problem_path=problem_path)
         results_test = run_pipeline.run(pipeline=pipeline_to_run)[0]
         # the value of score is in the first document in the first index
         score = results_test[0]["value"][0]
         return score
 
-    def run_experimenter_from_pipeline(self, problem_path):
+    def run_experimenter_from_file(self, problem_path):
         # run our system
-        run_pipeline = RunPipeline(self.datasets_dir, self.volumes_dir, self.pipeline_path, problem_path)
+        run_pipeline = RunPipeline(datasets_dir=self.datasets_dir, volumes_dir=self.volumes_dir,
+                                   pipeline_path=self.pipeline_path, problem_path=problem_path)
         results_test = run_pipeline.run()[0]
         # the value of score is in the first document in the first index
         score = results_test[0]["value"][0]
