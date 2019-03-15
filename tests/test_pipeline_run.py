@@ -52,10 +52,6 @@ class TestExecutingPipelines(unittest.TestCase):
         problem_name = problem_path.split("/")[-1]
         self.run_d3m(problem_name)
 
-    def test_experimenter_run_works_from_file(self):
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
-        self.run_experimenter_from_file(problem_path)
-
     def test_experimenter_run_works_from_pipeline(self):
         problem_path = "/datasets/seed_datasets_current/185_baseball"
         self.run_experimenter_from_pipeline(problem_path)
@@ -65,7 +61,7 @@ class TestExecutingPipelines(unittest.TestCase):
         problem_name = problem_path.split("/")[-1]
 
         # run both systems
-        experimenter_score = self.run_experimenter_from_file(problem_path)
+        experimenter_score = self.run_experimenter_from_pipeline(problem_path)
         self.run_d3m(problem_name)
 
         # get results from d3m output file
@@ -108,17 +104,8 @@ class TestExecutingPipelines(unittest.TestCase):
 
         # run our system
         run_pipeline = RunPipeline(datasets_dir=self.datasets_dir, volumes_dir=self.volumes_dir,
-                                   pipeline_path=self.pipeline_path, problem_path=problem_path)
+                                   problem_path=problem_path)
         results_test = run_pipeline.run(pipeline=pipeline_to_run)[0]
-        # the value of score is in the first document in the first index
-        score = results_test[0]["value"][0]
-        return score
-
-    def run_experimenter_from_file(self, problem_path):
-        # run our system
-        run_pipeline = RunPipeline(datasets_dir=self.datasets_dir, volumes_dir=self.volumes_dir,
-                                   pipeline_path=self.pipeline_path, problem_path=problem_path)
-        results_test = run_pipeline.run()[0]
         # the value of score is in the first document in the first index
         score = results_test[0]["value"][0]
         return score
