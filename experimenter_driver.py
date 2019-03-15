@@ -7,9 +7,10 @@ import redis
 from rq import Queue
 from execute_pipeline import execute_pipeline_on_problem
 try:
-    from experimenter.config import redis_host, redis_port
+    redis_host = os.environ['REDIS_HOST']
+    redis_port = int(os.environ['REDIS_PORT'])
 except Exception as E:
-    print("Exception: no config file given")
+    print("Exception: environment variables not set")
     raise E
 
 class ExperimenterDriver:
@@ -151,9 +152,11 @@ class ExperimenterDriver:
 
 """
 Options for command line interface
---run-type: "all", "execute", "generate", "distribute", or "pipelines_path" (controls whether to generate and run pipelines or just to run
-             pipelines from a folder)
+--run-type: "all", "execute", "generate", "distribute", or "pipelines_path" (controls whether to generate and run 
+            pipelines or just to run pipelines from a folder)
 --pipeline-folder: string of the file_path to the folder containing the pipelines. Used in combination with --run-type
+--run-baselines: a flag used for choosing to run only AutoML systems. By default this is off.  The previous flags work 
+            independently of this one.
 
 Examples:
 python3 experimenter_driver.py (runs and generates all pipelines from mongodb on all problems)
@@ -172,6 +175,10 @@ python3 experimenter.py -r generate (creates pipelines and stores them in mongod
 python3 experimenter.py -r generate -f default (creates pipelines in default folder "experimenter/created_pipelines/")
 python3 experimenter.py -r generate -f other_folder/ (creates pipelines and stores them in "other_folder/")
 
+python3 experimenter_driver.py -r all -b (creates AutoML pipelines on all problems and executes them)
+python3 experimenter.py -r generate -b (creates AutoML system pipelines and stores them in mongodb)
+python3 experimenter_driver.py -r distribute -b (takes AutoML pipelines from the database and adds jobs to the RQ queue)
+python3 experimenter.py -r execute -b (takes AutoML pipelines from the database and executes them)
 """
 def main(run_type, pipeline_folder, run_baselines):
 

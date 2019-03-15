@@ -6,9 +6,13 @@ import subprocess
 from bson import json_util
 from d3m.metadata.pipeline import Pipeline
 try:
-    from .config import real_mongo_port, default_mongo_port, lab_hostname, docker_hostname
-except Exception as e:
-    print("ERROR: Config File not found. Please follow the instructions in the README")
+    real_mongo_port = int(os.environ['REAL_MONGO_PORT'])
+    default_mongo_port = int(os.environ['DEFAULT_MONGO_PORT'])
+    lab_hostname = os.environ['LAB_HOSTNAME']
+    docker_hostname = os.environ['DOCKER_HOSTNAME']
+except Exception as E:
+    print("ERROR: environment variables not set")
+    raise E
 
 class PipelineDB:
     """

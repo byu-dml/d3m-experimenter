@@ -2,3 +2,4 @@ pymongo
 auto-sklearn==0.5.0
 numpy==1.15.4
 scikit-learn[alldeps]==0.20.2
+rq
