@@ -204,8 +204,6 @@ class Experimenter:
 
     def generate_pipelines(self, preprocessors: List[str], models: dict):
         preprocessors = list(set(preprocessors))
-        classification = list(set(models["classification"]))
-        regression = list(set(models["regression"]))
 
         generated_pipelines = {"classification": [], "regression": []}
         for type_name, model_list in models.items():
