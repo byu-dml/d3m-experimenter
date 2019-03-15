@@ -187,9 +187,7 @@ class Experimenter:
     def get_possible_problems(self):
         problems_list = {"classification": [], "regression": []}
         for problem_directory in self.problem_directories:
-            print(self.datasets_dir)
             datasets_dir = os.path.join(self.datasets_dir, problem_directory)
-            print(datasets_dir)
             for dataset_name in os.listdir(datasets_dir):
                 problem_description_path = utils.get_problem_path(dataset_name, datasets_dir)
                 try:
