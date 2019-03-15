@@ -63,7 +63,7 @@ models = {
 }
 problem_directories = [
     "seed_datasets_current/",
-    # "training_datasets/LL0/",
+    "training_datasets/LL0/",
     # "training_datasets/LL1/",
 ]
 

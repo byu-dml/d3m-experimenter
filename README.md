@@ -5,7 +5,6 @@
 # Getting Started
 ### Repositories ###
 * Clone the Experimenter Repo from [here](https://github.com/byu-dml/d3m-experimenter)
-* Copy the config_example to config and add the information for username, password, and mongodb db information.
 * Note that the directories used for these repositories will be the ones used in the docker-compose volumes
 
 ### docker-compose
@@ -17,6 +16,7 @@ Compose is a way to more easily run docker containers than the `docker run` comm
   * The volumes inside of the container can be accessed at the path `/volumes`
   * Make sure `DATASETS=` is pointing to the datasets you want the container to have access to
   * The datasets can be accessed from inside the container at `/datasets`
+  * Fill in the values for connections to databases and host computers
 
 # Usage
 ### Running the Container
