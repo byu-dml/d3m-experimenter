@@ -62,9 +62,9 @@ models = {
     ]
 }
 problem_directories = [
-    "/seed_datasets_current/",
-    # "/training_datasets/LL0/",
-    # "/training_datasets/LL1/",
+    "seed_datasets_current/",
+    # "training_datasets/LL0/",
+    # "training_datasets/LL1/",
 ]
 
 blacklist_non_tabular_data = [

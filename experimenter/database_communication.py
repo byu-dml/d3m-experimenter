@@ -65,10 +65,10 @@ class PipelineDB:
                     file_path = os.path.join(output_directory, "{}_{}_{}_{}{}".format(type, predictor_model, doc['id'],
                                                                                    "pipeline", '.json'))
                 elif collection_name == "problems":
-                    file_path = os.path.join(output_directory, "{}".format(doc["problemID"]))
+                    file_path = os.path.join(output_directory, "{}".format(doc["about"]["problemID"]))
 
                 elif collection_name == "datasets":
-                    file_path = os.path.join(output_directory, "{}".format(doc["datasetID"]))
+                    file_path = os.path.join(output_directory, "{}".format(doc["about"]["datasetID"]))
 
                 else:
                     print("ERROR: Not a valid collection name")
@@ -92,7 +92,10 @@ class PipelineDB:
             db.pipeline_runs.remove({})
             print("Clearing pipeline collection")
             db.pipelines.remove({})
-
+            print("Clearing datasets collection")
+            db.datasets.remove({})
+            print("Clearing problems collection")
+            db.problems.remove({})
 
     def has_duplicate_pipeline_run(self, problem, pipeline):
         """
@@ -219,9 +222,9 @@ class PipelineDB:
         """
         db = self.mongo_client.metalearning
         collection = db.problems
-        id = problem_doc["problemID"]
+        id = problem_doc["about"]["problemID"]
 
-        if collection.find({"problemID": id}).count():
+        if collection.find({"about.problemID": id}).count():
             return False
 
         pipeline_id = collection.insert_one(problem_doc).inserted_id
@@ -236,13 +239,13 @@ class PipelineDB:
         """
         db = self.mongo_client.metalearning
         collection = db.datasets
-        id = dataset_doc["datasetID"]
-        digest = dataset_doc["digest"]
+        id = dataset_doc["about"]["datasetID"]
+        digest = dataset_doc["about"]["digest"]
 
-        if collection.find({"digest": digest}).count():
+        if collection.find({"about.digest": digest}).count():
             return False
 
-        if collection.find({"datasetID": id}).count():
+        if collection.find({"about.datasetID": id}).count():
             return False
 
         pipeline_id = collection.insert_one(dataset_doc).inserted_id

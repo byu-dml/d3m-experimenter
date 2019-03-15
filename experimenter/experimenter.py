@@ -37,6 +37,7 @@ class Experimenter:
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.pipeline_path = pipeline_path
+        self.mongo_database = PipelineDB()
 
         # set up the primitives according to parameters
         self.preprocessors = preprocessors if input_preprocessors is None else input_preprocessors
@@ -64,7 +65,6 @@ class Experimenter:
             print("There are {} pipelines".format(self.num_pipelines))
 
             if location is None:
-                self.mongo_database = PipelineDB()
                 print('Exporting pipelines to mongodb...')
                 self.output_pipelines_to_mongodb()
             else:
@@ -193,12 +193,11 @@ class Experimenter:
             for dataset_name in os.listdir(datasets_dir):
                 problem_description_path = utils.get_problem_path(dataset_name, datasets_dir)
                 try:
-                    print("Adding dataset doc")
                     # add to dataset collection if it hasn't been already
                     dataset_doc = utils.get_dataset_doc(dataset_name, datasets_dir)
                     self.mongo_database.add_to_datasets(dataset_doc)
                 except Exception as e:
-                    print("ERROR: failed to get dataset document")
+                    print("ERROR: failed to get dataset document: {}".format(e))
 
                 problem_type = self.get_problem_type(dataset_name, [problem_description_path])
                 if problem_type in problems_list:
