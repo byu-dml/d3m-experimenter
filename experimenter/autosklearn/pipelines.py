@@ -5,6 +5,7 @@ from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 from .primitives import AutoSklearnClassifierPrimitive
 
 def get_classification_pipeline(time_limit=20):
+  
     pipeline_description = Pipeline(context=metadata_base.Context.TESTING)
     pipeline_description.add_input(name='inputs')
 
