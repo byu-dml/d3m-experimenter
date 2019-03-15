@@ -103,6 +103,10 @@ def get_classification_pipeline(time_limit=20):
         name='time_left_for_this_task', argument_type=metadata_base.ArgumentType.VALUE,
         data=time_limit
     )
+    step_6.add_hyperparameter(
+        name='per_run_time_limit', argument_type=metadata_base.ArgumentType.VALUE,
+        data=max(5, round(.1 * time_limit))
+    )
     step_6.add_output('produce')
     pipeline_description.add_step(step_6)
 
