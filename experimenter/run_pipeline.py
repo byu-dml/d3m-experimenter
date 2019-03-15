@@ -20,19 +20,16 @@ class RunPipeline:
     :param output_path: an optional parameter specifying the location to place the finished pipeline_run file.  If it
         is empty no output path is used.
     """
-    def __init__(self, datasets_dir: str, volumes_dir: str, problem_path: str, output_path: str=None,
-                 pipeline_path: str = ""):
+    def __init__(self, datasets_dir: str, volumes_dir: str, problem_path: str, output_path: str=None):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
-        self.pipeline_path = pipeline_path
         self.data_pipeline_path = './experimenter/pipelines/fixed-split-tabular-split.yml'
         self.scoring_pipeline_path = './experimenter/pipelines/scoring.yml'
         self.output_path = output_path
         self.problem_path = problem_path
         self.problem_name = self.problem_path.split("/")[-1]
 
-        self.run_args = {'pipeline': self.pipeline_path,
-                         "scoring_pipeline": self.scoring_pipeline_path,
+        self.run_args = {"scoring_pipeline": self.scoring_pipeline_path,
                          'data_pipeline': self.data_pipeline_path,
                          'data_split_file': '{}/{}_problem/dataSplits.csv'.
                              format(self.problem_path, self.problem_name),
@@ -53,7 +50,7 @@ class RunPipeline:
     :returns results_list: a list containing, in order, the scores from the pipeline predictions, the fit pipeline_run 
         and the produce pipeline_run.
     """
-    def run(self, pipeline=None, random_seed: int=0):
+    def run(self, pipeline, random_seed: int=0):
 
         arguments = self.run_args
 
@@ -62,15 +59,6 @@ class RunPipeline:
         dataset_resolver = get_dataset
 
         context = metadata_base.Context[arguments["context"]]
-
-        if type(pipeline) != Pipeline:
-            pipeline = get_pipeline(
-                arguments["pipeline"],
-                strict_resolving=False,
-                strict_digest=False,
-                pipeline_search_paths=[],
-                load_all_primitives=False
-            )
 
         data_pipeline = get_pipeline(
             arguments["data_pipeline"],
