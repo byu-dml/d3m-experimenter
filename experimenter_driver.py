@@ -1,6 +1,6 @@
 from experimenter.experimenter import Experimenter
 import os, json, pdb, traceback, sys
-from experimenter.pipeline.run_pipeline import RunPipeline
+from experimenter.run_pipeline import RunPipeline
 from d3m.metadata.pipeline import Pipeline
 from experimenter.database_communication import PipelineDB
 import warnings, argparse

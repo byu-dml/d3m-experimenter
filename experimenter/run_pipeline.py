@@ -25,13 +25,15 @@ class RunPipeline:
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.pipeline_path = pipeline_path
+        self.data_pipeline_path = './experimenter/pipelines/fixed-split-tabular-split.yml'
+        self.scoring_pipeline_path = './experimenter/pipelines/scoring.yml'
         self.output_path = output_path
         self.problem_path = problem_path
         self.problem_name = self.problem_path.split("/")[-1]
 
         self.run_args = {'pipeline': self.pipeline_path,
-                         "scoring_pipeline": 'tests/testing_pipelines/scoring.yml',
-                         'data_pipeline': 'tests/testing_pipelines/fixed-split-tabular-split.yml',
+                         "scoring_pipeline": self.scoring_pipeline_path,
+                         'data_pipeline': self.data_pipeline_path,
                          'data_split_file': '{}/{}_problem/dataSplits.csv'.
                              format(self.problem_path, self.problem_name),
                          'problem': '{}/{}_problem/problemDoc.json'.
