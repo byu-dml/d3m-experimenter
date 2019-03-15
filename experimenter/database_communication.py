@@ -96,6 +96,10 @@ class PipelineDB:
             db.datasets.remove({})
             print("Clearing problems collection")
             db.problems.remove({})
+            print("Clearing automl_pipelines collection")
+            db.automl_pipelines.remove({})
+            print("Clearing automl pipeline_runs collection")
+            db.automl_pipeline_runs.remove({})
 
     def has_duplicate_pipeline_run(self, problem, pipeline, collection_name):
         """
