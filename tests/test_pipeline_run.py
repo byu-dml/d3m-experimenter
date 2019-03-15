@@ -7,7 +7,7 @@ import yaml
 from d3m import runtime as runtime_module
 from d3m.runtime import get_pipeline, handler, configure_parser
 from d3m.metadata import pipeline as pipeline_module
-from experimenter.pipeline.run_pipeline import RunPipeline
+from experimenter.run_pipeline import RunPipeline
 
 def get_pipeline(
     pipeline_path: str, *, strict_resolving: bool = False,
@@ -36,7 +36,9 @@ class TestExecutingPipelines(unittest.TestCase):
     def setUp(self):
         self.datasets_dir = "/datasets"
         self.volumes_dir = "/volumes"
-        self.pipeline_path = 'tests/testing_pipelines/test_bagging_classification.json'
+        self.pipeline_path = './experimenter/pipelines/bagging_classification.json'
+        self.data_pipeline_path = './experimenter/pipelines/fixed-split-tabular-split.yml'
+        self.scoring_pipeline_path = './experimenter/pipelines/scoring.yml'
 
     @classmethod
     def tearDownClass(cls):
@@ -84,8 +86,8 @@ class TestExecutingPipelines(unittest.TestCase):
         configure_parser(parser)
         test_args = ['evaluate',
                      '-p', self.pipeline_path,
-                     '-n', 'tests/testing_pipelines/scoring.yml',
-                     '-d', 'tests/testing_pipelines/fixed-split-tabular-split.yml',
+                     '-n', self.scoring_pipeline_path,
+                     '-d', self.data_pipeline_path,
                      '--data-split-file',
                      '/datasets/seed_datasets_current/{}/{}_problem/dataSplits.csv'.
                          format(problem_name, problem_name),

@@ -6,7 +6,7 @@ to execute a pipeline on a problem and can be used by an individual machine, or 
 """
 
 from experimenter.database_communication import PipelineDB
-from experimenter.pipeline.run_pipeline import RunPipeline
+from experimenter.run_pipeline import RunPipeline
 
 
 """
