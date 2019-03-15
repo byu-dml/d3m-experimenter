@@ -5,6 +5,8 @@ services:
     container_name: experimenter
     stdin_open: true
     tty: true
+    env_file:
+    - .env
     entrypoint: /bin/bash
     volumes:
       - ${VOLUMES}:/volumes

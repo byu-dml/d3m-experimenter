@@ -7,9 +7,10 @@ The job queue is default of "default" priority.
 from rq import Connection, Worker
 import redis, os
 try:
-    from experimenter.config import redis_host, redis_port
+    redis_host = os.environ['REDIS_HOST']
+    redis_port = int(os.environ['REDIS_PORT'])
 except Exception as E:
-    print("Exception: no config file given")
+    print("Exception: environment variables not set")
     raise E
 
 conn = redis.StrictRedis(
