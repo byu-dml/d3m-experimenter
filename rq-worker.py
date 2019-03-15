@@ -5,7 +5,7 @@ This means that it will stop being a worker when the Queue is empty.
 The job queue is default of "default" priority.
 """
 from rq import Connection, Worker
-import redis
+import redis, os
 try:
     from experimenter.config import redis_host, redis_port
 except Exception as E:
