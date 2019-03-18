@@ -286,6 +286,9 @@ class PipelineDB:
         digest = new_pipeline_json["digest"]
         id = new_pipeline_json["id"]
 
+        # validate pipeline
+        new_pipeline.check()
+
         # simple checks to validate pipelines and potentially save time
         if collection.find({"digest": digest}).count():
             return False
