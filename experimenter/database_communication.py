@@ -123,6 +123,11 @@ class PipelineDB:
         """
         Adds a pipeline run to the database.  Minimal error checking as we assume "has_duplicate_pipeline_run" has been run.
         """
+
+        validated = validate_pipeline_run(pipeline_run.to_json_structure())
+        if not validated:
+            return False
+
         db = self.mongo_client.metalearning
         collection = db[collection_name]
         if not collection.find({"id": pipeline_run['id']}).count():
@@ -142,6 +147,9 @@ class PipelineDB:
         digest = new_pipeline_json["digest"]
         id = new_pipeline_json["id"]
 
+        # validate pipeline
+        new_pipeline.check()
+
         # simple checks to validate pipelines and potentially save time
         if collection.find({"digest": digest}).count():
             return False
@@ -151,11 +159,16 @@ class PipelineDB:
 
         # deep comparison of equality
         pipelines_cursor = collection.find({})
-        for pipeline in pipelines_cursor:
-            pipeline_to_compare = Pipeline.from_json(json.dumps(pipeline, sort_keys=True, indent=4,
-                                                                default=json_util.default))
-            if new_pipeline.equals(pipeline_to_compare):
-                return False
+        for index, pipeline in enumerate(pipelines_cursor):
+            try:
+                pipeline_to_compare = Pipeline.from_json(json.dumps(pipeline, sort_keys=True, indent=4,
+                                                                    default=json_util.default))
+                if new_pipeline.equals(pipeline_to_compare):
+                    return False
+
+            except Exception as e:
+                print("There was an error in evaluating equality: {}".format(e))
+                raise(e)
         else:
             pipeline_id = collection.insert_one(new_pipeline.to_json_structure()).inserted_id
             print("Wrote pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
@@ -290,6 +303,51 @@ class PipelineDB:
             pipeline_id = collection.insert_one(new_pipeline.to_json_structure()).inserted_id
             print("Wrote automl pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
             return True
+
+    def remove_pipelines_containing(self, bad_primitives):
+        delete_these_pipelines = []
+        db = self.mongo_client.metalearning
+        collection = db.pipelines
+        pipeline_cursor = collection.find({})
+        for index, pipeline in enumerate(pipeline_cursor):
+            pipeline_steps_to_compare = primitive_list_from_pipeline_json(pipeline)
+            for primitive in bad_primitives:
+                if primitive in pipeline_steps_to_compare:
+                    delete_these_pipelines.append(pipeline["_id"])
+                    break
+
+        # so you can check before you delete everything
+        import pdb; pdb.set_trace()
+
+        for document_id in delete_these_pipelines:
+            result = collection.delete_one({'_id': ObjectId(document_id)})
+
+        return
+
+    def clean_pipeline_runs(self):
+        delete_these_documents = []
+        db = self.mongo_client.metalearning
+        collection = db.pipeline_runs
+        pipeline_cursor = collection.find({})
+        for index, pipeline_run in enumerate(pipeline_cursor):
+            pipeline_digest = pipeline_run["pipeline"]["digest"]
+            pipeline_id = pipeline_run["pipeline"]["id"]
+            dataset_digest = pipeline_run["datasets"][0]["digest"]
+            # There is no pipeline matching that info or no dataset matching that info == bad data!
+            if not db.pipelines.find({"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]}).count()\
+                    or not db.datasets.find({"about.digest": dataset_digest}).count():
+                delete_these_documents.append(pipeline_run["_id"])
+
+        # so you can check before you delete everything
+        import pdb; pdb.set_trace()
+
+        for document_id in delete_these_documents:
+            result = collection.delete_one({'_id': ObjectId(document_id)})
+
+        return
+
+
+
 
 """
 A helper function to return all the primitives used in a pipeline
