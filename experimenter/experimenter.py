@@ -63,8 +63,7 @@ class Experimenter:
 
         if generate_pipelines:
             print("Generating pipelines...")
-            self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors,
-                                                                               self.models)
+            self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
             self.num_pipelines = len(self.generated_pipelines["classification"]) + \
                                  len(self.generated_pipelines["regression"])
 
@@ -136,6 +135,16 @@ class Experimenter:
         pipeline_description.add_step(step_3)
         step_counter += 1
 
+        # Step 4: extract_columns_by_semantic_types(targets)
+        step_4 = PrimitiveStep(primitive=index.get_primitive(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'))
+        step_4.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step_4.add_output('produce')
+        step_4.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                  data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+        pipeline_description.add_step(step_4)
+        step_counter += 1
+
         return step_counter
 
     def _add_predictions_constructor(self, pipeline_description, step_counter):
@@ -165,13 +174,20 @@ class Experimenter:
         pipeline_description = Pipeline(context=Context.TESTING)
 
         step_counter = self._add_initial_steps(pipeline_description, step_counter)
+        preprocessor_used = False
 
         # Step 4: Preprocessor
         if preprocessor:
             step_4 = PrimitiveStep(primitive_description=preprocessor.metadata.query())
             for arg in self._get_required_args(preprocessor):
+                if arg == "outputs":
+                    data_ref = 'steps.3.produce'
+                else:
+                    data_ref = 'steps.{}.produce'.format(step_counter - 2)
+                    preprocessor_used = True
+
                 step_4.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                    data_reference='steps.{}.produce'.format(step_counter - 1))
+                                    data_reference=data_ref)
             step_4.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
             step_4.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
             step_4.add_output('produce')
@@ -181,8 +197,14 @@ class Experimenter:
         # Step 5: Classifier
         step_5 = PrimitiveStep(primitive_description=classifier.metadata.query())
         for index, arg in enumerate(self._get_required_args(classifier)):
+            if arg == "outputs":
+                data_ref = 'steps.3.produce'
+            else:
+                # if we haven't used a preprocessor, we have to go back two to get the full dataframe
+                bias = 0 if preprocessor_used else -1
+                data_ref = 'steps.{}.produce'.format(step_counter - 1 + bias)
             step_5.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                data_reference='steps.{}.produce'.format(step_counter - 1))
+                                data_reference=data_ref)
         step_5.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
         step_5.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
         step_5.add_output('produce')
@@ -300,3 +322,61 @@ class Experimenter:
 
         print("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                            self.num_pipelines - added_pipeline_sum))
+    def generate_default_pipeline(self):
+        # Creating pipeline
+        pipeline_description = Pipeline(context=Context.TESTING)
+        pipeline_description.add_input(name='inputs')
+
+        # Step 1: dataset_to_dataframe
+        step_0 = PrimitiveStep(
+            primitive=index.get_primitive('d3m.primitives.data_transformation.dataset_to_dataframe.Common'))
+        step_0.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='inputs.0')
+        step_0.add_output('produce')
+        pipeline_description.add_step(step_0)
+
+        # Step 2: column_parser
+        step_1 = PrimitiveStep(
+            primitive=index.get_primitive('d3m.primitives.data_transformation.column_parser.DataFrameCommon'))
+        step_1.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step_1.add_output('produce')
+        pipeline_description.add_step(step_1)
+
+        # Step 3: extract_columns_by_semantic_types(attributes)
+        step_2 = PrimitiveStep(primitive=index.get_primitive(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'))
+        step_2.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.1.produce')
+        step_2.add_output('produce')
+        step_2.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                  data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
+        pipeline_description.add_step(step_2)
+
+        # Step 4: extract_columns_by_semantic_types(targets)
+        step_3 = PrimitiveStep(primitive=index.get_primitive(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'))
+        step_3.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step_3.add_output('produce')
+        step_3.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                  data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+        pipeline_description.add_step(step_3)
+
+        attributes = 'steps.2.produce'
+        targets = 'steps.3.produce'
+
+        # Step 5: imputer
+        step_4 = PrimitiveStep(primitive=index.get_primitive('d3m.primitives.data_cleaning.imputer.SKlearn'))
+        step_4.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference=attributes)
+        step_4.add_output('produce')
+        pipeline_description.add_step(step_4)
+
+        # Step 6: random_forest
+        step_5 = PrimitiveStep(primitive=index.get_primitive('d3m.primitives.regression.random_forest.SKlearn'))
+        step_5.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.4.produce')
+        step_5.add_argument(name='outputs', argument_type=ArgumentType.CONTAINER, data_reference=targets)
+        step_5.add_output('produce')
+        pipeline_description.add_step(step_5)
+
+        # Final Output
+        pipeline_description.add_output(name='output predictions', data_reference='steps.5.produce')
+
+        # Output to YAML
+        return {"classification": [pipeline_description], "regression": []}
