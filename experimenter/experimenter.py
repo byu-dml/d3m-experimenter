@@ -69,7 +69,8 @@ class Experimenter:
 
         if generate_pipelines:
             print("Generating pipelines...")
-            self.generated_pipelines: dict = self.generate_k_ensembles(2, 1, "d3m.primitives.classification.random_forest.SKlearn")
+            self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
+            # self.generated_pipelines: dict = self.generate_k_ensembles(2, 1, "d3m.primitives.classification.random_forest.SKlearn")
             self.num_pipelines = len(self.generated_pipelines["classification"]) + \
                                  len(self.generated_pipelines["regression"])
 

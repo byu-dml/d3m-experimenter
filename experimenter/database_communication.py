@@ -3,7 +3,7 @@ import json
 import os
 import pymongo
 import subprocess
-from bson import json_util
+from bson import json_util, ObjectId
 from d3m.metadata.pipeline import Pipeline
 from experimenter.validation import validate_pipeline_run
 try:
@@ -163,7 +163,10 @@ class PipelineDB:
         """
         db = self.mongo_client.metalearning
         collection = db.pipelines
-        new_pipeline_json = new_pipeline.to_json_structure()
+        if type(new_pipeline) != dict:
+            new_pipeline_json = new_pipeline.to_json_structure()
+        else:
+            new_pipeline_json = new_pipeline
         digest = new_pipeline_json["digest"]
         id = new_pipeline_json["id"]
 
@@ -192,7 +195,7 @@ class PipelineDB:
                 if primitive_list_from_pipeline_json(pipeline) == primitive_list_from_pipeline_json(new_pipeline_json):
                     return False
         else:
-            pipeline_id = collection.insert_one(new_pipeline.to_json_structure()).inserted_id
+            pipeline_id = collection.insert_one(new_pipeline_json).inserted_id
             print("Wrote pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
             return True
 
