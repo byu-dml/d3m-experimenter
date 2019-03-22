@@ -1,6 +1,5 @@
 from experimenter.experimenter import Experimenter, register_primitives
 import os, json, pdb, traceback, sys
-from experimenter.pipeline.run_pipeline import RunPipeline
 from d3m.metadata.pipeline import Pipeline
 from experimenter.database_communication import PipelineDB
 import warnings, argparse
@@ -20,7 +19,6 @@ class ExperimenterDriver:
                  stored_pipeline_loc=None, distributed=False, generate_automl_pipelines=False):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
-        self.pipeline_path = pipeline_path
         self.run_type = run_type
         self.distributed = distributed
         self.run_automl = generate_automl_pipelines

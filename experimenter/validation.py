@@ -37,12 +37,10 @@ def _validate_pipeline_run_status_consistency(
     def check_success_step(step):
         if step['type'] == metadata_base.PipelineStepType.PRIMITIVE.name:
             for method_call in step['method_calls']:
-                assert(
-                    SUCCESS == method_call['status']['state'],
+                assert SUCCESS == method_call['status']['state'],\
                     'Step with "{}" status has method_call with "{}" status'.format(
                         SUCCESS, FAILURE
                     )
-                )
         elif step['type'] == metadata_base.PipelineStepType.SUBPIPELINE.name:
             recurse_success(step)
         else:
@@ -54,10 +52,8 @@ def _validate_pipeline_run_status_consistency(
         if step['type'] == 'PRIMITIVE':
             found_a_method_call_failure = False
             for method_call in step['method_calls']:
-                assert(
-                    False == found_a_method_call_failure,
+                assert False == found_a_method_call_failure, \
                     'More than one method_call with \'FAILURE\' status found'
-                )
                 if method_call['status']['state'] == FAILURE:
                     found_a_method_call_failure = True
             assert(
@@ -73,31 +69,25 @@ def _validate_pipeline_run_status_consistency(
 
     def recurse_success(json_structure):
         for step in json_structure['steps']:
-            assert(
-                SUCCESS == step['status']['state'],
+            assert SUCCESS == step['status']['state'], \
                 'Pipeline_run or subpipeline_step with "{}" status has a step with "{}" ' \
                 'status'.format(SUCCESS, FAILURE)
-            )
             check_success_step(step)
 
     def recurse_failure(json_structure):
         found_a_step_failure = False
         # a step is successful iff all method_calls(PRIMITIVE) or steps(SUBPIPELINE) are successful
         for step in json_structure['steps']:
-            assert(
-                False == found_a_step_failure, 'More than one step with \'FAILURE\' status found'
-            )
+            assert False == found_a_step_failure, 'More than one step with \'FAILURE\' status found'
             if step['status']['state'] == SUCCESS:
                 check_success_step(step)
             # a step fails iff at least one method_call(PRIMITIVE) or step(SUBPIPELINE) fails
             elif step['status']['state'] == FAILURE:
                 found_a_step_failure = True
                 check_failure_step(step)
-        assert(
-            True == found_a_step_failure,
+        assert True == found_a_step_failure, \
             'Pipeline_run or subpipeline_step with \'FAILURE\' status contains no step with ' \
             '\'FAILURE\' status'
-        )
 
     state = json_structure['status']['state']
     if state == SUCCESS:
