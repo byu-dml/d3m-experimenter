@@ -86,6 +86,25 @@ class PipelineDB:
 
             print("There were {} files were exported from {}.".format(pipeline_runs_cursor.count(), collection_name))
 
+    def get_database_stats(self):
+        """
+        This function will tell us how many items are in each collection
+        """
+
+        collection_names = ["pipeline_runs", "pipelines", "datasets", "problems",
+                            "automl_pipelines", "automl_pipeline_runs"]
+        # connect to the database
+        for collection_name in collection_names:
+            db = self.mongo_client.metalearning
+            collection = db[collection_name]
+            pipeline_runs_cursor = collection.find({})
+            # go through each pipeline run
+            sum = 0
+            for doc in pipeline_runs_cursor:
+                sum += 1
+            print("There are {} in {}".format(sum, collection_name))
+
+
     def erase_mongo_database(self, are_you_sure=False):
         """
         Erases all collections of the database, for debug purposes.
@@ -168,7 +187,9 @@ class PipelineDB:
 
             except Exception as e:
                 print("There was an error in evaluating equality: {}".format(e))
-                raise(e)
+                print("Checking manually")
+                if primitive_list_from_pipeline_json(pipeline) == primitive_list_from_pipeline_json(new_pipeline_json):
+                    return False
         else:
             pipeline_id = collection.insert_one(new_pipeline.to_json_structure()).inserted_id
             print("Wrote pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
