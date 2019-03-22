@@ -5,6 +5,7 @@ import pymongo
 import subprocess
 from bson import json_util
 from d3m.metadata.pipeline import Pipeline
+from experimenter.validation import validate_pipeline_run
 try:
     real_mongo_port = int(os.environ['REAL_MONGO_PORT'])
     default_mongo_port = int(os.environ['DEFAULT_MONGO_PORT'])
@@ -143,7 +144,7 @@ class PipelineDB:
         Adds a pipeline run to the database.  Minimal error checking as we assume "has_duplicate_pipeline_run" has been run.
         """
 
-        validated = validate_pipeline_run(pipeline_run.to_json_structure())
+        validated = validate_pipeline_run(pipeline_run)
         if not validated:
             return False
 
@@ -253,8 +254,8 @@ class PipelineDB:
         pipeline_cursor = collection.find({})
         for index, pipeline in enumerate(pipeline_cursor):
             predictor_model = pipeline['steps'][-2]['primitive']['python_path'].split('.')[-3]
-            pipelines[predictor_model].append(Pipeline.from_json(json.dumps(pipeline, sort_keys=True, indent=4,
-                                                                            default=json_util.default)))
+            pipeline_json = json.dumps(pipeline, sort_keys=True, indent=4,default=json_util.default)
+            pipelines[predictor_model].append(Pipeline.from_json(pipeline_json))
         return pipelines, len(pipelines["regression"]) + len(pipelines["classification"])
 
     def add_to_problems(self, problem_doc):

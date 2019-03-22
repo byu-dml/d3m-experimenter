@@ -1,4 +1,4 @@
-from d3m import d3m_index as d3m_index
+from d3m import index as d3m_index
 from d3m.metadata import base as metadata_base
 from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 

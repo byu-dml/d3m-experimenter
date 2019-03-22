@@ -4,7 +4,8 @@ import warnings
 
 from bson import json_util
 from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data, not_working_preprocessors
-from d3m import d3m_index
+from d3m import index as d3m_index
+from d3m import utils as d3m_utils
 from d3m.primitive_interfaces.base import PrimitiveBase
 from d3m.metadata.pipeline import PrimitiveStep
 from d3m.metadata.base import Context, ArgumentType
@@ -16,7 +17,7 @@ import os
 import json
 import sys
 from .database_communication import PipelineDB
-from experimenter.autosklearn.pipelines import get_classification_pipeline
+from experimenter.autosklearn.pipelines import get_classification_pipeline, AutoSklearnClassifierPrimitive
 
 from experimenter import utils
 
@@ -68,7 +69,7 @@ class Experimenter:
 
         if generate_pipelines:
             print("Generating pipelines...")
-            self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
+            self.generated_pipelines: dict = self.generate_k_ensembles(2, 1, "d3m.primitives.classification.random_forest.SKlearn")
             self.num_pipelines = len(self.generated_pipelines["classification"]) + \
                                  len(self.generated_pipelines["regression"])
 
@@ -370,7 +371,7 @@ class Experimenter:
 
         final_pipeline = self.create_ensemble_pipeline(k_ensembles, p_preprocessors, preprocessor_list, model_list,
                                                        vertical_concat, ensemble)
-        return final_pipeline
+        return {'classification': [final_pipeline], 'regression': []}
 
         #
         # elif not same_model:
