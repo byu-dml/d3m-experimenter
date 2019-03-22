@@ -4,7 +4,7 @@ import warnings
 
 from bson import json_util
 from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data, not_working_preprocessors
-from d3m import index as d3m_index
+from d3m import d3m_index
 from d3m.primitive_interfaces.base import PrimitiveBase
 from d3m.metadata.pipeline import PrimitiveStep
 from d3m.metadata.base import Context, ArgumentType
@@ -16,9 +16,19 @@ import os
 import json
 import sys
 from .database_communication import PipelineDB
+from experimenter.autosklearn.pipelines import get_classification_pipeline
+
+from experimenter import utils
 
 logger = logging.getLogger(__name__)
 
+
+def register_primitives():
+    with d3m_utils.silence():
+        d3m_index.register_primitive(
+            AutoSklearnClassifierPrimitive.metadata.query()['python_path'],
+            AutoSklearnClassifierPrimitive
+        )
 
 class Experimenter:
     """
@@ -29,12 +39,16 @@ class Experimenter:
     learning models
     """
 
-    def __init__(self, datasets_dir: str, volumes_dir: str, pipeline_path: str, input_problem_directory=None,
+    def __init__(self, datasets_dir: str, volumes_dir: str, input_problem_directory=None,
                  input_models=None, input_preprocessors=None, generate_pipelines=True,
-                 location=None, generate_problems=False):
+                 location=None, generate_problems=False, generate_automl_pipelines=False):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
-        self.pipeline_path = pipeline_path
+        self.mongo_database = PipelineDB()
+
+        # If we want to run automl systems, don't run regular pipelines
+        if generate_automl_pipelines:
+            generate_pipelines = False
 
         # set up the primitives according to parameters
         self.preprocessors = preprocessors if input_preprocessors is None else input_preprocessors
@@ -46,21 +60,19 @@ class Experimenter:
         self.incorrect_problem_types = {}
 
         if generate_problems:
+            print("Generating problems...")
             self.problems = self.get_possible_problems()
             self.num_problems = len(self.problems["classification"]) + len(self.problems["regression"])
 
             print("There are {} problems".format(self.num_problems))
 
         if generate_pipelines:
-            tree = "d3m.primitives.classification.random_forest.SKlearn"
-            self.generated_pipelines: dict = self.generate_k_ensembles(4, 1, model=tree)
+            print("Generating pipelines...")
+            self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
+            self.num_pipelines = len(self.generated_pipelines["classification"]) + \
+                                 len(self.generated_pipelines["regression"])
 
-            # self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors,
-                                                                              # self.models)
-            # self.num_pipelines = len(self.generated_pipelines["classification"]) + \
-            #                      len(self.generated_pipelines["regression"])
-            #
-            # print("There are {} pipelines".format(self.num_pipelines))
+            print("There are {} pipelines".format(self.num_pipelines))
 
             if location is None:
                 self.mongo_database = PipelineDB()
@@ -70,13 +82,19 @@ class Experimenter:
                 print("Exporting pipelines to {}".format(location))
                 self.output_values_to_folder(location)
 
+        if generate_automl_pipelines:
+            self.generated_pipelines = self.generate_baseline_pipelines()
+            self.num_pipelines = len(self.generated_pipelines["classification"])
+            self.output_automl_pipelines_to_mongodb()
+
+
     """
     Pretty prints a JSON object to make it readable
     """
     def _pretty_print_json(self, json):
-            import pprint
-            pp = pprint.PrettyPrinter(indent=2)
-            pp.pprint(json)
+        import pprint
+        pp = pprint.PrettyPrinter(indent=2)
+        pp.pprint(json)
 
     """
     :param pipeline_description: an empty pipeline object that we can add steps to.
@@ -123,6 +141,16 @@ class Experimenter:
         pipeline_description.add_step(step_3)
         step_counter += 1
 
+        # Step 4: extract_columns_by_semantic_types(targets)
+        step_4 = PrimitiveStep(primitive=d3m_index.get_primitive(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'))
+        step_4.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step_4.add_output('produce')
+        step_4.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                  data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+        pipeline_description.add_step(step_4)
+        step_counter += 1
+
         return step_counter
 
     def _add_predictions_constructor(self, pipeline_description, step_counter):
@@ -152,14 +180,21 @@ class Experimenter:
         pipeline_description = Pipeline(context=Context.TESTING)
 
         step_counter = self._add_initial_steps(pipeline_description, step_counter)
+        preprocessor_used = False
 
         # Step 4: Preprocessor
         if preprocessor:
             step_4 = PrimitiveStep(primitive_description=preprocessor.metadata.query())
             for arg in self._get_required_args(preprocessor):
+                if arg == "outputs":
+                    data_ref = 'steps.3.produce'
+                else:
+                    data_ref = 'steps.{}.produce'.format(step_counter - 2)
+                    preprocessor_used = True
+
                 step_4.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                    data_reference='steps.{}.produce'.format(step_counter - 1))
-            # step_4.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
+                                    data_reference=data_ref)
+            step_4.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
             step_4.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
             step_4.add_output('produce')
             pipeline_description.add_step(step_4)
@@ -168,9 +203,15 @@ class Experimenter:
         # Step 5: Classifier
         step_5 = PrimitiveStep(primitive_description=classifier.metadata.query())
         for index, arg in enumerate(self._get_required_args(classifier)):
+            if arg == "outputs":
+                data_ref = 'steps.3.produce'
+            else:
+                # if we haven't used a preprocessor, we have to go back two to get the full dataframe
+                bias = 0 if preprocessor_used else -1
+                data_ref = 'steps.{}.produce'.format(step_counter - 1 + bias)
             step_5.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                data_reference='steps.{}.produce'.format(step_counter - 1))
-        # step_5.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
+                                data_reference=data_ref)
+        step_5.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
         step_5.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
         step_5.add_output('produce')
         pipeline_description.add_step(step_5)
@@ -186,19 +227,19 @@ class Experimenter:
     def get_possible_problems(self):
         problems_list = {"classification": [], "regression": []}
         for problem_directory in self.problem_directories:
-            datasets_suffix = problem_directory
-            datasets_dir = self.datasets_dir + datasets_suffix
-            for problem_name in os.listdir(datasets_dir):
-                problem_description_path = datasets_dir + problem_name + "/" + problem_name + "_problem"
-                filenames_match = glob.glob(problem_description_path + '*/problemDoc.json')
-                if len(filenames_match):
-                    type = self.get_problem_type(problem_name, filenames_match)
-                    if type == "classification":
-                        problems_list["classification"].append(datasets_dir + problem_name)
-                    elif type == "regression":
-                        problems_list["regression"].append(datasets_dir + problem_name)
+            datasets_dir = os.path.join(self.datasets_dir, problem_directory)
+            for dataset_name in os.listdir(datasets_dir):
+                problem_description_path = utils.get_problem_path(dataset_name, datasets_dir)
+                try:
+                    # add to dataset collection if it hasn't been already
+                    dataset_doc = utils.get_dataset_doc(dataset_name, datasets_dir)
+                    self.mongo_database.add_to_datasets(dataset_doc)
+                except Exception as e:
+                    print("ERROR: failed to get dataset document: {}".format(e))
 
-
+                problem_type = self.get_problem_type(dataset_name, [problem_description_path])
+                if problem_type in problems_list:
+                    problems_list[problem_type].append(os.path.join(datasets_dir, dataset_name))
         return problems_list
 
     def generate_pipelines(self, preprocessors: List[str], models: dict):
@@ -236,8 +277,11 @@ class Experimenter:
                 with open(path, 'r') as file:
                     problem_doc = json.load(file)
                     if problem_doc['about']['taskType'] == 'classification':
+                        # add the problem doc to the database if it hasn't already
+                        self.mongo_database.add_to_problems(problem_doc)
                         return "classification"
                     elif problem_doc['about']['taskType'] == 'regression':
+                        self.mongo_database.add_to_problems(problem_doc)
                         return "regression"
                     else:
                         try:
@@ -272,6 +316,23 @@ class Experimenter:
 
         print("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                self.num_pipelines - added_pipeline_sum))
+
+    def generate_baseline_pipelines(self):
+        register_primitives()
+        autosklearn_pipeline = get_classification_pipeline(time_limit=60)
+        # TODO: get other baseline primitives here
+        return {"classification": [autosklearn_pipeline]}
+
+    def output_automl_pipelines_to_mongodb(self):
+        added_pipeline_sum = 0
+        for pipeline_type in self.generated_pipelines:
+            for pipe in self.generated_pipelines[pipeline_type]:
+                added_pipeline_sum += self.mongo_database.add_to_automl_pipelines(pipe)
+
+        print("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
+                                                                                           self.num_pipelines - added_pipeline_sum))
+
+
 
     def generate_k_ensembles(self, k_ensembles: int, p_preprocessors,  model=None, same_model: bool = True):
 
@@ -429,3 +490,63 @@ class Experimenter:
 
         return {"classification": [pipeline_description]}
 
+
+
+    def generate_default_pipeline(self):
+        # Creating pipeline
+        pipeline_description = Pipeline(context=Context.TESTING)
+        pipeline_description.add_input(name='inputs')
+
+        # Step 1: dataset_to_dataframe
+        step_0 = PrimitiveStep(
+            primitive=d3m_index.get_primitive('d3m.primitives.data_transformation.dataset_to_dataframe.Common'))
+        step_0.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='inputs.0')
+        step_0.add_output('produce')
+        pipeline_description.add_step(step_0)
+
+        # Step 2: column_parser
+        step_1 = PrimitiveStep(
+            primitive=d3m_index.get_primitive('d3m.primitives.data_transformation.column_parser.DataFrameCommon'))
+        step_1.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step_1.add_output('produce')
+        pipeline_description.add_step(step_1)
+
+        # Step 3: extract_columns_by_semantic_types(attributes)
+        step_2 = PrimitiveStep(primitive=d3m_index.get_primitive(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'))
+        step_2.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.1.produce')
+        step_2.add_output('produce')
+        step_2.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                  data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
+        pipeline_description.add_step(step_2)
+
+        # Step 4: extract_columns_by_semantic_types(targets)
+        step_3 = PrimitiveStep(primitive=d3m_index.get_primitive(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'))
+        step_3.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step_3.add_output('produce')
+        step_3.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                  data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+        pipeline_description.add_step(step_3)
+
+        attributes = 'steps.2.produce'
+        targets = 'steps.3.produce'
+
+        # Step 5: imputer
+        step_4 = PrimitiveStep(primitive=d3m_index.get_primitive('d3m.primitives.data_cleaning.imputer.SKlearn'))
+        step_4.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference=attributes)
+        step_4.add_output('produce')
+        pipeline_description.add_step(step_4)
+
+        # Step 6: random_forest
+        step_5 = PrimitiveStep(primitive=d3m_index.get_primitive('d3m.primitives.regression.random_forest.SKlearn'))
+        step_5.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.4.produce')
+        step_5.add_argument(name='outputs', argument_type=ArgumentType.CONTAINER, data_reference=targets)
+        step_5.add_output('produce')
+        pipeline_description.add_step(step_5)
+
+        # Final Output
+        pipeline_description.add_output(name='output predictions', data_reference='steps.5.produce')
+
+        # Output to YAML
+        return {"classification": [pipeline_description], "regression": []}

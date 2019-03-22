@@ -62,9 +62,9 @@ models = {
     ]
 }
 problem_directories = [
-    "/seed_datasets_current/",
-    # "/training_datasets/LL0/",
-    # "/training_datasets/LL1/",
+    "seed_datasets_current/",
+    "training_datasets/LL0/",
+    # "training_datasets/LL1/",
 ]
 
 blacklist_non_tabular_data = [
@@ -84,4 +84,6 @@ blacklist_non_tabular_data = [
     "LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon",  # too long
     "LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction", # GPS data in another file
     "66_chlorineConcentration",
+    "LL0_1485_madelon",  # too long
+    "LL0_1468_cnae_9",  # also too long
 ]

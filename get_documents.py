@@ -30,12 +30,15 @@ def main(type_of_run, folder_directory):
     elif type_of_run == "erase":
         db.erase_mongo_database(True)
 
+    elif type_of_run == "check":
+        db.get_database_stats()
+
 
 # in case you want to just run the file
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-type", '-t', help="Whether to 'get' all runs or to 'erase' all runs from the database",
-                        choices=["get", "erase"], default="get")
+                        choices=["get", "erase", "check"], default="get")
     parser.add_argument("-folder", '-f', help="The path of the folder you want the json files stored in")
     args = parser.parse_args()
     main(args.type, args.folder)
