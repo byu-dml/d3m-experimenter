@@ -65,7 +65,10 @@ class Experimenter:
         if generate_pipelines:
             print("Generating pipelines...")
             self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
-            # self.generated_pipelines: dict = self.generate_k_ensembles(2, 1, "d3m.primitives.classification.random_forest.SKlearn")
+            # TODO: create a system for how to use the next line
+            # self.generated_pipelines: dict = self.generate_k_ensembles(k_ensembles=3, p_preprocessors=2,
+            #                                                            n_generated_pipelines=1, same_model=False,
+            #                                                            same_preprocessor_order=False)
             self.num_pipelines = len(self.generated_pipelines["classification"]) + \
                                  len(self.generated_pipelines["regression"])
 
@@ -75,6 +78,8 @@ class Experimenter:
                 self.mongo_database = PipelineDB()
                 print('Exporting pipelines to mongodb...')
                 self.output_pipelines_to_mongodb()
+            elif location == "test":
+                pass
             else:
                 print("Exporting pipelines to {}".format(location))
                 self.output_values_to_folder(location)
@@ -241,9 +246,6 @@ class Experimenter:
 
     def generate_pipelines(self, preprocessors: List[str], models: dict):
         preprocessors = list(set(preprocessors))
-        classification = list(set(models["classification"]))
-        regression = list(set(models["regression"]))
-
 
         generated_pipelines = {"classification": [], "regression": []}
         for type_name, model_list in models.items():
@@ -376,7 +378,7 @@ class Experimenter:
         for algorithm_type in problem_types:
             # use the model given, or use random ones from all options
             if model is None:
-                models_to_use = self.models[problem_type]
+                models_to_use = self.models[algorithm_type]
             else:
                 models_to_use = model
 
@@ -478,7 +480,8 @@ class Experimenter:
 
         # Add k pipelines
         for pipeline_number in range(k):
-            model = model_list[pipeline_number]
+            # mod this in case we want repeats of the same model
+            model = model_list[pipeline_number % len(model_list)]
 
             # Step 4: Add P Pre=processors
             for index, pre in enumerate(reversed(preprocessor_list)):

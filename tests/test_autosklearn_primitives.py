@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from d3m import d3m_index as d3m_index, runtime as runtime_module, utils as d3m_utils
+from d3m import index as d3m_index, runtime as runtime_module, utils as d3m_utils
 from d3m.metadata import base as metadata_base
 
 from experimenter import utils
