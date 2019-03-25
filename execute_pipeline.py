@@ -33,7 +33,7 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
         results = run_pipeline.run(pipeline=pipe)[0]
     except Exception as e:
         print("ERROR: pipeline was not successfully run due to {}".format(e))
-        print_successful_pipeline_run(pipe.to_json_structure())
+        print_pipeline_run(pipe.to_json_structure())
         raise e
 
     score = results[0]
@@ -71,8 +71,8 @@ def handle_successful_pipeline_run(pipeline_run, pipeline, score, problem, mongo
     if score["value"][0] == 0:
         # F-SCORE was calculated wrong - quit and don't keep this run
         return
-    primitive_list = print_successful_pipeline_run(pipeline, score)
-    # write_to_mongo_pipeline_run(mongo_db, pipeline_run, collection_name)
+    primitive_list = print_pipeline_run(pipeline, score)
+    write_to_mongo_pipeline_run(mongo_db, pipeline_run, collection_name)
 
 
 """
@@ -110,7 +110,7 @@ A helper function for printing a succesful run
 :param score: the results of the metric used in training
 :return primitive_list: a list of all the primitives used in the pipeline
 """
-def print_successful_pipeline_run(pipeline, score=None):
+def print_pipeline_run(pipeline, score=None):
     primitive_list = primitive_list_from_pipeline_json(pipeline)
     print("Ran pipeline:\n")
     print(get_list_vertically(primitive_list))
