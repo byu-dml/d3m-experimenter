@@ -1,9 +1,6 @@
-import argparse
-import collections
-import warnings
+from random import sample
 
-from bson import json_util
-from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data, not_working_preprocessors
+from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data
 from d3m import index as d3m_index
 from d3m import utils as d3m_utils
 from d3m.primitive_interfaces.base import PrimitiveBase
@@ -12,10 +9,8 @@ from d3m.metadata.base import Context, ArgumentType
 from typing import List
 import logging
 from d3m.metadata.pipeline import Pipeline
-import glob
 import os
 import json
-import sys
 from .database_communication import PipelineDB
 from experimenter.autosklearn.pipelines import get_classification_pipeline, AutoSklearnClassifierPrimitive
 
@@ -336,7 +331,8 @@ class Experimenter:
 
 
 
-    def generate_k_ensembles(self, k_ensembles: int, p_preprocessors,  model=None, same_model: bool = True):
+    def generate_k_ensembles(self, k_ensembles: int, p_preprocessors,  model=None, same_model: bool = True,
+                             same_preprocessor_order: bool = True):
 
         if model is None and same_model:
             print("Error: did not specify a model to ensemble with.  Please enter a valid model name.")
@@ -358,36 +354,42 @@ class Experimenter:
             model_list = [predictor] * k_ensembles
 
         else:
-            for index, model in enumerate(models):
+            # Generate k pipelines with randomly sampled models
+            for index in enumerate(models):
+                model = sample(models, 1)
                 if index == k_ensembles:
                     break
                 predictor: PrimitiveBase = d3m_index.get_primitive(model)
                 model_list.append(predictor)
 
-        for index, p in enumerate(preprocessors):
-            if index == p_preprocessors:
-                break
-            preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
-            preprocessor_list.append(preprocessor)
+        if same_preprocessor_order:
+            # this creates preprocessors with the same order every time
+            for index, p in enumerate(preprocessors):
+                if index == p_preprocessors:
+                    break
+                preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
+                preprocessor_list.append(preprocessor)
+
+        else:
+            # randomly sample preprocessors
+            for index in enumerate(preprocessors):
+                pre = sample(preprocessors, 1)
+                if index == p_preprocessors:
+                    break
+                preprocessor: PrimitiveBase = d3m_index.get_primitive(pre)
+                preprocessor_list.append(preprocessor)
 
         final_pipeline = self.create_ensemble_pipeline(k_ensembles, p_preprocessors, preprocessor_list, model_list,
                                                        vertical_concat, ensemble)
         return {'classification': [final_pipeline], 'regression': []}
 
-        #
-        # elif not same_model:
-        #     print("Implement this")
-        #     # for p in preprocessors:
-        #     #     preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
-        #     #     for model in model_list:
-        #     #         predictor: PrimitiveBase = d3m_index.get_primitive(model)
-        #     #
-        #     #         pipeline_with_preprocessor: Pipeline = self._generate_standard_pipeline(preprocessor, predictor)
-        #     #         generated_pipelines[type_name].append(pipeline_with_preprocessor)
+
 
 
 
     def create_ensemble_pipeline(self, k, p, preprocessor_list, model_list, concatenator, ensembler):
+
+
         print("Creating {} pipelines of length {}".format(k, p+1))
         step_counter = 0
 
@@ -398,6 +400,8 @@ class Experimenter:
         step_counter = self._add_initial_steps(pipeline_description, step_counter)
         init_step_counter = step_counter
         total_step_counter = step_counter
+        list_of_outputs = []
+        preprocessor_used = False
 
         # Add k pipelines
         for pipeline_number in range(k):
@@ -409,13 +413,13 @@ class Experimenter:
                     break
                 step_4 = PrimitiveStep(primitive_description=pre.metadata.query())
                 for arg in self._get_required_args(pre):
-                    print(arg, step_counter, pre)
-                    if index == 0:
-                        use_step = init_step_counter
+                    if arg == "outputs":
+                        data_ref = 'steps.3.produce'
                     else:
-                        use_step = step_counter
+                        data_ref = 'steps.{}.produce'.format(init_step_counter - 2)
+                        preprocessor_used = True
                     step_4.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                        data_reference='steps.{}.produce'.format(use_step - 1))
+                                        data_reference=data_ref)
                 step_4.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
                 step_4.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
                 step_4.add_output('produce')
@@ -426,8 +430,14 @@ class Experimenter:
             # Step 5: Classifier
             step_5 = PrimitiveStep(primitive_description=model.metadata.query())
             for arg in self._get_required_args(model):
+                # if no preprocessors make sure we are getting the data from the imputer
+                if not preprocessor_used:
+                    data_ref = 'steps.{}.produce'.format(init_step_counter - 2)
+                else:
+                    data_ref = 'steps.{}.produce'.format(step_counter - 1)
+
                 step_5.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                    data_reference='steps.{}.produce'.format(step_counter - 1))
+                                    data_reference=data_ref)
             step_5.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
             step_5.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
             step_5.add_output('produce')
@@ -436,34 +446,16 @@ class Experimenter:
             print(step_counter)
 
             step_counter = self._add_predictions_constructor(pipeline_description, step_counter)
+            list_of_outputs.append(step_counter - 1)
 
-            # # keep a total step count number - should be p
-            # total_step_counter += step_counter
-            # print("The total step counter is {}".format(total_step_counter))
-            # print("The current step is {}".format(init_step_counter + (p + 1) * (pipeline_number+ 1)))
-            #
-            # assert(total_step_counter == init_step_counter + (p + 1) * (pipeline_number+ 1))
 
-        # get the output values from each pipeline to combine them
-        first_output = init_step_counter + (p + 2) * 1
-        second_output = init_step_counter + (p + 2) * 2
-        outputs = [first_output, second_output]
+        # concatenate k - 1 times
+        for concat_num in range(k-1):
+            if concat_num == 0:
+                steps_list = [list_of_outputs[concat_num], list_of_outputs[concat_num + 1]]
+            else:
+                steps_list = [step_counter - 1, list_of_outputs[concat_num + 1]]
 
-        step_6 = PrimitiveStep(primitive_description=concatenator.metadata.query())
-        for arg_index, arg in enumerate(self._get_required_args(concatenator)):
-            print(arg_index, arg)
-            step_6.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                data_reference='steps.{}.produce'.format(outputs[arg_index] - 1))
-        step_6.add_hyperparameter(name='use_index', argument_type=ArgumentType.VALUE, data=False)
-        step_6.add_output('produce')
-        pipeline_description.add_step(step_6)
-        step_counter += 1
-
-        # concatenate k - 2 times since we did the first above
-        for concat_num in range(k-2):
-            prev_concat = step_counter - 1
-            next_output = (init_step_counter - 1) + (p + 2) * (3 + concat_num)
-            steps_list = [prev_concat, next_output]
             step_6 = PrimitiveStep(primitive_description=concatenator.metadata.query())
             for arg_index, arg in enumerate(self._get_required_args(concatenator)):
                 step_6.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
@@ -475,13 +467,24 @@ class Experimenter:
         print(step_counter)
 
         # finally ensemble them all together
-        step_7 = PrimitiveStep(primitive_description=ensembler.metadata.query())
+        renamer = PrimitiveStep(
+            primitive=d3m_index.get_primitive('d3m.primitives.data_transformation.rename_duplicate_name.DataFrameCommon'))
         for arg_index, arg in enumerate(self._get_required_args(ensembler)):
             print("The arg is {}".format(arg))
-            step_7.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
+            renamer.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
                                 data_reference='steps.{}.produce'.format(step_counter - 1))
-        step_7.add_output('produce')
-        pipeline_description.add_step(step_7)
+        renamer.add_output('produce')
+        pipeline_description.add_step(renamer)
+        step_counter += 1
+
+        # finally ensemble them all together
+        step_8 = PrimitiveStep(primitive_description=ensembler.metadata.query())
+        for arg_index, arg in enumerate(self._get_required_args(ensembler)):
+            print("The arg is {}".format(arg))
+            step_8.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
+                                data_reference='steps.{}.produce'.format(step_counter - 1))
+        step_8.add_output('produce')
+        pipeline_description.add_step(step_8)
         step_counter += 1
 
         # output them as predictions
@@ -490,7 +493,7 @@ class Experimenter:
         # Adding output step to the pipeline
         pipeline_description.add_output(name='Output', data_reference='steps.{}.produce'.format(step_counter - 1))
 
-        return {"classification": [pipeline_description]}
+        return pipeline_description
 
 
 

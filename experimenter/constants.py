@@ -86,4 +86,17 @@ blacklist_non_tabular_data = [
     "66_chlorineConcentration",
     "LL0_1485_madelon",  # too long
     "LL0_1468_cnae_9",  # also too long
+
+
+    "LL0_155_pokerhand", # too long
+    "LL0_300_isolet",  # too long
+    "LL0_312_scene",   # too long
+    "LL0_1113_kddcup99",  # too long
+    "LL0_180_covertype",   # too long
+    "LL0_1122_ap_breast_prostate",  # too long
+    "LL0_180_covertype",  # too long
+    "LL0_4541_diabetes130us",  # calculation too big, memory error np.dot()
+
+
+
 ]

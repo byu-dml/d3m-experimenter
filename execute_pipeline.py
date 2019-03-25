@@ -33,6 +33,7 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
         results = run_pipeline.run(pipeline=pipe)[0]
     except Exception as e:
         print("ERROR: pipeline was not successfully run due to {}".format(e))
+        print_successful_pipeline_run(pipe.to_json_structure())
         raise e
 
     score = results[0]
@@ -71,7 +72,7 @@ def handle_successful_pipeline_run(pipeline_run, pipeline, score, problem, mongo
         # F-SCORE was calculated wrong - quit and don't keep this run
         return
     primitive_list = print_successful_pipeline_run(pipeline, score)
-    write_to_mongo_pipeline_run(mongo_db, pipeline_run, collection_name)
+    # write_to_mongo_pipeline_run(mongo_db, pipeline_run, collection_name)
 
 
 """
