@@ -329,66 +329,140 @@ class Experimenter:
         print("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                            self.num_pipelines - added_pipeline_sum))
 
-
-
-    def generate_k_ensembles(self, k_ensembles: int, p_preprocessors,  model=None, same_model: bool = True,
-                             same_preprocessor_order: bool = True):
+    def generate_k_ensembles(self, k_ensembles: int, p_preprocessors, n_generated_pipelines: int = 1, model=None,
+                             same_model: bool = True, same_preprocessor_order: bool = True,
+                             problem_type="classification", given_preprocessors: list = None):
+        """
+        This function takes all the options on how to generate ensembles and then returns the created pipelines
+        :param k_ensembles: the number of pipelines that will be ensembles together to form one big pipeline.
+        :param p_preprocessors: the number of preprocessors before each predictor in each sub-pipeline.
+        :param n_generated_pipelines: the number of pipelines to generate.
+        :param model: the specific model to use in the task.  This can be a string or a list of strings.
+        :param same_model: whether or not to use the same model every time as the predictor.
+        :param same_preprocessor_order: Whether or not to use the same preprocessor order every time
+        :param problem_type: whether to generate regression, classification, or both
+        :param given_preprocessors: a list of given preprocessors that you want to use
+        :return: a dictionary containing two keys "classification" and "regression" each containing the list of
+        generated pipelines
+        """
 
         if model is None and same_model:
             print("Error: did not specify a model to ensemble with.  Please enter a valid model name.")
             raise Exception
 
-        if k_ensembles == -1:
-            k_ensembles = min(len(models), len(preprocessors))
+        if type(model) == list and len(model) > 1 and same_model:
+            print("You can't have the same model and give more than one model")
+            raise Exception
 
+        if k_ensembles == -1:
+            k_ensembles = min(len(model), len(preprocessors))
+
+        if problem_type == "all":
+            problem_types = ["classification", "regression"]
+        else:
+            problem_types = [problem_type]
+
+        # no point in generating the same pipeline twice (we were given a model and told to use the same order)
+        if model is not None and same_preprocessor_order:
+            n_generated_pipelines = 1
+
+        # initialize values and constants
+        generated_pipes = {'classification': [], 'regression': []}
         model_list = []
+        preprocessor_list = []
         vertical_concat = d3m_index.get_primitive("d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat")
         ensemble = d3m_index.get_primitive("d3m.primitives.data_preprocessing.EnsembleVoting.DSBOX")
 
-        if same_model:
-            # Generate k pipelines with different preprocessors and the same model
-            pipeline_list = []
-            preprocessor_list = []
+        for algorithm_type in problem_types:
+            # use the model given, or use random ones from all options
+            if model is None:
+                models_to_use = self.models[problem_type]
+            else:
+                models_to_use = model
 
-            predictor: PrimitiveBase = d3m_index.get_primitive(model)
-            model_list = [predictor] * k_ensembles
+            # Create the pipelines
+            for _ in range(n_generated_pipelines):
+                if same_model:
+                    print("Using the same model order")
+                    # is there only one model? If so use it all the time
+                    if type(models_to_use) == str or len(models_to_use) == 1:
+                        if type(models_to_use) == list:
+                            models_to_use = models_to_use[0]
+                        # Generate k pipelines with different preprocessors and the same model
+                        predictor: PrimitiveBase = d3m_index.get_primitive(models_to_use)
+                        model_list = [predictor] * k_ensembles
+                    else:
+                        # use the models given in exactly that order
+                        for index, algorithm in enumerate(models_to_use):
+                            if index == k_ensembles:
+                                break
+                            predictor: PrimitiveBase = d3m_index.get_primitive(algorithm)
+                            model_list.append(predictor)
 
-        else:
-            # Generate k pipelines with randomly sampled models
-            for index in enumerate(models):
-                model = sample(models, 1)
-                if index == k_ensembles:
-                    break
-                predictor: PrimitiveBase = d3m_index.get_primitive(model)
-                model_list.append(predictor)
+                else:
+                    print("Randomly sampling models")
+                    # Generate k pipelines with randomly sampled models
+                    for index in range(len(models_to_use)):
+                        algorithm = sample(models_to_use, 1)[0]
+                        if index == k_ensembles:
+                            break
+                        predictor: PrimitiveBase = d3m_index.get_primitive(algorithm)
+                        model_list.append(predictor)
 
-        if same_preprocessor_order:
-            # this creates preprocessors with the same order every time
-            for index, p in enumerate(preprocessors):
-                if index == p_preprocessors:
-                    break
-                preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
-                preprocessor_list.append(preprocessor)
+                if same_preprocessor_order:
+                    print("Using the same preprocessor order")
+                    # is there only one preprocessor? If so use it all the time
+                    if given_preprocessors is not None:
+                        if len(given_preprocessors) == 1:
+                            preprocessor_to_use = given_preprocessors[0]
+                            preprocessor: PrimitiveBase = d3m_index.get_primitive(preprocessor_to_use)
+                            model_list = [predictor] * p_preprocessors
+                        else:
+                            # there is more than one preprocessor given
+                            for index, p in enumerate(given_preprocessors):
+                                if index == p_preprocessors:
+                                    break
+                                preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
+                                preprocessor_list.append(preprocessor)
+                    else:
+                        # this creates preprocessors with the same order every time
+                        for index, p in enumerate(self.preprocessors):
+                            if index == p_preprocessors:
+                                break
+                            preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
+                            preprocessor_list.append(preprocessor)
 
-        else:
-            # randomly sample preprocessors
-            for index in enumerate(preprocessors):
-                pre = sample(preprocessors, 1)
-                if index == p_preprocessors:
-                    break
-                preprocessor: PrimitiveBase = d3m_index.get_primitive(pre)
-                preprocessor_list.append(preprocessor)
+                else:
+                    print("Randomly sampling preprocessors")
+                    # randomly sample preprocessors - til we have a new one for each model
+                    for index in range(k_ensembles):
+                        # get p preprocessor for each model
+                        pre = sample(preprocessors, p_preprocessors)
+                        if index == k_ensembles:
+                            break
+                        for p in pre:
+                            preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
+                            preprocessor_list.append(preprocessor)
 
-        final_pipeline = self.create_ensemble_pipeline(k_ensembles, p_preprocessors, preprocessor_list, model_list,
-                                                       vertical_concat, ensemble)
-        return {'classification': [final_pipeline], 'regression': []}
+                print(model_list)
+                print(preprocessor_list)
+                final_pipeline = self.create_ensemble_pipeline(k_ensembles, p_preprocessors, preprocessor_list,
+                                                               model_list, vertical_concat, ensemble)
+                generated_pipes[algorithm_type].append(final_pipeline)
 
-
-
-
+        return generated_pipes
 
     def create_ensemble_pipeline(self, k, p, preprocessor_list, model_list, concatenator, ensembler):
-
+        """
+        This function does the nitty gritty work of preparing the pipeline and returning it
+        :param k: the number of pipelines that will be ensembled
+        :param p: the number of preprocessors for each sub-pipeline
+        :param preprocessor_list: a list of preprocessors to use
+        :param model_list:  the list of models to use
+        :param concatenator: the primitive that will concantentate the pipelines
+        :param ensembler: the ensembler that will ensemble all those pipelines together
+        :return: the ensembled pipeline
+        """
 
         print("Creating {} pipelines of length {}".format(k, p+1))
         step_counter = 0
@@ -399,7 +473,6 @@ class Experimenter:
 
         step_counter = self._add_initial_steps(pipeline_description, step_counter)
         init_step_counter = step_counter
-        total_step_counter = step_counter
         list_of_outputs = []
         preprocessor_used = False
 
@@ -498,6 +571,10 @@ class Experimenter:
 
 
     def generate_default_pipeline(self):
+        """
+        Example from https://docs.datadrivendiscovery.org/devel/pipeline.html#pipeline-description-example
+        :return: the sample pipeline
+        """
         # Creating pipeline
         pipeline_description = Pipeline(context=Context.TESTING)
         pipeline_description.add_input(name='inputs')
