@@ -17,13 +17,13 @@ class TestSchemaValidation(unittest.TestCase):
         with open(os.path.join(self.pipeline_path, "valid_pipeline_run.json"), 'r') as file:
             pipeline_run = json.load(file)
         validated = validate_pipeline_run(pipeline_run)
-        self.assertEqual(True, validated, "The schema validation FAILED, when it should have PASSED")
+        self.assertTrue(validated, "The schema validation FAILED, when it should have PASSED")
 
     def test_invalid_pipeline_run_schema(self):
         with open(os.path.join(self.pipeline_path, "invalid_pipeline_run.json"), 'r') as file:
             pipeline_run = json.load(file)
         validated = validate_pipeline_run(pipeline_run)
-        self.assertEqual(False, validated, "The schema validation PASSED, when it should have FAILED")
+        self.assertFalse(validated, "The schema validation PASSED, when it should have FAILED")
 
     def test_valid_pipeline_schema(self):
         with open(os.path.join(self.pipeline_path, "bagging_classification.json"), 'r') as file:
