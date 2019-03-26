@@ -21,24 +21,22 @@ def validate_pipeline_run(new_pipeline_json):
         print('\n', error, '\n')
         return False
 
-
 def _validate_pipeline_run_status_consistency(
-        json_structure: typing.Dict
+    json_structure: typing.Dict
 ) -> None:
     """
-    Verifies that the success or failure states of pipeline_run components are consistent with
-    each other. A pipeline_run (or subpipeline) is successful if and only if all steps and
-    method_calls are successful. All status states should indicate a success. A failed
-    pipeline_run (or subpipeline) occurs when a method_call failed. This failure state should
-    be propagated upwards to all parent steps and pipeline_run. The runtime should
-    "short-circuit" and there should only be one failed method_call.
+    Verifies that the success or failure states of pipeline_run components
+    are consistent with each other. Any failure state should be propagated
+    upwards to all parents in the pipeline_run. The runtime should
+    "short-circuit", meaning any failure state in the pipeline_run should
+    be the final component.
     """
 
     def check_success_step(step):
         if step['type'] == metadata_base.PipelineStepType.PRIMITIVE.name:
             for method_call in step['method_calls']:
                 if SUCCESS != method_call['status']['state']:
-                    raise Exception(
+                    raise exceptions.InvalidArgumentValueError(
                         'Step with "{}" status has method_call with "{}" status'.format(
                             SUCCESS, FAILURE
                         )
@@ -51,16 +49,16 @@ def _validate_pipeline_run_status_consistency(
             )
 
     def check_failure_step(step):
-        if step['type'] == 'PRIMITIVE':
+        if step['type'] == metadata_base.PipelineStepType.PRIMITIVE.name:
             found_a_method_call_failure = False
             for method_call in step['method_calls']:
                 if found_a_method_call_failure:
-                    raise Exception(
-                        'More than one method_call with \'FAILURE\' status found'
+                    raise exceptions.InvalidArgumentValueError(
+                        'There exists a method_call after a method_call with \'FAILURE\' status'
                     )
                 if method_call['status']['state'] == FAILURE:
                     found_a_method_call_failure = True
-        elif step['type'] == 'SUBPIPELINE':
+        elif step['type'] == metadata_base.PipelineStepType.SUBPIPELINE.name:
             recurse_failure(step)
         else:
             raise exceptions.InvalidArgumentValueError(
@@ -70,23 +68,21 @@ def _validate_pipeline_run_status_consistency(
     def recurse_success(json_structure):
         for step in json_structure['steps']:
             if SUCCESS != step['status']['state']:
-                raise Exception(
-                    'Pipeline_run or subpipeline_step with "{}" status has a step with "{}" ' \
-                    'status'.format(SUCCESS, FAILURE)
+                raise exceptions.InvalidArgumentValueError(
+                    'Pipeline_run or subpipeline_step with "{}" status has a step with "{}" '\
+                        'status'.format(SUCCESS, FAILURE)
                 )
             check_success_step(step)
 
     def recurse_failure(json_structure):
         found_a_step_failure = False
-        # a step is successful iff all method_calls(PRIMITIVE) or steps(SUBPIPELINE) are successful
         for step in json_structure['steps']:
             if found_a_step_failure:
-                raise Exception(
-                    'More than one step with \'FAILURE\' status found'
+                raise exceptions.InvalidArgumentValueError(
+                    'There exists a step after a step with \'FAILURE\' status'
                 )
             if step['status']['state'] == SUCCESS:
                 check_success_step(step)
-            # a step fails iff at least one method_call(PRIMITIVE) or step(SUBPIPELINE) fails
             elif step['status']['state'] == FAILURE:
                 found_a_step_failure = True
                 check_failure_step(step)
