@@ -3,6 +3,7 @@ import json
 import os
 import pymongo
 import subprocess
+import re
 from bson import json_util, ObjectId
 from d3m.metadata.pipeline import Pipeline
 import datetime
@@ -247,6 +248,9 @@ class PipelineDB:
 
         return min_name, problem_name
 
+    def is_phrase_in(self, phrase, text):
+        return re.search(r"\b{}\b".format(phrase), text, re.IGNORECASE) is not None
+
     def get_all_pipelines(self, baselines=False):
         """
         Used to gather pipelines for the experimenter_driver.py
@@ -258,7 +262,20 @@ class PipelineDB:
         collection = db.pipelines if not baselines else db.automl_pipelines
         pipeline_cursor = collection.find({})
         for index, pipeline in enumerate(pipeline_cursor):
-            predictor_model = pipeline['steps'][-2]['primitive']['python_path'].split('.')[-3]
+            if index % 1000 == 0:
+                print("On pipeline number {}".format(index))
+            is_classification = self.is_phrase_in("d3m.primitives.classification", json.dumps(pipeline['steps']))
+            is_regression = self.is_phrase_in("d3m.primitives.regression", json.dumps(pipeline['steps']))
+            if is_classification and is_regression:
+                print("Cannot be both")
+                raise Exception
+            elif is_classification:
+                predictor_model = "classification"
+            elif is_regression:
+                predictor_model = "regression"
+            else:
+                print("Could not find classification or regression")
+                raise Exception
             pipeline_json = json.dumps(pipeline, sort_keys=True, indent=4,default=json_util.default)
             pipelines[predictor_model].append(Pipeline.from_json(pipeline_json))
         return pipelines, len(pipelines["regression"]) + len(pipelines["classification"])
