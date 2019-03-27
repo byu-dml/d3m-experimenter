@@ -120,25 +120,4 @@ blacklist_non_tabular_data = [
     "uu2_gp_hyperparameter_estimation_v2",  # has extra data
     "uu2_gp_hyperparameter_estimation",  # has extra data
     "57_hypothyroid",  # always NAN's out
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ]
