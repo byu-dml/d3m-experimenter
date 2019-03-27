@@ -5,6 +5,8 @@ import pymongo
 import subprocess
 from bson import json_util, ObjectId
 from d3m.metadata.pipeline import Pipeline
+import datetime
+from dateutil.parser import parse
 from experimenter.validation import validate_pipeline_run
 try:
     real_mongo_port = int(os.environ['REAL_MONGO_PORT'])
@@ -374,6 +376,58 @@ class PipelineDB:
 
         return
 
+    def get_pipeline_run_time_distribution(self):
+        """
+        This function will tell us the times of each pipeline_run approx.
+        """
+
+        collection_names = ["pipeline_runs"]
+        # connect to the database
+        list_of_times = []
+        print("Collecting Times...")
+        for collection_name in collection_names:
+            db = self.mongo_client.metalearning
+            collection = db[collection_name]
+            pipeline_runs_cursor = collection.find({})
+            # go through each pipeline run
+            for index, doc in enumerate(pipeline_runs_cursor):
+                if index % 10000 == 0:
+                    print("At {} documents parsed".format(index))
+                dataset = doc["datasets"][0]["id"]
+                begin = doc["steps"][0]["method_calls"][0]["start"]
+                begin_val = parse(begin)
+                end = doc["steps"][-1]["method_calls"][-1]["end"]
+                end_val = parse(end)
+                total_time = (end_val - begin_val).total_seconds()
+                list_of_times.append({"time": total_time, "dataset": dataset})
+
+        return list_of_times
+
+
+    def get_pipeline_run_score_distribution(self):
+        """
+        This function will give us the scores from every pipeline run
+        """
+
+        collection_names = ["pipeline_runs"]
+        # connect to the database
+        list_of_times = []
+        print("Collecting Times...")
+        for collection_name in collection_names:
+            db = self.mongo_client.metalearning
+            collection = db[collection_name]
+            pipeline_runs_cursor = collection.find({})
+            # go through each pipeline run
+            for index, doc in enumerate(pipeline_runs_cursor):
+                if index % 10000 == 0:
+                    print("At {} documents parsed".format(index))
+                metric = doc["run"]["results"]["scores"][0]["metric"]["metric"]
+                if metric == "F1_MACRO":
+                    dataset = doc["datasets"][0]["id"]
+                    score = doc["run"]["results"]["scores"][0]["value"]
+                    list_of_times.append({"score": score, "dataset": dataset})
+
+        return list_of_times
 
 
 

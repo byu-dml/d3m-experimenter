@@ -137,7 +137,7 @@ class ExperimenterDriver:
                             # if we are trying to distribute, add to the RQ
                             if self.distributed:
                                 async_results = self.queue.enqueue(execute_pipeline_on_problem, pipe, problem,
-                                                                   self.datasets_dir, self.volumes_dir, timeout=60*20)
+                                                                   self.datasets_dir, self.volumes_dir, timeout=60*12)
                             else:
                                 execute_pipeline_on_problem(pipe, problem, self.datasets_dir, self.volumes_dir)
 
