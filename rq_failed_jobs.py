@@ -31,6 +31,7 @@ with Connection(connection=conn):
     map_of_failed_memory = {}
     map_of_bad_combinations = {}
     map_of_bad_matrices = {}
+    map_bad_rename = {}
 
     total_nan = 0
     total_timeout = 0
@@ -39,6 +40,7 @@ with Connection(connection=conn):
     total_memory = 0
     total_bad_primitive_comb = 0
     total_bad_matrix = 0
+    total_bad_rename = 0
 
     for job in fq.jobs:
         total_failed += 1
@@ -60,6 +62,8 @@ with Connection(connection=conn):
         is_bad_matrix = is_phrase_in("numpy.linalg.linalg.LinAlgError", error) or \
                             is_phrase_in("Internal work array size computation failed", error)
 
+        is_bad_rename = is_phrase_in("rename_duplicate_columns.py", error)
+
         if is_nan_issue:
             map_of_failed_for_nan[dataset_name] = map_of_failed_for_nan.get(dataset_name, 0) + 1
             total_nan += 1
@@ -78,6 +82,9 @@ with Connection(connection=conn):
         elif is_bad_matrix:
             map_of_bad_matrices[dataset_name] = map_of_bad_matrices.get(dataset_name, 0) + 1
             total_bad_primitive_comb += 1
+        elif is_bad_rename:
+            map_bad_rename[dataset_name] = map_bad_rename.get(dataset_name, 0) + 1
+            total_bad_rename += 1
         else:
             print(error)
 
@@ -105,15 +112,19 @@ with Connection(connection=conn):
     for key, value in map_of_bad_combinations.items():
         print(key, value)
 
+    print("\n##### IS BAD RENAME FAILED #####")
+    for key, value in map_bad_rename.items():
+        print(key, value)
+
     print("\n##### TIMEOUT FAILED #####")
     for key, value in map_of_failed_for_timeout.items():
         print(key, value)
 
     print("\n\n\n")
     print("Out of {} failures. {} were from NANs, {} were timeouts, {} memory too large errors, {} bad combinations, "
-          "{} bad matrices, and {} were from trying to use str as an int".
-          format(total_failed, total_nan, total_timeout, total_memory, total_bad_primitive_comb, total_bad_matrix,
-                 total_str_failure))
+          "{} bad rename errors, {} bad matrices, and {} were from trying to use str as an int".
+          format(total_failed, total_nan, total_timeout, total_memory, total_bad_primitive_comb, total_bad_rename,
+                 total_bad_matrix, total_str_failure))
     print("{} failures are unaccounted for".
           format(total_failed - (total_nan + total_timeout + total_str_failure + total_memory +
-                                 total_bad_primitive_comb + total_bad_matrix)))
+                                 total_bad_primitive_comb + total_bad_matrix + total_bad_rename)))

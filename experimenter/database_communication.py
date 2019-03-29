@@ -101,12 +101,8 @@ class PipelineDB:
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
             collection = db[collection_name]
-            pipeline_runs_cursor = collection.find({})
-            # go through each pipeline run
-            sum = 0
-            for doc in pipeline_runs_cursor:
-                sum += 1
-            print("There are {} in {}".format(sum, collection_name))
+            sum_docs = collection.count()
+            print("There are {} in {}".format(sum_docs, collection_name))
 
 
     def erase_mongo_database(self, are_you_sure=False):
@@ -377,12 +373,22 @@ class PipelineDB:
         collection = db.pipeline_runs
         pipeline_cursor = collection.find({})
         for index, pipeline_run in enumerate(pipeline_cursor):
+            if index % 1000 == 0:
+                print("At {}, length of deletion is {}".format(index, len(delete_these_documents)))
             pipeline_digest = pipeline_run["pipeline"]["digest"]
             pipeline_id = pipeline_run["pipeline"]["id"]
             dataset_digest = pipeline_run["datasets"][0]["digest"]
             # There is no pipeline matching that info or no dataset matching that info == bad data!
-            if not db.pipelines.find({"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]}).count()\
-                    or not db.datasets.find({"about.digest": dataset_digest}).count():
+            no_dataset = not db.datasets.find({"about.digest": dataset_digest}).count()
+            no_pipeline = not db.pipelines.find({"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]}).count()
+            if no_dataset and no_pipeline:
+                print("The pipeline run did not have a referenced pipeline or dataset")
+                delete_these_documents.append(pipeline_run["_id"])
+            elif no_dataset:
+                print("The pipeline run did not have a referenced dataset")
+                delete_these_documents.append(pipeline_run["_id"])
+            elif no_pipeline:
+                print("The pipeline run did not have a referenced pipeline")
                 delete_these_documents.append(pipeline_run["_id"])
 
         # so you can check before you delete everything
