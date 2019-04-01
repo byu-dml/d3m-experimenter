@@ -23,7 +23,7 @@ from experimenter_driver import *
 # similar to rq worker
 with Connection():
     qs = sys.argv[1:] or ['default']
-
+    print("Working on queue: {}".format(qs))
     w = Worker(qs, connection=conn)
     print("About to work")
     w.work(burst=True)

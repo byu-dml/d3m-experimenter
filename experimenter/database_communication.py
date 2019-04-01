@@ -96,7 +96,7 @@ class PipelineDB:
         """
 
         collection_names = ["pipeline_runs", "pipelines", "datasets", "problems",
-                            "automl_pipelines", "automl_pipeline_runs"]
+                            "automl_pipelines", "automl_pipeline_runs", "metalearning"]
         # connect to the database
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
@@ -426,6 +426,14 @@ class PipelineDB:
 
         return list_of_times
 
+    def add_to_metafeatures(self, pipeline_run):
+        db = self.mongo_client.metalearning
+        collection = db.metafeatures
+        if not collection.find({"id": pipeline_run['id']}).count():
+            pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
+            print("Wrote metafeature pipeline run to the database with inserted_id: {}".format(pipeline_run_id))
+        else:
+            print("\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n")
 
     def get_pipeline_run_score_distribution(self):
         """

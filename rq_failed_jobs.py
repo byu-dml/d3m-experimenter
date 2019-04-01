@@ -32,6 +32,7 @@ with Connection(connection=conn):
     map_of_bad_combinations = {}
     map_of_bad_matrices = {}
     map_bad_rename = {}
+    map_workhorse = {}
 
     total_nan = 0
     total_timeout = 0
@@ -64,6 +65,8 @@ with Connection(connection=conn):
 
         is_bad_rename = is_phrase_in("rename_duplicate_columns.py", error)
 
+        is_workhorse_error = is_phrase_in("Work-horse process was terminated unexpectedly", error)
+
         if is_nan_issue:
             map_of_failed_for_nan[dataset_name] = map_of_failed_for_nan.get(dataset_name, 0) + 1
             total_nan += 1
@@ -85,46 +88,49 @@ with Connection(connection=conn):
         elif is_bad_rename:
             map_bad_rename[dataset_name] = map_bad_rename.get(dataset_name, 0) + 1
             total_bad_rename += 1
+        elif is_workhorse_error:
+            map_workhorse[dataset_name] = map_workhorse.get(dataset_name, 0) + 1
+            is_workhorse_error += 1
         else:
             print(error)
 
-    print("\n##### TOTAL FAILED #####")
-    for key, value in map_of_failed_probs.items():
-        print(key, value)
-
-    print("\n##### NAN FAILED #####")
-    for key, value in map_of_failed_for_nan.items():
-        print(key, value)
-
-    print("\n##### IS MEMORY FAILED #####")
-    for key, value in map_of_failed_memory.items():
-        print(key, value)
-
-    print("\n##### USING STRING BAD FAILED #####")
-    for key, value in map_of_failed_for_str.items():
-        print(key, value)
-
-    print("\n##### BAD MATRIX FAILED #####")
-    for key, value in map_of_bad_matrices.items():
-        print(key, value)
-
-    print("\n##### IS BAD COMBO FAILED #####")
-    for key, value in map_of_bad_combinations.items():
-        print(key, value)
-
-    print("\n##### IS BAD RENAME FAILED #####")
-    for key, value in map_bad_rename.items():
-        print(key, value)
-
-    print("\n##### TIMEOUT FAILED #####")
-    for key, value in map_of_failed_for_timeout.items():
-        print(key, value)
+    # print("\n##### TOTAL FAILED #####")
+    # for key, value in map_of_failed_probs.items():
+    #     print(key, value)
+    #
+    # print("\n##### NAN FAILED #####")
+    # for key, value in map_of_failed_for_nan.items():
+    #     print(key, value)
+    #
+    # print("\n##### IS MEMORY FAILED #####")
+    # for key, value in map_of_failed_memory.items():
+    #     print(key, value)
+    #
+    # print("\n##### USING STRING BAD FAILED #####")
+    # for key, value in map_of_failed_for_str.items():
+    #     print(key, value)
+    #
+    # print("\n##### BAD MATRIX FAILED #####")
+    # for key, value in map_of_bad_matrices.items():
+    #     print(key, value)
+    #
+    # print("\n##### IS BAD COMBO FAILED #####")
+    # for key, value in map_of_bad_combinations.items():
+    #     print(key, value)
+    #
+    # print("\n##### IS BAD RENAME FAILED #####")
+    # for key, value in map_bad_rename.items():
+    #     print(key, value)
+    #
+    # print("\n##### TIMEOUT FAILED #####")
+    # for key, value in map_of_failed_for_timeout.items():
+    #     print(key, value)
 
     print("\n\n\n")
     print("Out of {} failures. {} were from NANs, {} were timeouts, {} memory too large errors, {} bad combinations, "
-          "{} bad rename errors, {} bad matrices, and {} were from trying to use str as an int".
+          "{} bad rename errors, {} bad matrices, and {} were from trying to use str as an int, {} workhorse errors".
           format(total_failed, total_nan, total_timeout, total_memory, total_bad_primitive_comb, total_bad_rename,
-                 total_bad_matrix, total_str_failure))
+                 total_bad_matrix, total_str_failure, is_workhorse_error))
     print("{} failures are unaccounted for".
           format(total_failed - (total_nan + total_timeout + total_str_failure + total_memory +
-                                 total_bad_primitive_comb + total_bad_matrix + total_bad_rename)))
+                                 total_bad_primitive_comb + total_bad_matrix + total_bad_rename + is_workhorse_error)))

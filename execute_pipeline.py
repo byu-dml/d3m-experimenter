@@ -6,6 +6,7 @@ to execute a pipeline on a problem and can be used by an individual machine, or 
 """
 
 from experimenter.database_communication import PipelineDB
+from experimenter.run_fit_pipeline import RunFitPipeline
 from experimenter.run_pipeline import RunPipeline
 
 
@@ -25,8 +26,8 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
     collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
 
     # check if the pipeline has been run:
-    if mongo_db.has_duplicate_pipeline_run(problem, pipe.to_json_structure(), collection_name):
-        print("Already ran. Skipping")
+    if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name):
+        print("Documents are missing or pipeline has already been run. SKIPPING")
         return
     run_pipeline = RunPipeline(datasets_dir, volumes_dir, problem)
     try:
@@ -41,6 +42,29 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
     produce_pipeline_run = results[2]
     handle_successful_pipeline_run(produce_pipeline_run.to_json_structure(),
                                             pipe.to_json_structure(), score, problem, mongo_db, collection_name)
+
+
+
+def execute_fit_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
+    # Attempt to run the pipeline
+    print("\n On problem {}".format(problem))
+    mongo_db = PipelineDB()
+    collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
+    # check if the pipeline has been run:
+    if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name, skip_pipeline=True):
+        print("Documents are missing or pipeline has already been run. SKIPPING")
+        return
+    run_pipeline = RunFitPipeline(datasets_dir, volumes_dir, problem)
+    try:
+        results = run_pipeline.run(pipeline=pipe)
+    except Exception as e:
+        print("ERROR: pipeline was not successfully run due to {}".format(e))
+        print_pipeline_run(pipe.to_json_structure())
+        raise e
+
+    print(results)
+    fit_pipeline_run = results
+    mongo_db.add_to_metafeatures(fit_pipeline_run.to_json_structure())
 
 
 """
