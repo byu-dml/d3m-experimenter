@@ -96,7 +96,7 @@ class PipelineDB:
         """
 
         collection_names = ["pipeline_runs", "pipelines", "datasets", "problems",
-                            "automl_pipelines", "automl_pipeline_runs", "metalearning"]
+                            "automl_pipelines", "automl_pipeline_runs", "metafeatures"]
         # connect to the database
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
@@ -427,9 +427,13 @@ class PipelineDB:
         return list_of_times
 
     def add_to_metafeatures(self, pipeline_run):
+        print(pipeline_run)
         db = self.mongo_client.metalearning
         collection = db.metafeatures
-        if not collection.find({"id": pipeline_run['id']}).count():
+        pipeline_id = pipeline_run["pipeline"]["id"]
+        dataset_id = pipeline_run["datasets"][0]["id"]
+
+        if not collection.find({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}).count():
             pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
             print("Wrote metafeature pipeline run to the database with inserted_id: {}".format(pipeline_run_id))
         else:

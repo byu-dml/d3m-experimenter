@@ -693,7 +693,7 @@ class Experimenter:
         # Step 2: column_parser
         step_2 = PrimitiveStep(
             primitive=d3m_index.get_primitive('d3m.primitives.metafeature_extraction.metafeature_extractor.BYU'))
-        step_2.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step_2.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.1.produce')
         step_2.add_output('produce')
         pipeline_description.add_step(step_2)
 

@@ -59,12 +59,12 @@ def execute_fit_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
         results = run_pipeline.run(pipeline=pipe)
     except Exception as e:
         print("ERROR: pipeline was not successfully run due to {}".format(e))
-        print_pipeline_run(pipe.to_json_structure())
+        print_pipeline_run(pipe._to_json_structure())
         raise e
 
     print(results)
     fit_pipeline_run = results
-    mongo_db.add_to_metafeatures(fit_pipeline_run.to_json_structure())
+    mongo_db.add_to_metafeatures(fit_pipeline_run._to_json_structure())
 
 
 """

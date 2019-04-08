@@ -37,7 +37,7 @@ class RunPipeline:
                              format(self.problem_path, self.problem_name),
                          'inputs': ['{}/{}_dataset/datasetDoc.json'.
                              format(self.problem_path, self.problem_name)],
-                         "context": metadata_base.Context.TESTING
+                         "context": metadata_base.Context.PRODUCTION
                          }
 
     """
