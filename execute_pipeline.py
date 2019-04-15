@@ -51,7 +51,8 @@ def execute_fit_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
     mongo_db = PipelineDB()
     collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
     # check if the pipeline has been run:
-    if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name, skip_pipeline=True):
+    if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name, skip_pipeline=True)\
+            or mongo_db.metafeature_run_already_exists(problem, pipe.to_json_structure()):
         print("Documents are missing or pipeline has already been run. SKIPPING")
         return
     run_pipeline = RunFitPipeline(datasets_dir, volumes_dir, problem)

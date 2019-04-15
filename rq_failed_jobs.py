@@ -44,7 +44,6 @@ with Connection(connection=conn):
     total_bad_rename = 0
     total_workhorse = 0
     print("Going through failed queue")
-    import pdb; pdb.set_trace()
     for index, job in enumerate(fq.jobs):
         if not index % 1000:
             print("At {} failed jobs".format(index))
@@ -111,37 +110,37 @@ with Connection(connection=conn):
             continue
 
 
-    # print("\n##### TOTAL FAILED #####")
-    # for key, value in map_of_failed_probs.items():
-    #     print(key, value)
-    #
-    # print("\n##### NAN FAILED #####")
-    # for key, value in map_of_failed_for_nan.items():
-    #     print(key, value)
-    #
-    # print("\n##### IS MEMORY FAILED #####")
-    # for key, value in map_of_failed_memory.items():
-    #     print(key, value)
-    #
-    # print("\n##### USING STRING BAD FAILED #####")
-    # for key, value in map_of_failed_for_str.items():
-    #     print(key, value)
-    #
-    # print("\n##### BAD MATRIX FAILED #####")
-    # for key, value in map_of_bad_matrices.items():
-    #     print(key, value)
-    #
-    # print("\n##### IS BAD COMBO FAILED #####")
-    # for key, value in map_of_bad_combinations.items():
-    #     print(key, value)
-    #
-    # print("\n##### IS BAD RENAME FAILED #####")
-    # for key, value in map_bad_rename.items():
-    #     print(key, value)
-    #
-    # print("\n##### TIMEOUT FAILED #####")
-    # for key, value in map_of_failed_for_timeout.items():
-    #     print(key, value)
+    print("\n##### TOTAL FAILED #####")
+    for key, value in map_of_failed_probs.items():
+        print(key, value)
+
+    print("\n##### NAN FAILED #####")
+    for key, value in map_of_failed_for_nan.items():
+        print(key, value)
+
+    print("\n##### IS MEMORY FAILED #####")
+    for key, value in map_of_failed_memory.items():
+        print(key, value)
+
+    print("\n##### USING STRING BAD FAILED #####")
+    for key, value in map_of_failed_for_str.items():
+        print(key, value)
+
+    print("\n##### BAD MATRIX FAILED #####")
+    for key, value in map_of_bad_matrices.items():
+        print(key, value)
+
+    print("\n##### IS BAD COMBO FAILED #####")
+    for key, value in map_of_bad_combinations.items():
+        print(key, value)
+
+    print("\n##### IS BAD RENAME FAILED #####")
+    for key, value in map_bad_rename.items():
+        print(key, value)
+
+    print("\n##### TIMEOUT FAILED #####")
+    for key, value in map_of_failed_for_timeout.items():
+        print(key, value)
 
     print("\n\n\n")
     print("Out of {} failures. {} were from NANs, {} were timeouts, {} memory too large errors, {} bad combinations, "

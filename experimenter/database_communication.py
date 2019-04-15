@@ -96,7 +96,8 @@ class PipelineDB:
         """
 
         collection_names = ["pipeline_runs", "pipelines", "datasets", "problems",
-                            "automl_pipelines", "automl_pipeline_runs", "metafeatures"]
+                            "automl_pipelines", "automl_pipeline_runs", "metafeatures",
+                            "pipeline_runs_old"]
         # connect to the database
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
@@ -123,16 +124,37 @@ class PipelineDB:
             db.automl_pipelines.remove({})
             print("Clearing automl pipeline_runs collection")
             db.automl_pipeline_runs.remove({})
+            print("Clearing metafeatures collection")
+            db.metafeatures.remove({})
 
-    def has_duplicate_pipeline_run(self, problem, pipeline, collection_name):
+    def should_not_run_pipeline(self, problem, pipeline, collection_name, skip_pipeline=False):
         """
          Used by experimenter_driver.py to check whether or not to run a pipeline on a specific problem
-         :return True if the pipeline has been run, False if it hasn't
+         Currently checks for duplicates and for whether or not the pipeline and dataset exists in the the db
+         :return True if the pipeline should not be run, False if we should proceed
          """
         db = self.mongo_client.metalearning
         collection = db[collection_name]
         pipeline_id = pipeline["id"]
         dataset_id = problem.split("/")[-1] + "_dataset"
+        problem_id = problem.split("/")[-1] + "_problem"
+
+        # Make sure the pipeline, problem, and dataset docs exist already:
+        pipeline_collection = db.pipelines
+        dataset_collection = db.datasets
+        problem_collection = db.problems
+        dataset_exists = dataset_collection.find({"about.datasetID": dataset_id}).count()
+        pipeline_exists = True if skip_pipeline else pipeline_collection.find({'id': pipeline_id}).count()
+        problem_exists = problem_collection.find({"about.problemID": problem_id}).count()
+
+        # check for existence
+        if not dataset_exists or not problem_exists or not pipeline_exists:
+            print("This pipeline, problem, and or dataset has not been entered in the database yet")
+            print("Missing pipeline {}, missing dataset doc: {}, missing problem doc: {}".format(not pipeline_exists,
+                                                                                                 not problem_exists,
+                                                                                                 not dataset_exists))
+            return True
+        # check for duplicates
         if collection.find({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}).count():
             return True
         else:
@@ -427,7 +449,6 @@ class PipelineDB:
         return list_of_times
 
     def add_to_metafeatures(self, pipeline_run):
-        print(pipeline_run)
         db = self.mongo_client.metalearning
         collection = db.metafeatures
         pipeline_id = pipeline_run["pipeline"]["id"]
@@ -464,6 +485,15 @@ class PipelineDB:
 
         return list_of_times
 
+    def metafeature_run_already_exists(self, problem, pipeline):
+        db = self.mongo_client.metalearning
+        collection = db.metafeatures
+        pipeline_id = pipeline["id"]
+        dataset_id = problem
+        print(problem)
+        exit(0)
+        check = collection.find({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}).count()
+        return check
 
 
 """

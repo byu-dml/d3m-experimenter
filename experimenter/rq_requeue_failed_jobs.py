@@ -62,6 +62,7 @@ with Connection(connection=conn):
                 requeued_jobs += 1
 
         except Exception:
+            print("Exception")
             job_ids.append(job.id)
             requeued_jobs += 1
 
