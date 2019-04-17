@@ -38,10 +38,14 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
         raise e
 
     score = results[0]
-    # fit_pipeline_run = results[1]
+    fit_pipeline_run = results[1]
     produce_pipeline_run = results[2]
-    handle_successful_pipeline_run(produce_pipeline_run.to_json_structure(),
+    # put in the fit pipeline
+    handle_successful_pipeline_run(fit_pipeline_run.to_json_structure(),
                                             pipe.to_json_structure(), score, problem, mongo_db, collection_name)
+    # put in the produce pipeline
+    handle_successful_pipeline_run(produce_pipeline_run.to_json_structure(),
+                                   pipe.to_json_structure(), score, problem, mongo_db, collection_name)
 
 
 
