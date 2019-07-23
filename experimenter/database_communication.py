@@ -11,12 +11,22 @@ from dateutil.parser import parse
 from experimenter.validation import validate_pipeline_run
 try:
     real_mongo_port = int(os.environ['REAL_MONGO_PORT'])
+    real_mongo_port_dev = int(os.environ['REAL_MONGO_PORT_DEV'])
     default_mongo_port = int(os.environ['DEFAULT_MONGO_PORT'])
     lab_hostname = os.environ['LAB_HOSTNAME']
     docker_hostname = os.environ['DOCKER_HOSTNAME']
+    env_mode = os.environ['MODE']
 except Exception as E:
     print("ERROR: environment variables not set")
     raise E
+
+def get_mongo_port(env_mode):
+    if env_mode == 'production':
+        return real_mongo_port
+    elif env_mode == 'development':
+        return real_mongo_port_dev
+    else:
+        raise ValueError(f'invalid value for env_mode "{env_mode}"')
 
 class PipelineDB:
     """
@@ -26,7 +36,7 @@ class PipelineDB:
     as defined below.
     """
 
-    def __init__(self, host_name=lab_hostname, mongo_port=real_mongo_port):
+    def __init__(self, host_name=lab_hostname, mongo_port=get_mongo_port(env_mode)):
         self.host_name = host_name
         self.mongo_port = mongo_port
 

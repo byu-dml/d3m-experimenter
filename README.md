@@ -17,6 +17,7 @@ Compose is a way to more easily run docker containers than the `docker run` comm
   * Make sure `DATASETS=` is pointing to the datasets you want the container to have access to
   * The datasets can be accessed from inside the container at `/datasets`
   * Fill in the values for connections to databases and host computers
+  * If you are planning on developing/contributing to this repo, make sure `MODE=` is properly set (see [Contributing](#contributing) section below).
 
 # Usage
 ### Running the Container
@@ -26,7 +27,7 @@ Before being able to pull the image you will need to login the D3M's private doc
   * Note: If you get a permission denied error, try rerunning the command with `sudo`
   * Note: if you have previously installed a d3m docker image before and this one is not working, try using `sudo docker-compose build` and try these steps again
   * If you don't want to use `sudo` follow the instructions [here](https://askubuntu.com/questions/477551/how-can-i-use-docker-without-sudo)
-* Run `docker exec -it experimenter bash` to access the container from the command line
+* Run `sudo docker exec -it experimenter bash` to access the container from the command line
 
 Once inside the container you should be able to follow the instructions for d3m found [here](https://gitlab.com/datadrivendiscovery/d3m)
   * One example command is `python3 -m d3m.index search`. This will list all of the primitives inside of the container
@@ -45,7 +46,7 @@ Once inside the container you should be able to follow the instructions for d3m 
  
 
 ### Bringing Down the Container
-* To stop and remove the container run `docker-compose down` from within the directory with the docker-compose.yml file
+* To stop and remove the container run `sudo docker-compose down` from within the directory with the docker-compose.yml file
 
 
 # How-To Run After Set-Up #
@@ -76,3 +77,6 @@ or specific db commands see `get_documents.py`.
 4. If you encounter an error about not being able to authenticate with the other machine, make sure you can regular SSH into it first and then try again.
 5. To prep a lab computer to run this software, use `prep-machine.sh`.  Once that is run and you are in the Docker container run `build_env_and_work` to become a worker.
 
+# Contributing
+
+When developing, always have the `MODE` environment variable set to `development` to interact with the development mongodb instance instead of the production one. The easiest thing to do is change the value for `MODE` inside your `.env` file.
