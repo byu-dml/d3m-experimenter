@@ -33,12 +33,31 @@ def main(type_of_run, folder_directory):
     elif type_of_run == "check":
         db.get_database_stats()
 
+    elif type_of_run == "visualize-time":
+        values = db.get_pipeline_run_time_distribution()
+        import pdb; pdb.set_trace()
+        import pandas as pd
+        import numpy as np
+        df_time = pd.DataFrame(values)
+        df_time.to_csv("all_pipeline_runs")
+        df_time.groupby("dataset").mean().to_csv("aggregate_all_pipeline_runs.csv")
+        print("The datasets with means over 20:")
+        print(np.mean(df_time["time"] > 20*60))
+
+    elif type_of_run == "visualize-score":
+        values = db.get_pipeline_run_score_distribution()
+        import pandas as pd
+        import numpy as np
+        df_time = pd.DataFrame(values)
+        df_time.to_csv("all_pipeline_runs_score.csv")
+        df_time.groupby("dataset").mean().to_csv("average_score_all_pipeline_runs.csv")
+
 
 # in case you want to just run the file
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-type", '-t', help="Whether to 'get' all runs or to 'erase' all runs from the database",
-                        choices=["get", "erase", "check"], default="get")
+                        choices=["get", "erase", "check", "visualize-time", "visualize-score"], default="get")
     parser.add_argument("-folder", '-f', help="The path of the folder you want the json files stored in")
     args = parser.parse_args()
     main(args.type, args.folder)
