@@ -83,8 +83,6 @@ class Experimenter:
                 self.mongo_database = PipelineDB()
                 print('Exporting pipelines to mongodb...')
                 self.output_pipelines_to_mongodb()
-            elif location == "test":
-                pass
             else:
                 print("Exporting pipelines to {}".format(location))
                 self.output_values_to_folder(location)

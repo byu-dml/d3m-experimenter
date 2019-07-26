@@ -20,7 +20,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
         self.experimenter_driver = Experimenter(
             self.datasets_dir, volumes_dir,
             self.seed_problem_directory, models, preprocessors,
-            generate_problems=True, location="test"
+            generate_problems=True
         )
 
     def test_get_classification_problems(self):
