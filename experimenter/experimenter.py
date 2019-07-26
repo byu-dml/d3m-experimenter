@@ -13,6 +13,8 @@ import os
 import json
 from .database_communication import PipelineDB
 from itertools import combinations
+from bson import json_util
+from d3m.metadata import base as metadata_base, problem as base_problem
 from experimenter.autosklearn.pipelines import get_classification_pipeline, AutoSklearnClassifierPrimitive
 
 from experimenter import utils
@@ -66,6 +68,7 @@ class Experimenter:
         if generate_pipelines:
             print("Generating pipelines...")
             # self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
+            pipeline = self.generate_metafeatures_pipeline()
             # TODO: create a system for how to use the next line
             self.generated_pipelines: dict = self._wrap_generate_all_ensembles()
             # self.generated_pipelines: dict = self.generate_k_ensembles(k_ensembles=3, p_preprocessors=0,
@@ -665,3 +668,36 @@ class Experimenter:
 
         # Output to YAML
         return {"classification": [pipeline_description], "regression": []}
+
+    def generate_metafeatures_pipeline(self):
+        # Creating pipeline
+        pipeline_description = Pipeline(context=Context.TESTING)
+        pipeline_description.add_input(name='inputs')
+
+        # Step 1: dataset_to_dataframe
+        step_0 = PrimitiveStep(
+            primitive=d3m_index.get_primitive('d3m.primitives.data_transformation.dataset_to_dataframe.Common'))
+        step_0.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='inputs.0')
+        step_0.add_output('produce')
+        pipeline_description.add_step(step_0)
+
+        # Step 2: column_parser
+        step_1 = PrimitiveStep(
+            primitive=d3m_index.get_primitive('d3m.primitives.data_transformation.column_parser.DataFrameCommon'))
+        step_1.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step_1.add_output('produce')
+        pipeline_description.add_step(step_1)
+
+        # Step 2: column_parser
+        step_2 = PrimitiveStep(
+            primitive=d3m_index.get_primitive('d3m.primitives.metafeature_extraction.metafeature_extractor.BYU'))
+        step_2.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.1.produce')
+        step_2.add_output('produce')
+        pipeline_description.add_step(step_2)
+
+        pipeline_description.add_output(name='output predictions', data_reference='steps.2.produce')
+
+        with open("metafeature_extractor_pipeline.json", "w") as file:
+            json.dump(pipeline_description.to_json_structure(), file, indent=2, default=json_util.default)
+
+        return {"classification": [pipeline_description], "regression": [pipeline_description]}, 1

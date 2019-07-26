@@ -1,15 +1,16 @@
-import pandas
-from d3m import exceptions
 import json
-from d3m.metadata import base as metadata_base, problem as base_problem
-from d3m.metadata.pipeline import Pipeline
+import typing
+
+from d3m import exceptions, container
+from d3m.metadata import (base as metadata_base, problem as base_problem, pipeline as pipeline_module,
+                          pipeline_run as pipeline_run_module)
 from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
-from d3m.runtime import get_metrics_from_problem_description, evaluate, get_pipeline, get_dataset
+from d3m.runtime import fit, get_dataset, Runtime
 
 
-class RunPipeline:
 
+class RunFitPipeline:
     """
     In this function we define all the parameters needed to actually execute the pipeline.
 
@@ -20,7 +21,8 @@ class RunPipeline:
     :param output_path: an optional parameter specifying the location to place the finished pipeline_run file.  If it
         is empty no output path is used.
     """
-    def __init__(self, datasets_dir: str, volumes_dir: str, problem_path: str, output_path: str=None):
+
+    def __init__(self, datasets_dir: str, volumes_dir: str, problem_path: str, output_path: str = None):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.data_pipeline_path = './experimenter/pipelines/fixed-split-tabular-split.yml'
@@ -29,6 +31,7 @@ class RunPipeline:
         self.problem_path = problem_path
         self.problem_name = self.problem_path.split("/")[-1]
 
+        # Note that most of these are not needed but included in case it is useful someday
         self.run_args = {"scoring_pipeline": self.scoring_pipeline_path,
                          'data_pipeline': self.data_pipeline_path,
                          'data_split_file': '{}/{}_problem/dataSplits.csv'.
@@ -36,7 +39,7 @@ class RunPipeline:
                          'problem': '{}/{}_problem/problemDoc.json'.
                              format(self.problem_path, self.problem_name),
                          'inputs': ['{}/{}_dataset/datasetDoc.json'.
-                             format(self.problem_path, self.problem_name)],
+                                        format(self.problem_path, self.problem_name)],
                          "context": metadata_base.Context.PRODUCTION
                          }
 
@@ -44,13 +47,14 @@ class RunPipeline:
     This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
     Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
     function does not allow for returning the data, so it did not fit in the workflow.
-    
+
     :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
     :param random_seed: the random seed that the runtime will use to evalutate the pipeline
-    :returns results_list: a list containing, in order, the scores from the pipeline predictions, the fit pipeline_run 
+    :returns results_list: a list containing, in order, scores from the pipeline predictions, the fit pipeline_run 
         and the produce pipeline_run.
     """
-    def run(self, pipeline, random_seed: int=0):
+
+    def run(self, pipeline, random_seed: int = 0):
 
         arguments = self.run_args
 
@@ -59,21 +63,6 @@ class RunPipeline:
         dataset_resolver = get_dataset
 
         context = metadata_base.Context[arguments["context"]]
-
-        data_pipeline = get_pipeline(
-            arguments["data_pipeline"],
-            strict_resolving=False,
-            strict_digest= False,
-            pipeline_search_paths=[],
-            load_all_primitives=False
-        )
-        scoring_pipeline = get_pipeline(
-            arguments["scoring_pipeline"],
-            strict_resolving=False,
-            strict_digest=False,
-            pipeline_search_paths=[],
-            load_all_primitives=False
-        )
 
         problem_description = base_problem.parse_problem_description(arguments["problem"])
 
@@ -86,39 +75,12 @@ class RunPipeline:
             for input_uri in arguments['inputs']
         ]
 
-        data_params = {}
-
-        split_file = pandas.read_csv(
-            arguments["data_split_file"],
-            # We do not want to do any conversion of values at this point.
-            # This should be done by primitives later on.
-            dtype=str,
-            # We always expect one row header.
-            header=0,
-            # We want empty strings and not NaNs.
-            na_filter=False,
-            encoding='utf8',
-            low_memory=False,
-            memory_map=True,
-        )
-
-        # We use just the "d3mIndex" column and ignore multi-key indices.
-        # This works for now because it seems that every current multi-key
-        # dataset in fact has an unique value in "d3mIndex" alone.
-        # See: https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/issues/117
-        # Hyper-parameter value has to be JSON-serialized.
-        data_params['primary_index_values'] = json.dumps(
-            list(split_file.loc[split_file['type'] == 'TEST']['d3mIndex']))
-
-
-        metrics = get_metrics_from_problem_description(problem_description)
+        print(inputs)
 
         try:
-            results_list = evaluate(
-                pipeline, data_pipeline, scoring_pipeline, problem_description, inputs, data_params, metrics,
+            runtime, outputs, results_list = self.our_fit(
+                pipeline, problem_description, inputs,
                 context=context, random_seed=random_seed,
-                data_random_seed=random_seed,
-                scoring_random_seed=random_seed,
                 volumes_dir=self.volumes_dir,
                 runtime_environment=runtime_environment,
             )
@@ -127,3 +89,45 @@ class RunPipeline:
             raise error
 
         return results_list
+
+
+    def our_fit(self, pipeline: pipeline_module.Pipeline, problem_description: typing.Dict, inputs: typing.Sequence[container.Dataset], *,
+    context: metadata_base.Context, hyperparams: typing.Sequence = None, random_seed: int = 0, volumes_dir: str = None,
+    runtime_environment: pipeline_run_module.RuntimeEnvironment = None,
+    ) -> typing.Tuple[Runtime, container.DataFrame, pipeline_run_module.PipelineRun]:
+        for input in inputs:
+            if not isinstance(input, container.Dataset):
+                raise TypeError(
+                    "A standard pipeline's input should be of a container Dataset type, not {input_type}.".format(
+                        input_type=type(input),
+                    ))
+
+        if len(pipeline.outputs) != 1:
+            raise ValueError("A standard pipeline should have exactly one output, not {outputs}.".format(
+                outputs=len(pipeline.outputs),
+            ))
+
+        runtime = Runtime(
+            pipeline, hyperparams,
+            problem_description=problem_description, context=context,
+            random_seed=random_seed, volumes_dir=volumes_dir,
+            is_standard_pipeline=False, environment=runtime_environment,
+        )
+
+        result = runtime.fit(inputs, return_values=['outputs.0'])
+        result.check_success()
+
+        output = result.values['outputs.0']
+
+        if not isinstance(output, container.DataFrame):
+            raise TypeError(
+                "A standard pipeline's output should be of a container DataFrame type, not {output_type}.".format(
+                    output_type=type(output),
+                ))
+
+        # add dataset information
+        for input_value in inputs:
+            result.pipeline_run.add_input_dataset(input_value)
+
+        return runtime, output, result.pipeline_run
+

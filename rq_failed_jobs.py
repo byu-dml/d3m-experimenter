@@ -32,6 +32,7 @@ with Connection(connection=conn):
     map_of_bad_combinations = {}
     map_of_bad_matrices = {}
     map_bad_rename = {}
+    map_workhorse = {}
 
     total_nan = 0
     total_timeout = 0
@@ -41,52 +42,73 @@ with Connection(connection=conn):
     total_bad_primitive_comb = 0
     total_bad_matrix = 0
     total_bad_rename = 0
+    total_workhorse = 0
+    print("Going through failed queue")
+    for index, job in enumerate(fq.jobs):
+        if not index % 1000:
+            print("At {} failed jobs".format(index))
+            print("Out of {} failures. {} were from NANs, {} were timeouts, {} memory too large errors, {} bad combinations, "
+                "{} bad rename errors, {} bad matrices, and {} were from trying to use str as an int, {} workhorse errors".
+                format(total_failed, total_nan, total_timeout, total_memory, total_bad_primitive_comb, total_bad_rename,
+                       total_bad_matrix, total_str_failure, total_workhorse))
 
-    for job in fq.jobs:
         total_failed += 1
         dataset_name = job.args[1].split("/")[-1]
         map_of_failed_probs[dataset_name] = map_of_failed_probs.get(dataset_name, 0) + 1
         error = job.__dict__["exc_info"]
-        is_nan_issue = is_phrase_in("array must not contain infs or NaNs", error) or \
-                       is_phrase_in("Input contains NaN, infinity or a value too large", error)
+        try:
+            is_nan_issue = is_phrase_in("array must not contain infs or NaNs", error) or \
+                           is_phrase_in("Input contains NaN, infinity or a value too large", error)
 
-        is_timeout_issue = is_phrase_in("Task exceeded maximum timeout value", error)
-        is_memory_error = is_phrase_in("MemoryError", error)
+            is_timeout_issue = is_phrase_in("Task exceeded maximum timeout value", error)
+            is_memory_error = is_phrase_in("MemoryError", error)
 
-        is_string_bad_type = is_phrase_in("unsupported operand type", error) or \
-                                is_phrase_in("could not convert string to float", error)
+            is_string_bad_type = is_phrase_in("unsupported operand type", error) or \
+                                    is_phrase_in("could not convert string to float", error)
 
-        is_bad_combo = is_phrase_in("Found array with 0 feature", error) or \
-                        is_phrase_in("For multi-task outputs, use", error)
+            is_bad_combo = is_phrase_in("Found array with 0 feature", error) or \
+                            is_phrase_in("For multi-task outputs, use", error)
 
-        is_bad_matrix = is_phrase_in("numpy.linalg.linalg.LinAlgError", error) or \
-                            is_phrase_in("Internal work array size computation failed", error)
+            is_bad_matrix = is_phrase_in("numpy.linalg.linalg.LinAlgError", error) or \
+                                is_phrase_in("Internal work array size computation failed", error)
 
-        is_bad_rename = is_phrase_in("rename_duplicate_columns.py", error)
+            is_bad_rename = is_phrase_in("rename_duplicate_columns.py", error)
 
-        if is_nan_issue:
-            map_of_failed_for_nan[dataset_name] = map_of_failed_for_nan.get(dataset_name, 0) + 1
-            total_nan += 1
-        elif is_timeout_issue:
-            map_of_failed_for_timeout[dataset_name] = map_of_failed_for_timeout.get(dataset_name, 0) + 1
-            total_timeout += 1
-        elif is_string_bad_type:
-            map_of_failed_for_str[dataset_name] = map_of_failed_for_str.get(dataset_name, 0) + 1
-            total_str_failure += 1
-        elif is_memory_error:
-            map_of_failed_memory[dataset_name] = map_of_failed_memory.get(dataset_name, 0) + 1
-            total_memory += 1
-        elif is_bad_combo:
-            map_of_bad_combinations[dataset_name] = map_of_bad_combinations.get(dataset_name, 0) + 1
-            total_bad_primitive_comb += 1
-        elif is_bad_matrix:
-            map_of_bad_matrices[dataset_name] = map_of_bad_matrices.get(dataset_name, 0) + 1
-            total_bad_primitive_comb += 1
-        elif is_bad_rename:
-            map_bad_rename[dataset_name] = map_bad_rename.get(dataset_name, 0) + 1
-            total_bad_rename += 1
-        else:
-            print(error)
+            is_workhorse_error = is_phrase_in("Work-horse process was terminated unexpectedly", error)
+
+            if is_nan_issue:
+                map_of_failed_for_nan[dataset_name] = map_of_failed_for_nan.get(dataset_name, 0) + 1
+                total_nan += 1
+            elif is_timeout_issue:
+                map_of_failed_for_timeout[dataset_name] = map_of_failed_for_timeout.get(dataset_name, 0) + 1
+                total_timeout += 1
+            elif is_string_bad_type:
+                map_of_failed_for_str[dataset_name] = map_of_failed_for_str.get(dataset_name, 0) + 1
+                total_str_failure += 1
+            elif is_memory_error:
+                map_of_failed_memory[dataset_name] = map_of_failed_memory.get(dataset_name, 0) + 1
+                total_memory += 1
+            elif is_bad_combo:
+                map_of_bad_combinations[dataset_name] = map_of_bad_combinations.get(dataset_name, 0) + 1
+                total_bad_primitive_comb += 1
+            elif is_bad_matrix:
+                map_of_bad_matrices[dataset_name] = map_of_bad_matrices.get(dataset_name, 0) + 1
+                total_bad_primitive_comb += 1
+            elif is_bad_rename:
+                map_bad_rename[dataset_name] = map_bad_rename.get(dataset_name, 0) + 1
+                total_bad_rename += 1
+            elif is_workhorse_error:
+                map_workhorse[dataset_name] = map_workhorse.get(dataset_name, 0) + 1
+                is_workhorse_error += 1
+            else:
+                print(error)
+
+
+        except Exception as e:
+            print(e)
+            print("The error it was trying to parse is {}".format(error))
+            continue
+
 
     print("\n##### TOTAL FAILED #####")
     for key, value in map_of_failed_probs.items():
@@ -122,9 +144,9 @@ with Connection(connection=conn):
 
     print("\n\n\n")
     print("Out of {} failures. {} were from NANs, {} were timeouts, {} memory too large errors, {} bad combinations, "
-          "{} bad rename errors, {} bad matrices, and {} were from trying to use str as an int".
+          "{} bad rename errors, {} bad matrices, and {} were from trying to use str as an int, {} workhorse errors".
           format(total_failed, total_nan, total_timeout, total_memory, total_bad_primitive_comb, total_bad_rename,
-                 total_bad_matrix, total_str_failure))
+                 total_bad_matrix, total_str_failure, total_workhorse))
     print("{} failures are unaccounted for".
           format(total_failed - (total_nan + total_timeout + total_str_failure + total_memory +
-                                 total_bad_primitive_comb + total_bad_matrix + total_bad_rename)))
+                                 total_bad_primitive_comb + total_bad_matrix + total_bad_rename + total_workhorse)))

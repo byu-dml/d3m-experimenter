@@ -42,23 +42,23 @@ models = {
         "d3m.primitives.classification.passive_aggressive.SKlearn",
     ],
     'regression': [
-        "d3m.primitives.regression.random_forest.SKlearn",
-        "d3m.primitives.regression.ard.SKlearn",
-        "d3m.primitives.regression.extra_trees.SKlearn",
-        "d3m.primitives.regression.decision_tree.SKlearn",
-        "d3m.primitives.regression.gaussian_process.SKlearn",
-        "d3m.primitives.regression.gradient_boosting.SKlearn",
-        "d3m.primitives.regression.k_neighbors.SKlearn",
-        "d3m.primitives.regression.lasso_cv.SKlearn",
-        "d3m.primitives.regression.svr.SKlearn",
-        "d3m.primitives.regression.kernel_ridge.SKlearn",
-        "d3m.primitives.regression.lars.SKlearn",
-        "d3m.primitives.regression.lasso.SKlearn",
-        "d3m.primitives.regression.linear_svr.SKlearn",
-        "d3m.primitives.regression.mlp.SKlearn",
-        "d3m.primitives.regression.passive_aggressive.SKlearn",
-        "d3m.primitives.regression.ridge.SKlearn",
-        "d3m.primitives.regression.sgd.SKlearn",
+        # "d3m.primitives.regression.random_forest.SKlearn",
+        # "d3m.primitives.regression.ard.SKlearn",
+        # "d3m.primitives.regression.extra_trees.SKlearn",
+        # "d3m.primitives.regression.decision_tree.SKlearn",
+        # "d3m.primitives.regression.gaussian_process.SKlearn",
+        # "d3m.primitives.regression.gradient_boosting.SKlearn",
+        # "d3m.primitives.regression.k_neighbors.SKlearn",
+        # "d3m.primitives.regression.lasso_cv.SKlearn",
+        # "d3m.primitives.regression.svr.SKlearn",
+        # "d3m.primitives.regression.kernel_ridge.SKlearn",
+        # "d3m.primitives.regression.lars.SKlearn",
+        # "d3m.primitives.regression.lasso.SKlearn",
+        # "d3m.primitives.regression.linear_svr.SKlearn",
+        # "d3m.primitives.regression.mlp.SKlearn",
+        # "d3m.primitives.regression.passive_aggressive.SKlearn",
+        # "d3m.primitives.regression.ridge.SKlearn",
+        # "d3m.primitives.regression.sgd.SKlearn",
     ]
 }
 problem_directories = [
@@ -120,4 +120,10 @@ blacklist_non_tabular_data = [
     "uu2_gp_hyperparameter_estimation_v2",  # has extra data
     "uu2_gp_hyperparameter_estimation",  # has extra data
     "57_hypothyroid",  # always NAN's out
+    "LL0_315_us_crime",  # the next are due to timeouts
+    "LL0_688_visualizing_soil",
+    "LL0_189_kin8nm",
+    "LL0_572_bank8fm",
+    "LL0_308_puma32h"
+
 ]
