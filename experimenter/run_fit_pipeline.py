@@ -1,6 +1,9 @@
 import json
 import typing
 
+import logging
+logger = logging.getLogger(__name__)
+
 from d3m import exceptions, container
 from d3m.metadata import (base as metadata_base, problem as base_problem, pipeline as pipeline_module,
                           pipeline_run as pipeline_run_module)
@@ -8,8 +11,6 @@ from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import fit, get_dataset, Runtime
 
-import logging
-logger = logging.getLogger(__name__)
 
 class RunFitPipeline:
     """

@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 import collections
 import json
 import os
@@ -9,9 +12,6 @@ from d3m.metadata.pipeline import Pipeline
 import datetime
 from dateutil.parser import parse
 from experimenter.validation import validate_pipeline_run
-
-import logging
-logger = logging.getLogger(__name__)
 
 try:
     real_mongo_port = int(os.environ['REAL_MONGO_PORT'])

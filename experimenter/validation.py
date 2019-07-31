@@ -1,13 +1,13 @@
-import typing
 
+import logging
+logger = logging.getLogger(__name__)
+
+import typing
 from d3m import exceptions
 
 from d3m.utils import load_schema_validators
 from d3m.metadata import base as metadata_base
 import jsonschema
-
-import logging
-logger = logging.getLogger(__name__)
 
 SUCCESS = metadata_base.PipelineRunStatusState.SUCCESS.name
 FAILURE = metadata_base.PipelineRunStatusState.FAILURE.name

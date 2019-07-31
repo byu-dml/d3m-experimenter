@@ -1,13 +1,19 @@
+import warnings, argparse, logging
+import logging.config as log_config
+from d3m.metadata.pipeline import Pipeline
+# disable d3m's deluge of warnings
+log_config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+})
+logger = logging.getLogger(__name__)
 from experimenter.experimenter import Experimenter, register_primitives
 import os, json, pdb, traceback, sys
-from d3m.metadata.pipeline import Pipeline
 from experimenter.database_communication import PipelineDB
-import warnings, argparse, logging
 import redis
 from rq import Queue
 from execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem
 
-logger = logging.getLogger(__name__)
 
 try:
     redis_host = os.environ['REDIS_HOST']
@@ -203,16 +209,6 @@ def main(run_type, pipeline_folder, run_baselines, only_run_fit):
     if run_baselines:
         register_primitives()
 
-    if args.verbose:
-        logging.basicConfig(level=logging.INFO)
-    else:
-        logging.basicConfig(level=logging.CRITICAL)
-
-    # annoyed with D3M namespace warnings
-    logging.config.dictConfig({
-        'version': 1,
-        'disable_existing_loggers': True,
-    })
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         if run_type == "all":
@@ -263,4 +259,8 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("--verbose", "-v", action="store_true", help="Whether to print for debugging or not", default=False)
     args = parser.parse_args()
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.CRITICAL)
     main(args.run_type, args.pipeline_folder, args.run_baselines, args.run_custom_fit)

@@ -1,5 +1,7 @@
-from random import sample
 
+import logging
+logger = logging.getLogger(__name__)
+from random import sample
 from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data
 from d3m import index as d3m_index
 from d3m import utils as d3m_utils
@@ -18,9 +20,6 @@ from d3m.metadata import base as metadata_base, problem as base_problem
 from experimenter.autosklearn.pipelines import get_classification_pipeline, AutoSklearnClassifierPrimitive
 
 from experimenter import utils
-
-import logging
-logger = logging.getLogger(__name__)
 
 def register_primitives():
     with d3m_utils.silence():
