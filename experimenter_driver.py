@@ -2,15 +2,18 @@ from experimenter.experimenter import Experimenter, register_primitives
 import os, json, pdb, traceback, sys
 from d3m.metadata.pipeline import Pipeline
 from experimenter.database_communication import PipelineDB
-import warnings, argparse
+import warnings, argparse, logging
 import redis
 from rq import Queue
 from execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem
+
+logger = logging.getLogger(__name__)
+
 try:
     redis_host = os.environ['REDIS_HOST']
     redis_port = int(os.environ['REDIS_PORT'])
 except Exception as E:
-    print("Exception: environment variables not set")
+    logger.info("Exception: environment variables not set")
     raise E
 
 class ExperimenterDriver:
@@ -36,7 +39,7 @@ class ExperimenterDriver:
         self.mongo_db = PipelineDB()
 
         if distributed:
-            print("Connecting to Redis")
+            logger.info("Connecting to Redis")
             try:
                 conn = redis.StrictRedis(
                     host=redis_host,
@@ -58,19 +61,17 @@ class ExperimenterDriver:
     def get_list_vertically(self, list):
         return '\n'.join(list)
 
-    def pretty_print_json(self, json):
-        print("\n\n These are the problems that weren't regression or classification:")
-        import pprint
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(json)
+    def pretty_print_json(self, json_string):
+        logger.info("\n\n These are the problems that weren't regression or classification:")
+        logger.info(json.dumps(json_string, indent=4))
 
     def print_pipeline_and_problem(self, pipeline, problem):
-        print("Pipeline:")
-        print(self.get_list_vertically(self.primitive_list_from_pipeline_object(pipeline)))
-        print("on problem {} \n\n".format(problem))
+        logger.info("Pipeline:")
+        logger.info(self.get_list_vertically(self.primitive_list_from_pipeline_object(pipeline)))
+        logger.info("on problem {} \n\n".format(problem))
 
     def handle_keyboard_interrupt(self):
-        print('Interrupted')
+        logger.info('Interrupted')
         traceback.print_exc()
         try:
             sys.exit(0)
@@ -78,12 +79,12 @@ class ExperimenterDriver:
             os._exit(0)
 
     def handle_failed_pipeline_run(self, pipeline, problem, error):
-        print("\nFailed to run pipeline:\n" + self.get_list_vertically(
+        logger.info("\nFailed to run pipeline:\n" + self.get_list_vertically(
             self.primitive_list_from_pipeline_object(pipeline)) + "\n")
-        print("On the problem:\n{}\n".format(problem))
-        print("ERROR: " + str(error))
+        logger.info("On the problem:\n{}\n".format(problem))
+        logger.info("ERROR: " + str(error))
         traceback.print_exc()
-        print("\n\n")
+        logger.info("\n\n")
 
     def get_pipelines_from_path(self, pipeline_location):
         pipeline_list = {"classification": [], "regression": []}
@@ -101,7 +102,7 @@ class ExperimenterDriver:
 
     def run(self):
         if self.run_type == "pipeline_path":
-            print("Executing pipelines found in {}".format(self.pipeline_location))
+            logger.info("Executing pipelines found in {}".format(self.pipeline_location))
             if self.pipeline_location is None:
                 raise NotADirectoryError
             else:
@@ -116,18 +117,18 @@ class ExperimenterDriver:
                                         generate_problems=True, generate_pipelines=False)
             problems: dict = experimenter.problems
             if self.fit_only:
-                print("Using only the fit pipeline")
+                logger.info("Using only the fit pipeline")
                 pipes, num_pipes = experimenter.generate_metafeatures_pipeline()
             else:
-                print("\n Gathering pipelines from database...")
+                logger.info("\n Gathering pipelines from database...")
                 pipes, num_pipes = self.mongo_db.get_all_pipelines(baselines=self.run_automl)
-            print("There are {} pipelines to be executed".format(num_pipes))
+            logger.info("There are {} pipelines to be executed".format(num_pipes))
 
-        print("\nExecuting pipelines now")
+        logger.info("\nExecuting pipelines now")
         # Run classification and regression
         for type_name, pipeline_list in pipes.items():
             if type_name in ["classification", "regression"]:
-                print("\n Starting to execute ####{}#### problems".format(type_name))
+                logger.info("\n Starting to execute ####{}#### problems".format(type_name))
                 for index, problem in enumerate(problems[type_name]):
                     sys.stdout.write('\r')
                     percent = 100 / len(problems[type_name])
@@ -138,7 +139,7 @@ class ExperimenterDriver:
                                                                  collection_name= "automl_pipeline_runs" if
                                                                  self.run_automl else "pipeline_runs",
                                                                  skip_pipeline=self.fit_only):
-                            print("\n SKIPPING. Pipeline already run.")
+                            logger.info("\n SKIPPING. Pipeline already run.")
                             self.print_pipeline_and_problem(pipe, problem)
                             continue
 
@@ -156,7 +157,7 @@ class ExperimenterDriver:
                                 execute_pipeline_on_problem(pipe, problem, self.datasets_dir, self.volumes_dir)
 
                         except Exception as e:
-                            print("Pipeline execution failed. See {}".format(e))
+                            logger.info("Pipeline execution failed. See {}".format(e))
                             # pipeline didn't work.  Try the next one
                             raise e
 
@@ -202,8 +203,12 @@ def main(run_type, pipeline_folder, run_baselines, only_run_fit):
     if run_baselines:
         register_primitives()
 
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.CRITICAL)
+
     # annoyed with D3M namespace warnings
-    import logging.config
     logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': True,
@@ -216,7 +221,7 @@ def main(run_type, pipeline_folder, run_baselines, only_run_fit):
                                         generate_problems=True, generate_automl_pipelines=run_baselines)
 
         elif run_type == "generate":
-            print("Only generating pipelines...")
+            logger.info("Only generating pipelines...")
             experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
                                         location=pipeline_folder, generate_automl_pipelines=run_baselines)
             return
@@ -256,5 +261,6 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("--run-custom-fit", '-c', help="Whether or not to run only fit and use given pipelines",
                         action='store_true')
+    parser.add_argument("--verbose", "-v", action="store_true", help="Whether to print for debugging or not", default=False)
     args = parser.parse_args()
     main(args.run_type, args.pipeline_folder, args.run_baselines, args.run_custom_fit)

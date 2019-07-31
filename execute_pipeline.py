@@ -9,6 +9,9 @@ from experimenter.database_communication import PipelineDB
 from experimenter.run_fit_pipeline import RunFitPipeline
 from experimenter.run_pipeline import RunPipeline
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 """
 The main function to execute a pipeline.  Called in `experimenter_driver.py`  This function will check if the 
@@ -21,19 +24,19 @@ pipeline and dataset has been executed before, run the pipeline, and record the 
 """
 def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
     # Attempt to run the pipeline
-    print("\n On problem {}".format(problem))
+    logger.info("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
     collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
 
     # check if the pipeline has been run:
     if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name):
-        print("Documents are missing or pipeline has already been run. SKIPPING")
+        logger.info("Documents are missing or pipeline has already been run. SKIPPING")
         return
     run_pipeline = RunPipeline(datasets_dir, volumes_dir, problem)
     try:
         results = run_pipeline.run(pipeline=pipe)[0]
     except Exception as e:
-        print("ERROR: pipeline was not successfully run due to {}".format(e))
+        logger.info("ERROR: pipeline was not successfully run due to {}".format(e))
         print_pipeline_run(pipe.to_json_structure())
         raise e
 
@@ -51,23 +54,23 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
 
 def execute_fit_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
     # Attempt to run the pipeline
-    print("\n On problem {}".format(problem))
+    logger.info("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
     collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
     # check if the pipeline has been run:
     if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name, skip_pipeline=True)\
             or mongo_db.metafeature_run_already_exists(problem, pipe.to_json_structure()):
-        print("Documents are missing or pipeline has already been run. SKIPPING")
+        logger.info("Documents are missing or pipeline has already been run. SKIPPING")
         return
     run_pipeline = RunFitPipeline(datasets_dir, volumes_dir, problem)
     try:
         results = run_pipeline.run(pipeline=pipe)
     except Exception as e:
-        print("ERROR: pipeline was not successfully run due to {}".format(e))
+        logger.info("ERROR: pipeline was not successfully run due to {}".format(e))
         print_pipeline_run(pipe._to_json_structure())
         raise e
 
-    print(results)
+    logger.info(results)
     fit_pipeline_run = results
     mongo_db.add_to_metafeatures(fit_pipeline_run._to_json_structure())
 
@@ -111,9 +114,9 @@ A simple function to print the pipeline and problem, for debugging
 :param problem: the dataset/problem that was used
 """
 def print_pipeline_and_problem(pipeline, problem):
-    print("Pipeline:")
-    print(get_list_vertically(primitive_list_from_pipeline_object(pipeline)))
-    print("on problem {} \n\n".format(problem))
+    logger.info("Pipeline:")
+    logger.info(get_list_vertically(primitive_list_from_pipeline_object(pipeline)))
+    logger.info("on problem {} \n\n".format(problem))
 
 def get_primitive_combo_string(pipeline):
     prim_string = ''
@@ -141,10 +144,10 @@ A helper function for printing a succesful run
 """
 def print_pipeline_run(pipeline, score=None):
     primitive_list = primitive_list_from_pipeline_json(pipeline)
-    print("Ran pipeline:\n")
-    print(get_list_vertically(primitive_list))
+    logger.info("Ran pipeline:\n")
+    logger.info(get_list_vertically(primitive_list))
     if score is not None:
-        print("With a {} of {}".format(score["metric"][0], score["value"][0]))
+        logger.info("With a {} of {}".format(score["metric"][0], score["value"][0]))
     return primitive_list
 
 

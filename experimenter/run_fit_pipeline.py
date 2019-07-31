@@ -8,7 +8,8 @@ from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import fit, get_dataset, Runtime
 
-
+import logging
+logger = logging.getLogger(__name__)
 
 class RunFitPipeline:
     """
@@ -75,7 +76,7 @@ class RunFitPipeline:
             for input_uri in arguments['inputs']
         ]
 
-        print(inputs)
+        logger.info(inputs)
 
         try:
             runtime, outputs, results_list = self.our_fit(
@@ -85,7 +86,7 @@ class RunFitPipeline:
                 runtime_environment=runtime_environment,
             )
         except exceptions.PipelineRunError as error:
-            print("ERROR: {}".format(error.pipeline_runs))
+            logger.info("ERROR: {}".format(error.pipeline_runs))
             raise error
 
         return results_list

@@ -7,6 +7,8 @@ from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import get_metrics_from_problem_description, evaluate, get_pipeline, get_dataset
 
+import logging
+logger = logging.getLogger(__name__)
 
 class RunPipeline:
 
@@ -123,7 +125,7 @@ class RunPipeline:
                 runtime_environment=runtime_environment,
             )
         except exceptions.PipelineRunError as error:
-            print("ERROR: {}".format(error.pipeline_runs))
+            logger.info("ERROR: {}".format(error.pipeline_runs))
             raise error
 
         return results_list

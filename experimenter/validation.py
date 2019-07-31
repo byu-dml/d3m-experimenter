@@ -6,6 +6,8 @@ from d3m.utils import load_schema_validators
 from d3m.metadata import base as metadata_base
 import jsonschema
 
+import logging
+logger = logging.getLogger(__name__)
 
 SUCCESS = metadata_base.PipelineRunStatusState.SUCCESS.name
 FAILURE = metadata_base.PipelineRunStatusState.FAILURE.name
@@ -18,7 +20,7 @@ def validate_pipeline_run(new_pipeline_json):
         _validate_pipeline_run_status_consistency(new_pipeline_json)
         return True
     except Exception as error:
-        print('\n', error, '\n')
+        logger.info('\n {} \n'.format(error))
         return False
 
 def _validate_pipeline_run_status_consistency(

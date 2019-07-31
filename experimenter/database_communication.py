@@ -9,6 +9,10 @@ from d3m.metadata.pipeline import Pipeline
 import datetime
 from dateutil.parser import parse
 from experimenter.validation import validate_pipeline_run
+
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     real_mongo_port = int(os.environ['REAL_MONGO_PORT'])
     real_mongo_port_dev = int(os.environ['REAL_MONGO_PORT_DEV'])
@@ -17,7 +21,7 @@ try:
     docker_hostname = os.environ['DOCKER_HOSTNAME']
     env_mode = os.environ['MODE']
 except Exception as E:
-    print("ERROR: environment variables not set")
+    logger.info("ERROR: environment variables not set")
     raise E
 
 def get_mongo_port(env_mode):
@@ -43,7 +47,7 @@ class PipelineDB:
         try:
             self.mongo_client = pymongo.MongoClient(self.host_name, self.mongo_port)
         except Exception as e:
-            print("Cannot connect to the Mongo Client at port {}. Error is {}".format(self.mongo_port, e))
+            logger.info("Cannot connect to the Mongo Client at port {}. Error is {}".format(self.mongo_port, e))
 
     def export_pipeline_runs_to_folder(self, folder_directory='~/database/',
                                        collection_names=["pipeline_runs", "pipelines", "datasets", "problems",
@@ -89,7 +93,7 @@ class PipelineDB:
                     file_path = os.path.join(output_directory, "{}".format(doc["about"]["datasetID"]))
 
                 else:
-                    print("ERROR: Not a valid collection name")
+                    logger.info("ERROR: Not a valid collection name")
                     raise Exception
 
                 if not os.path.isfile(file_path):
@@ -98,7 +102,7 @@ class PipelineDB:
                     # give permission to open the files
                     subprocess.call(['chmod', '0777', file_path])
 
-            print("There were {} files were exported from {}.".format(pipeline_runs_cursor.count(), collection_name))
+            logger.info("There were {} files were exported from {}.".format(pipeline_runs_cursor.count(), collection_name))
 
     def get_database_stats(self):
         """
@@ -113,7 +117,7 @@ class PipelineDB:
             db = self.mongo_client.metalearning
             collection = db[collection_name]
             sum_docs = collection.count()
-            print("There are {} in {}".format(sum_docs, collection_name))
+            logger.info("There are {} in {}".format(sum_docs, collection_name))
 
 
     def erase_mongo_database(self, are_you_sure=False):
@@ -122,20 +126,20 @@ class PipelineDB:
         """
         if are_you_sure:
             db = self.mongo_client.metalearning
-            print("Clearing pipeline_runs collection")
-            db.pipeline_runs.remove({})
-            print("Clearing pipeline collection")
-            db.pipelines.remove({})
-            print("Clearing datasets collection")
-            db.datasets.remove({})
-            print("Clearing problems collection")
-            db.problems.remove({})
-            print("Clearing automl_pipelines collection")
-            db.automl_pipelines.remove({})
-            print("Clearing automl pipeline_runs collection")
-            db.automl_pipeline_runs.remove({})
-            print("Clearing metafeatures collection")
-            db.metafeatures.remove({})
+            # logger.info("Clearing pipeline_runs collection")
+            # db.pipeline_runs.remove({})
+            # logger.info("Clearing pipeline collection")
+            # db.pipelines.remove({})
+            # logger.info("Clearing datasets collection")
+            # db.datasets.remove({})
+            # logger.info("Clearing problems collection")
+            # db.problems.remove({})
+            # logger.info("Clearing automl_pipelines collection")
+            # db.automl_pipelines.remove({})
+            # logger.info("Clearing automl pipeline_runs collection")
+            # db.automl_pipeline_runs.remove({})
+            # logger.info("Clearing metafeatures collection")
+            # db.metafeatures.remove({})
 
     def should_not_run_pipeline(self, problem, pipeline, collection_name, skip_pipeline=False):
         """
@@ -159,8 +163,8 @@ class PipelineDB:
 
         # check for existence
         if not dataset_exists or not problem_exists or not pipeline_exists:
-            print("This pipeline, problem, and or dataset has not been entered in the database yet")
-            print("Missing pipeline {}, missing dataset doc: {}, missing problem doc: {}".format(not pipeline_exists,
+            logger.info("This pipeline, problem, and or dataset has not been entered in the database yet")
+            logger.info("Missing pipeline {}, missing dataset doc: {}, missing problem doc: {}".format(not pipeline_exists,
                                                                                                  not problem_exists,
                                                                                                  not dataset_exists))
             return True
@@ -183,9 +187,9 @@ class PipelineDB:
         collection = db[collection_name]
         if not collection.find({"id": pipeline_run['id']}).count():
             pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
-            print("Wrote pipeline run to the database with inserted_id: {}".format(pipeline_run_id))
+            logger.info("Wrote pipeline run to the database with inserted_id: {}".format(pipeline_run_id))
         else:
-            print("\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n")
+            logger.info("\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n")
 
     def add_to_pipelines_mongo(self, new_pipeline):
         """
@@ -210,25 +214,27 @@ class PipelineDB:
 
         if collection.find({"id": id}).count():
             return False
-
-        # deep comparison of equality
-        pipelines_cursor = collection.find({})
-        for index, pipeline in enumerate(pipelines_cursor):
-            try:
-                pipeline_to_compare = Pipeline.from_json(json.dumps(pipeline, sort_keys=True, indent=4,
-                                                                    default=json_util.default))
-                if new_pipeline.equals(pipeline_to_compare):
-                    return False
-
-            except Exception as e:
-                print("There was an error in evaluating equality: {}".format(e))
-                print("Checking manually")
-                if primitive_list_from_pipeline_json(pipeline) == primitive_list_from_pipeline_json(new_pipeline_json):
-                    return False
-        else:
-            pipeline_id = collection.insert_one(new_pipeline_json).inserted_id
-            print("Wrote pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
-            return True
+        #
+        # # deep comparison of equality
+        # pipelines_cursor = collection.find({})
+        # for index, pipeline in enumerate(pipelines_cursor):
+        #     try:
+        #         # forgo this for now until we can get it to work.
+        #         # pipeline_to_compare = Pipeline.from_json(json.dumps(pipeline, sort_keys=True, indent=4,
+        #         #                                                     default=json_util.default))
+        #         # if new_pipeline.equals(pipeline_to_compare):
+        #         #     return False
+        #         if primitive_list_from_pipeline_json(pipeline) == primitive_list_from_pipeline_json(new_pipeline_json):
+        #             return False
+        #
+        #     except Exception as e:
+        #         logger.info(e)
+        #         raise(e)
+        #
+        # else:
+        pipeline_id = collection.insert_one(new_pipeline_json).inserted_id
+        logger.info("Wrote pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
+        return True
 
     def find_mongo_pipeline_run_by_id(self, pipeline_run_id):
         db = self.mongo_client.metalearning
@@ -259,7 +265,7 @@ class PipelineDB:
                 # get the third to last folder name -> it's the name of the problem.
                 problem_name = path.split("/")[-3]
             except Exception:
-                print("WARNING: could not get the URI")
+                logger.info("WARNING: could not get the URI")
                 return "unknown", "unknown"
 
         # search for the first one of these. The first one to appear is which folder it is in.
@@ -291,18 +297,18 @@ class PipelineDB:
         pipeline_cursor = collection.find({})
         for index, pipeline in enumerate(pipeline_cursor):
             if index % 1000 == 0:
-                print("On pipeline number {}".format(index))
+                logger.info("On pipeline number {}".format(index))
             is_classification = self.is_phrase_in("d3m.primitives.classification", json.dumps(pipeline['steps']))
             is_regression = self.is_phrase_in("d3m.primitives.regression", json.dumps(pipeline['steps']))
             if is_classification and is_regression:
-                print("Cannot be both")
+                logger.info("Cannot be both")
                 raise Exception
             elif is_classification:
                 predictor_model = "classification"
             elif is_regression:
                 predictor_model = "regression"
             else:
-                print("Could not find classification or regression")
+                logger.info("Could not find classification or regression")
                 raise Exception
             pipeline_json = json.dumps(pipeline, sort_keys=True, indent=4,default=json_util.default)
             pipelines[predictor_model].append(Pipeline.from_json(pipeline_json))
@@ -322,7 +328,7 @@ class PipelineDB:
             return False
 
         pipeline_id = collection.insert_one(problem_doc).inserted_id
-        print("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
+        logger.info("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
         return True
 
     def add_to_datasets(self, dataset_doc):
@@ -343,7 +349,7 @@ class PipelineDB:
             return False
 
         pipeline_id = collection.insert_one(dataset_doc).inserted_id
-        print("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
+        logger.info("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
         return True
 
     def add_to_automl_pipelines(self, new_pipeline):
@@ -376,7 +382,7 @@ class PipelineDB:
                 return False
         else:
             pipeline_id = collection.insert_one(new_pipeline.to_json_structure()).inserted_id
-            print("Wrote automl pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
+            logger.info("Wrote automl pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
             return True
 
     def remove_pipelines_containing(self, bad_primitives):
@@ -406,7 +412,7 @@ class PipelineDB:
         pipeline_cursor = collection.find({})
         for index, pipeline_run in enumerate(pipeline_cursor):
             if index % 1000 == 0:
-                print("At {}, length of deletion is {}".format(index, len(delete_these_documents)))
+                logger.info("At {}, length of deletion is {}".format(index, len(delete_these_documents)))
             pipeline_digest = pipeline_run["pipeline"]["digest"]
             pipeline_id = pipeline_run["pipeline"]["id"]
             dataset_digest = pipeline_run["datasets"][0]["digest"]
@@ -414,13 +420,13 @@ class PipelineDB:
             no_dataset = not db.datasets.find({"about.digest": dataset_digest}).count()
             no_pipeline = not db.pipelines.find({"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]}).count()
             if no_dataset and no_pipeline:
-                print("The pipeline run did not have a referenced pipeline or dataset")
+                logger.info("The pipeline run did not have a referenced pipeline or dataset")
                 delete_these_documents.append(pipeline_run["_id"])
             elif no_dataset:
-                print("The pipeline run did not have a referenced dataset")
+                logger.info("The pipeline run did not have a referenced dataset")
                 delete_these_documents.append(pipeline_run["_id"])
             elif no_pipeline:
-                print("The pipeline run did not have a referenced pipeline")
+                logger.info("The pipeline run did not have a referenced pipeline")
                 delete_these_documents.append(pipeline_run["_id"])
 
         # so you can check before you delete everything
@@ -439,7 +445,7 @@ class PipelineDB:
         collection_names = ["pipeline_runs"]
         # connect to the database
         list_of_times = []
-        print("Collecting Times...")
+        logger.info("Collecting Times...")
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
             collection = db[collection_name]
@@ -447,7 +453,7 @@ class PipelineDB:
             # go through each pipeline run
             for index, doc in enumerate(pipeline_runs_cursor):
                 if index % 10000 == 0:
-                    print("At {} documents parsed".format(index))
+                    logger.info("At {} documents parsed".format(index))
                 dataset = doc["datasets"][0]["id"]
                 begin = doc["steps"][0]["method_calls"][0]["start"]
                 begin_val = parse(begin)
@@ -466,9 +472,9 @@ class PipelineDB:
 
         if not collection.find({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}).count():
             pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
-            print("Wrote metafeature pipeline run to the database with inserted_id: {}".format(pipeline_run_id))
+            logger.info("Wrote metafeature pipeline run to the database with inserted_id: {}".format(pipeline_run_id))
         else:
-            print("\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n")
+            logger.info("\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n")
 
     def get_pipeline_run_score_distribution(self):
         """
@@ -478,7 +484,7 @@ class PipelineDB:
         collection_names = ["pipeline_runs"]
         # connect to the database
         list_of_times = []
-        print("Collecting Times...")
+        logger.info("Collecting Times...")
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
             collection = db[collection_name]
@@ -486,7 +492,7 @@ class PipelineDB:
             # go through each pipeline run
             for index, doc in enumerate(pipeline_runs_cursor):
                 if index % 10000 == 0:
-                    print("At {} documents parsed".format(index))
+                    logger.info("At {} documents parsed".format(index))
                 metric = doc["run"]["results"]["scores"][0]["metric"]["metric"]
                 if metric == "F1_MACRO":
                     dataset = doc["datasets"][0]["id"]
@@ -500,7 +506,7 @@ class PipelineDB:
         collection = db.metafeatures
         pipeline_id = pipeline["id"]
         dataset_id = problem
-        print(problem)
+        logger.info(problem)
         exit(0)
         check = collection.find({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}).count()
         return check
