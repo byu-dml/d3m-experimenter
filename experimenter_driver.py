@@ -5,7 +5,7 @@ from experimenter.database_communication import PipelineDB
 import warnings, argparse
 import redis
 from rq import Queue
-from execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem
+from experimenter.execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem
 try:
     redis_host = os.environ['REDIS_HOST']
     redis_port = int(os.environ['REDIS_PORT'])

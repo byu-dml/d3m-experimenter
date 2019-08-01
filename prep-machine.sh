@@ -4,4 +4,4 @@ sudo apt-get install docker -y
 sudo apt-get install docker-compose -y
 sudo docker-compose up -d
 sudo docker exec -it experimenter bash
-echo "Done!"
+echo "Done creating enviroment"

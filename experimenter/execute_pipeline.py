@@ -5,9 +5,9 @@ because RQ only accepts a function that is imported and not defined in __main__.
 to execute a pipeline on a problem and can be used by an individual machine, or used in a RQ job queue.
 """
 
-from experimenter.database_communication import PipelineDB
-from experimenter.run_fit_pipeline import RunFitPipeline
-from experimenter.run_pipeline import RunPipeline
+from .database_communication import PipelineDB
+from .run_fit_pipeline import RunFitPipeline
+from .run_pipeline import RunPipeline
 
 
 """

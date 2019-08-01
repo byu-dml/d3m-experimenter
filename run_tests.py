@@ -5,7 +5,7 @@ import unittest
 
 runner = unittest.TextTestRunner(verbosity=1)
 
-tests = unittest.TestLoader().discover('./tests')
+tests = unittest.TestLoader().discover('./test')
 
 if not runner.run(tests).wasSuccessful():
     sys.exit(1)
