@@ -63,7 +63,7 @@ class ExperimenterDriver:
         except SystemExit:
             os._exit(0)
 
-    def handle_failed_pipeline_run(self, pipeline, problem, error):
+    def handle_failed_pipeline_run(self, pipeline: dict, problem: str, error: Exception):
         """
         The main function for handline failed pipeline runs
         :param pipeline: the pipeline that failed
@@ -77,7 +77,7 @@ class ExperimenterDriver:
         traceback.print_exc()
         print("\n\n")
 
-    def get_pipelines_from_path(self, pipeline_location):
+    def get_pipelines_from_path(self, pipeline_location: str):
         """
         Used to gather pipelines from a file location
         TODO: is this deprecated?
@@ -191,7 +191,7 @@ python3 experimenter.py -r generate -b (creates AutoML system pipelines and stor
 python3 experimenter_driver.py -r distribute -b (takes AutoML pipelines from the database and adds jobs to the RQ queue)
 python3 experimenter.py -r execute -b (takes AutoML pipelines from the database and executes them)
 """
-def main(run_type, pipeline_folder, run_baselines, only_run_fit):
+def main(run_type: str, pipeline_folder: str, run_baselines: bool, only_run_fit: bool):
 
     datasets_dir = '/datasets'
     volumes_dir = '/volumes'

@@ -8,7 +8,7 @@ from d3m.metadata import problem as problem_module
 DEFAULT_DATASET_DIR = '/datasets/training_datasets/LL0'
 
 
-def get_dataset_doc_path(dataset_name, dataset_dir=DEFAULT_DATASET_DIR):
+def get_dataset_doc_path(dataset_name: str, dataset_dir: str = DEFAULT_DATASET_DIR) -> str:
     """
     A quick helper function to gather a problem path
     :param dataset_name: the name of the dataset
@@ -20,7 +20,7 @@ def get_dataset_doc_path(dataset_name, dataset_dir=DEFAULT_DATASET_DIR):
     )
 
 
-def get_dataset_doc(dataset_name, dataset_dir=DEFAULT_DATASET_DIR):
+def get_dataset_doc(dataset_name: str, dataset_dir: str = DEFAULT_DATASET_DIR) -> dict:
     """
     Gets a dataset doc from a path and loads it
     :param dataset_name: the name of the dataset
@@ -33,7 +33,7 @@ def get_dataset_doc(dataset_name, dataset_dir=DEFAULT_DATASET_DIR):
     return dataset_doc
 
 
-def get_problem_path(problem_name, dataset_dir=DEFAULT_DATASET_DIR):
+def get_problem_path(problem_name: str, dataset_dir: str = DEFAULT_DATASET_DIR) -> str:
     """
     A quick helper function to gather a problem path
     :param problem_name: the name of the problem
@@ -45,7 +45,7 @@ def get_problem_path(problem_name, dataset_dir=DEFAULT_DATASET_DIR):
     )
 
 
-def get_problem(problem_path, *, parse=True):
+def get_problem(problem_path: str, *, parse: bool = True) -> dict:
     """
     Gets problem doc from a path and parses it using d3m
     :param problem_path: the path to get the problem from
@@ -62,7 +62,7 @@ def get_problem(problem_path, *, parse=True):
 
 def get_default_args(f):
     """
-    A helper function to get the default arguments
+    A helper function to get the default arguments for a function
     """
     return {
         k: v.default for k, v in inspect.signature(f).parameters.items()

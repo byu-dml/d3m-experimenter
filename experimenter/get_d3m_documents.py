@@ -10,7 +10,7 @@ except Exception as E:
     raise E
 
 
-def get_documents_elastic(name_of_index):
+def get_documents_elastic(name_of_index) -> list:
     """
     Gets documents from an index of D3M's elastic search
     TODO: deprecated due to the MtL database repo?

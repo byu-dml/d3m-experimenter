@@ -17,7 +17,7 @@ name_of_folder)
 "python3 get_documents.py erase" (erases all pipelines and pipeline runs from the database)
 
 """
-def main(type_of_run, folder_directory):
+def main(type_of_run: str, folder_directory: str):
     # the following block gets the command line argument and if none is given, marks it as "get files"
     db = PipelineDB()
     if type_of_run == "get":

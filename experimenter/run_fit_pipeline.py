@@ -44,7 +44,7 @@ class RunFitPipeline:
                          }
 
 
-    def run(self, pipeline, random_seed: int = 0):
+    def run(self, pipeline: pipeline_module.Pipeline, random_seed: int = 0) -> list:
          """
         This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
         Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
