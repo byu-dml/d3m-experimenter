@@ -4,6 +4,7 @@ import os
 import pymongo
 import subprocess
 import re
+from typing import List
 from bson import json_util, ObjectId
 from d3m.metadata.pipeline import Pipeline
 import datetime
@@ -20,7 +21,11 @@ except Exception as E:
     print("ERROR: environment variables not set")
     raise E
 
-def get_mongo_port(env_mode):
+def get_mongo_port(env_mode: str):
+    """
+    A simple helper function for deciding which port to use
+    :param env_mode: the mode of enviroment to use ("production" or "development")
+    """
     if env_mode == 'production':
         return real_mongo_port
     elif env_mode == 'development':
@@ -36,7 +41,7 @@ class PipelineDB:
     as defined below.
     """
 
-    def __init__(self, host_name=lab_hostname, mongo_port=get_mongo_port(env_mode)):
+    def __init__(self, host_name: str = lab_hostname, mongo_port: int = get_mongo_port(env_mode)):
         self.host_name = host_name
         self.mongo_port = mongo_port
 
@@ -45,8 +50,8 @@ class PipelineDB:
         except Exception as e:
             print("Cannot connect to the Mongo Client at port {}. Error is {}".format(self.mongo_port, e))
 
-    def export_pipeline_runs_to_folder(self, folder_directory='~/database/',
-                                       collection_names=["pipeline_runs", "pipelines", "datasets", "problems",
+    def export_pipeline_runs_to_folder(self, folder_directory: str = '~/database/',
+                                       collection_names: list = ["pipeline_runs", "pipelines", "datasets", "problems",
                                                          "automl_pipelines", "automl_pipeline_runs"]):
         """
         This function will create or find the directory given and export all pipeline runs from the database to
@@ -116,9 +121,10 @@ class PipelineDB:
             print("There are {} in {}".format(sum_docs, collection_name))
 
 
-    def erase_mongo_database(self, are_you_sure=False):
+    def erase_mongo_database(self, are_you_sure: bool = False):
         """
         Erases all collections of the database, for debug purposes.
+        :param are_you_sure: a check to make sure you're ready for the consequences
         """
         if are_you_sure:
             db = self.mongo_client.metalearning
@@ -137,10 +143,14 @@ class PipelineDB:
             print("Clearing metafeatures collection")
             db.metafeatures.remove({})
 
-    def should_not_run_pipeline(self, problem, pipeline, collection_name, skip_pipeline=False):
+    def should_not_run_pipeline(self, problem: str, pipeline: dict, collection_name: str, skip_pipeline: bool = False) -> bool:
         """
          Used by experimenter_driver.py to check whether or not to run a pipeline on a specific problem
          Currently checks for duplicates and for whether or not the pipeline and dataset exists in the the db
+         :param problem: the name of the problem 
+         :param pipeline: the pipeline json that is being checked
+         :param collection_name: the collection name to check if it exists already
+         :param skip_pipeline: a flag to skip checking the database for it by assuming it already exists
          :return True if the pipeline should not be run, False if we should proceed
          """
         db = self.mongo_client.metalearning
@@ -170,11 +180,12 @@ class PipelineDB:
         else:
             return False
 
-    def add_to_pipeline_runs_mongo(self, pipeline_run, collection_name):
+    def add_to_pipeline_runs_mongo(self, pipeline_run: dict, collection_name: str):
         """
         Adds a pipeline run to the database.  Minimal error checking as we assume "has_duplicate_pipeline_run" has been run.
+        :param pipeline_run: the json document of the pipeline_run
+        :param collection_name: the name of the collection to add the pipeline_run to
         """
-
         validated = validate_pipeline_run(pipeline_run)
         if not validated:
             return False
@@ -187,9 +198,10 @@ class PipelineDB:
         else:
             print("\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n")
 
-    def add_to_pipelines_mongo(self, new_pipeline):
+    def add_to_pipelines_mongo(self, new_pipeline: Pipeline) -> bool:
         """
         Function to add a pipeline to the mongodb database of pipelines.
+        :param new_pipeline: the new pipeline to add to mongo
         :return False if the database already contains it, True if the pipeline was added to the database
         """
         db = self.mongo_client.metalearning
@@ -230,12 +242,25 @@ class PipelineDB:
             print("Wrote pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
             return True
 
-    def find_mongo_pipeline_run_by_id(self, pipeline_run_id):
+    def find_mongo_pipeline_run_by_id(self, pipeline_run_id: str) -> int:
+        """
+        A helper function to find a pipeline_run by id
+        :param pipeline_run_id: the id of the pipeline run
+        :returns a count of how many pipelines match that idea (should be 0 or 1)
+        TODO: assert the check of 0 or 1
+        """
         db = self.mongo_client.metalearning
         collection = db.pipeline_runs
         return collection.find({"id": pipeline_run_id}).count()
 
-    def find_mongo_pipeline_by_primitive_ids(self, problem, primitives_string):
+    def find_mongo_pipeline_by_primitive_ids(self, problem: str, primitives_string: str) -> int:
+        """
+        Finds a pipeline by taking the primities used and concatenating them, and then finding same pipelines
+        TODO: is this ever used?
+        :param problem: the problem the pipeline ran on
+        :param primitives_string: the concatenated string of primitives
+        :return the count of pipelines that match that primitives_string
+        """
         # Attempt to uniquely identify a pipeline_run by the combination of inputs and pipeline
         problem_name = problem.split('/')[-1]
         primitives_id_string = problem_name + primitives_string
@@ -244,8 +269,10 @@ class PipelineDB:
         collection = db.pipeline_runs
         return collection.find({"primitives_used": primitives_id_string}).count()
 
-    def _get_location_of_dataset(self, doc):
+    def _get_location_of_dataset(self, doc: dict) -> tuple(str, str):
         """
+        Checks a dataset document to find whether it is "seed", "LL0", or "LL1"
+        :param doc: the document to query
         :return min_name: what directory of problems it came from (seed, LL0, LL1)
         :return problem_name: the name of the problem (i.e. 185_baseball)
         """
@@ -276,10 +303,16 @@ class PipelineDB:
 
         return min_name, problem_name
 
-    def is_phrase_in(self, phrase, text):
+    def is_phrase_in(self, phrase: str, text: str) -> bool:
+        """ 
+        a helper function for regex-ing through text
+        :param phrase: the phrase to look in the text for
+        :param text: the text to be searched
+        :return a boolean of whether the phrase exists
+        """
         return re.search(r"\b{}\b".format(phrase), text, re.IGNORECASE) is not None
 
-    def get_all_pipelines(self, baselines=False):
+    def get_all_pipelines(self, baselines: bool = False) -> dict:
         """
         Used to gather pipelines for the experimenter_driver.py
         :param baselines: a bool, indicating whether or not to grab the regular pipelines or the automl pipelines
@@ -308,7 +341,7 @@ class PipelineDB:
             pipelines[predictor_model].append(Pipeline.from_json(pipeline_json))
         return pipelines, len(pipelines["regression"]) + len(pipelines["classification"])
 
-    def add_to_problems(self, problem_doc):
+    def add_to_problems(self, problem_doc: dict) -> bool:
         """
         A function for adding to the problems collection
         :param problem_doc: the problem document
@@ -325,7 +358,7 @@ class PipelineDB:
         print("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
         return True
 
-    def add_to_datasets(self, dataset_doc):
+    def add_to_datasets(self, dataset_doc: dict) -> bool:
         """
         A function for adding to the problems collection
         :param dataset_doc: the dataset document describing the dataset
@@ -346,10 +379,12 @@ class PipelineDB:
         print("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
         return True
 
-    def add_to_automl_pipelines(self, new_pipeline):
+    def add_to_automl_pipelines(self, new_pipeline: Pipeline) -> bool:
         """
         Function to add a pipeline to the mongodb collection of automl_pipelines.
+        :param new_pipeline: the new pipeline to add to the AutoML baselines
         :return False if the database already contains it, True if the pipeline was added to the database
+        TODO: I think this is deprecated/could be
         """
         db = self.mongo_client.metalearning
         collection = db.automl_pipelines
@@ -379,7 +414,11 @@ class PipelineDB:
             print("Wrote automl pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
             return True
 
-    def remove_pipelines_containing(self, bad_primitives):
+    def remove_pipelines_containing(self, bad_primitives: List[str]):
+        """
+        A function to deleting all pipelines that contain bad primitives
+        :param bad_primitives: a list of primitive ids
+        """
         delete_these_pipelines = []
         db = self.mongo_client.metalearning
         collection = db.pipelines
@@ -400,6 +439,9 @@ class PipelineDB:
         return
 
     def clean_pipeline_runs(self):
+        """
+        A function for deleting all pipeline_runs that do not match all the checks (verified problem, dataset, and pipeline, etc.)
+        """
         delete_these_documents = []
         db = self.mongo_client.metalearning
         collection = db.pipeline_runs
@@ -435,7 +477,6 @@ class PipelineDB:
         """
         This function will tell us the times of each pipeline_run approx.
         """
-
         collection_names = ["pipeline_runs"]
         # connect to the database
         list_of_times = []
@@ -458,7 +499,11 @@ class PipelineDB:
 
         return list_of_times
 
-    def add_to_metafeatures(self, pipeline_run):
+    def add_to_metafeatures(self, pipeline_run: dict):
+        """
+        Adds a pipeline_run to the metafeatures collection
+        :param pipeline_run: the pipeline_run to add
+        """
         db = self.mongo_client.metalearning
         collection = db.metafeatures
         pipeline_id = pipeline_run["pipeline"]["id"]
@@ -474,7 +519,6 @@ class PipelineDB:
         """
         This function will give us the scores from every pipeline run
         """
-
         collection_names = ["pipeline_runs"]
         # connect to the database
         list_of_times = []
@@ -495,7 +539,13 @@ class PipelineDB:
 
         return list_of_times
 
-    def metafeature_run_already_exists(self, problem, pipeline):
+    def metafeature_run_already_exists(self, problem: str, pipeline: dict) -> int:
+        """
+        A function to check if a metafeature run already exists
+        :param problem: the problem to check the pipeline with
+        :param pipeline: the metafeature pipeline
+        :return a count of existing pipelines
+        """
         db = self.mongo_client.metalearning
         collection = db.metafeatures
         pipeline_id = pipeline["id"]
@@ -506,14 +556,13 @@ class PipelineDB:
         return check
 
 
-"""
-A helper function to return all the primitives used in a pipeline
-Duplicate of one in execute_pipeline.py but cannot import it due to RQ limitations
+def primitive_list_from_pipeline_json(pipeline_json: dict):
+    """
+    A helper function to return all the primitives used in a pipeline
+    Duplicate of one in execute_pipeline.py but cannot import it due to RQ limitations
 
-:param pipeline_json a pipeline object in JSON form
-"""
-
-def primitive_list_from_pipeline_json(pipeline_json):
+    :param pipeline_json a pipeline object in JSON form
+    """
     primitives = []
     for step in pipeline_json['steps']:
         primitives.append(step['primitive']['python_path'])
