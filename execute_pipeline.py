@@ -10,16 +10,16 @@ from experimenter.run_fit_pipeline import RunFitPipeline
 from experimenter.run_pipeline import RunPipeline
 
 
-"""
-The main function to execute a pipeline.  Called in `experimenter_driver.py`  This function will check if the 
-pipeline and dataset has been executed before, run the pipeline, and record the results
-
-:param pipe: the pipeline object that will be executed
-:param problem: the path to the problemDoc of the particular dataset
-:param datasets_dir: a string containing the main directory of datasets
-:param volumes_dir: a string containing the path to the volumes directory
-"""
 def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
+    """
+    The main function to execute a pipeline.  Called in `experimenter_driver.py`  This function will check if the 
+    pipeline and dataset has been executed before, run the pipeline, and record the results
+
+    :param pipe: the pipeline object that will be executed
+    :param problem: the path to the problemDoc of the particular dataset
+    :param datasets_dir: a string containing the main directory of datasets
+    :param volumes_dir: a string containing the path to the volumes directory
+    """
     # Attempt to run the pipeline
     print("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
@@ -48,8 +48,18 @@ def execute_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
                                    pipe.to_json_structure(), score, problem, mongo_db, collection_name)
 
 
-
 def execute_fit_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
+    """
+    The main function to execute a `metafeatures` pipeline.  Differs from `execute_pipeline_on_problem` by only handling metafeatures
+    TODO: combine this with `execute_pipeline_on_problem`
+    Called in `experimenter_driver.py`  This function will check if the 
+    pipeline and dataset has been executed before, run the pipeline, and record the results
+
+    :param pipe: the pipeline object that will be executed
+    :param problem: the path to the problemDoc of the particular dataset
+    :param datasets_dir: a string containing the main directory of datasets
+    :param volumes_dir: a string containing the path to the volumes directory
+    """
     # Attempt to run the pipeline
     print("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
@@ -72,22 +82,11 @@ def execute_fit_pipeline_on_problem(pipe, problem, datasets_dir, volumes_dir):
     mongo_db.add_to_metafeatures(fit_pipeline_run._to_json_structure())
 
 
-"""
-Called after a successful pipeline run.  It will output the results to the console and write it to the database
-
-:param pipeline_run: the pipeline run object that will be recorded
-:param pipeline: the pipeline that was run
-:param score: the results from the execution of the pipeline
-:param problem: the problem that was used
-:param mongo_db: a connection to the MongoDB database
-"""
-
-"""
-A helper function to determine if a primitive used for checking baselines was used in the pipeline
-:param primitive_list: a list of string primitive names used in the pipeline
-:return collection_name: the name of the collection to insert this pipeline into
-"""
 def get_pipeline_run_collection_from_primitives(primitive_list):
+    """
+    A helper function to determine if a primitive used for checking baselines was used in the pipeline
+    :param primitive_list: a list of string primitive names used in the pipeline
+    """
     baseline_primitives = [ 'd3m.primitives.classification.search.AutoSKLearn']
     for primitive in baseline_primitives:
         if primitive in primitive_list:
@@ -97,6 +96,15 @@ def get_pipeline_run_collection_from_primitives(primitive_list):
 
 
 def handle_successful_pipeline_run(pipeline_run, pipeline, score, problem, mongo_db, collection_name):
+    """
+    Called after a successful pipeline run.  It will output the results to the console and write it to the database
+
+    :param pipeline_run: the pipeline run object that will be recorded
+    :param pipeline: the pipeline that was run
+    :param score: the results from the execution of the pipeline
+    :param problem: the problem that was used
+    :param mongo_db: a connection to the MongoDB database
+    """
     if score["value"][0] == 0:
         # F-SCORE was calculated wrong - quit and don't keep this run
         return
@@ -104,13 +112,13 @@ def handle_successful_pipeline_run(pipeline_run, pipeline, score, problem, mongo
     write_to_mongo_pipeline_run(mongo_db, pipeline_run, collection_name)
 
 
-"""
-A simple function to print the pipeline and problem, for debugging
-
-:param pipeline: the pipeline that was executed
-:param problem: the dataset/problem that was used
-"""
 def print_pipeline_and_problem(pipeline, problem):
+    """
+    A simple function to print the pipeline and problem, for debugging
+
+    :param pipeline: the pipeline that was executed
+    :param problem: the dataset/problem that was used
+    """
     print("Pipeline:")
     print(get_list_vertically(primitive_list_from_pipeline_object(pipeline)))
     print("on problem {} \n\n".format(problem))
@@ -121,25 +129,26 @@ def get_primitive_combo_string(pipeline):
         prim_string += p['primitive']['id']
     return prim_string
 
-"""
-A function to write a pipeline_run document to a database.  A wrapper for the function in database_communication.py
 
-:param mongo_db: the database connection
-:param pipeline_run: the json object to be written to the database
-:param collection_name: the name of the pipeline_run collection to insert it into: baselines or pipeline_runs
-"""
 def write_to_mongo_pipeline_run(mongo_db, pipeline_run, collection_name):
+    """
+    A function to write a pipeline_run document to a database.  A wrapper for the function in database_communication.py
+
+    :param mongo_db: the database connection
+    :param pipeline_run: the json object to be written to the database
+    :param collection_name: the name of the pipeline_run collection to insert it into: baselines or pipeline_runs
+    """
     mongo_db.add_to_pipeline_runs_mongo(pipeline_run, collection_name)
 
 
-"""
-A helper function for printing a succesful run
-
-:param pipeline: the pipeline that we will print
-:param score: the results of the metric used in training
-:return primitive_list: a list of all the primitives used in the pipeline
-"""
 def print_pipeline_run(pipeline, score=None):
+    """
+    A helper function for printing a succesful run
+
+    :param pipeline: the pipeline that we will print
+    :param score: the results of the metric used in training
+    :return primitive_list: a list of all the primitives used in the pipeline
+    """
     primitive_list = primitive_list_from_pipeline_json(pipeline)
     print("Ran pipeline:\n")
     print(get_list_vertically(primitive_list))
@@ -148,32 +157,32 @@ def print_pipeline_run(pipeline, score=None):
     return primitive_list
 
 
-"""
-A helper function to return all the primitives used in a pipeline
-
-:param pipeline: a pipeline object
-"""
 def primitive_list_from_pipeline_object(pipeline):
+    """
+    A helper function to return all the primitives used in a pipeline
+
+    :param pipeline: a pipeline object
+    """
     primitives = []
     for p in pipeline.steps:
         primitives.append(p.to_json_structure()['primitive']['python_path'])
     return primitives
 
 
-"""
-A helper function to return all the primitives used in a pipeline
-
-:param pipeline_json a pipeline object in JSON form
-"""
 def primitive_list_from_pipeline_json( pipeline_json):
+    """
+    A helper function to return all the primitives used in a pipeline
+
+    :param pipeline_json a pipeline object in JSON form
+    """
     primitives = []
     for step in pipeline_json['steps']:
         primitives.append(step['primitive']['python_path'])
     return primitives
 
 
-"""
-A helper function to join a list vertically.  Used for debugging printing.
-"""
 def get_list_vertically( list):
+    """
+    A helper function to join a list vertically.  Used for debugging printing.
+    """
     return '\n'.join(list)
