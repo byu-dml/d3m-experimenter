@@ -61,23 +61,24 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
         for pipeline in generated_pipelines["classification"]:
             pipeline.check()
 
-    def test_experimenter_can_generate_multiple_preprocessors(self):
-        num_preprocessors = 5
-        num_ensembles = 3
-        # generate the pipelines
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=num_ensembles, p_preprocessors=num_preprocessors,
-                                                                        n_generated_pipelines=1, same_model=False,
-                                                                        same_preprocessor_order=True,
-                                                                        problem_type="classification")
-        self.assertEqual(1, len(generated_pipelines["classification"]))
+    # TODO: add a command line argument to allow this to happen in the Experimenter generate pipelines section
+    # def test_experimenter_can_generate_multiple_preprocessors(self):
+    #     num_preprocessors = 5
+    #     num_ensembles = 3
+    #     # generate the pipelines
+    #     generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=num_ensembles, p_preprocessors=num_preprocessors,
+    #                                                                     n_generated_pipelines=1, same_model=False,
+    #                                                                     same_preprocessor_order=True,
+    #                                                                     problem_type="classification")
+    #     self.assertEqual(1, len(generated_pipelines["classification"]))
 
-        primitives = primitive_list_from_pipeline_json(generated_pipelines["classification"][0].to_json_structure())
-        preprocessor_count = 0
-        for primitive in primitives:
-            if primitive in self.preprocessors:
-                preprocessor_count += 1
-        self.assertEqual(num_preprocessors * num_ensembles, preprocessor_count, "The expected number of preprocessors was {} but we got"
-                                                                "{}".format(num_ensembles * num_preprocessors, preprocessor_count))
+    #     primitives = primitive_list_from_pipeline_json(generated_pipelines["classification"][0].to_json_structure())
+    #     preprocessor_count = 0
+    #     for primitive in primitives:
+    #         if primitive in self.preprocessors:
+    #             preprocessor_count += 1
+    #     self.assertEqual(num_preprocessors * num_ensembles, preprocessor_count, "The expected number of preprocessors was {} but we got"
+    #                                                             "{}".format(num_ensembles * num_preprocessors, preprocessor_count))
 
     def test_experimenter_can_generate_different_models(self):
         """

@@ -1,6 +1,9 @@
 *.pyc
 .env
+env/*
 *hidden*
 *pycache*
 .idea/*
 tests/.cache/
+.vscode/*
+

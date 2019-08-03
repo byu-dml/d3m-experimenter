@@ -4,8 +4,8 @@ This file needs to be a stand alone file so that it can be imported and used by 
 because RQ only accepts a function that is imported and not defined in __main__.  These functions are what is needed
 to execute a pipeline on a problem and can be used by an individual machine, or used in a RQ job queue.
 """
-from d3m import Pipeline
-from typing List
+from d3m.metadata.pipeline import Pipeline
+from typing import List
 from experimenter.database_communication import PipelineDB
 from experimenter.run_fit_pipeline import RunFitPipeline
 from experimenter.run_pipeline import RunPipeline

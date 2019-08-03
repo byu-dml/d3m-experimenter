@@ -21,16 +21,6 @@ from experimenter.autosklearn.pipelines import get_classification_pipeline, Auto
 
 from experimenter import utils
 
-def register_primitives():
-    """
-    Registers the AutoSKlearn pipeline
-    TODO: remove all autoML code
-    """
-    with d3m_utils.silence():
-        d3m_index.register_primitive(
-            AutoSklearnClassifierPrimitive.metadata.query()['python_path'],
-            AutoSklearnClassifierPrimitive
-        )
 
 class Experimenter:
     """
@@ -68,10 +58,10 @@ class Experimenter:
 
         if generate_pipelines:
             logger.info("Generating pipelines...")
-            # self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
-            pipeline = self.generate_metafeatures_pipeline()
+            self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
+            # pipeline = self.generate_metafeatures_pipeline()
             # TODO: create a system for how to use the next line
-            self.generated_pipelines: dict = self._wrap_generate_all_ensembles()
+            # self.generated_pipelines: dict = self._wrap_generate_all_ensembles()
             # self.generated_pipelines: dict = self.generate_k_ensembles(k_ensembles=3, p_preprocessors=0,
             #                                                            n_generated_pipelines=50, same_model=False,
             #                                                            same_preprocessor_order=False, problem_type="all")
@@ -92,15 +82,6 @@ class Experimenter:
             self.generated_pipelines = self.generate_baseline_pipelines()
             self.num_pipelines = len(self.generated_pipelines["classification"])
             self.output_automl_pipelines_to_mongodb()
-
-
-    def _pretty_print_json(self, json_obj: str):
-        """
-        Pretty prints a JSON object to make it readable
-        """
-        import pprint
-        pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(json_obj)
 
     def _add_initial_steps(self, pipeline_description: Pipeline, step_counter: int) -> Pipeline:
         """
@@ -752,3 +733,12 @@ class Experimenter:
             json.dump(pipeline_description.to_json_structure(), file, indent=2, default=json_util.default)
 
         return {"classification": [pipeline_description], "regression": [pipeline_description]}, 1
+
+
+def _pretty_print_json(self, json_obj: str):
+    """
+    Pretty prints a JSON object to make it readable
+    """
+    import pprint
+    pp = pprint.PrettyPrinter(indent=2)
+    pp.pprint(json_obj)

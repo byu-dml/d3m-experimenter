@@ -275,7 +275,7 @@ class PipelineDB:
         collection = db.pipeline_runs
         return collection.find({"primitives_used": primitives_id_string}).count()
 
-    def _get_location_of_dataset(self, doc: dict) -> tuple(str, str):
+    def _get_location_of_dataset(self, doc: dict) -> tuple((str, str)):
         """
         Checks a dataset document to find whether it is "seed", "LL0", or "LL1"
         :param doc: the document to query

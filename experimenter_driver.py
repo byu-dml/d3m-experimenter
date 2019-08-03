@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 from experimenter.experimenter import Experimenter, register_primitives
 import os, json, pdb, traceback, sys
 from experimenter.database_communication import PipelineDB
-from experimenter import _pretty_print_json
+from experimenter.experimenter import _pretty_print_json
 import warnings, argparse
 import redis
 from rq import Queue
-from execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem, primitive_list_from_pipeline_object, get_list_vertically, print_pipeline_and_problem
+from experimenter.execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem, primitive_list_from_pipeline_object, get_list_vertically, print_pipeline_and_problem
 try:
     redis_host = os.environ['REDIS_HOST']
     redis_port = int(os.environ['REDIS_PORT'])
