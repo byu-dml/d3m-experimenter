@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 from experimenter.experimenter import Experimenter, register_primitives
 import os, json, pdb, traceback, sys
 from experimenter.database_communication import PipelineDB
+from experimenter import _pretty_print_json
+import warnings, argparse
 import redis
 from rq import Queue
-from execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem
-
-
+from execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem, primitive_list_from_pipeline_object, get_list_vertically, print_pipeline_and_problem
 try:
     redis_host = os.environ['REDIS_HOST']
     redis_port = int(os.environ['REDIS_PORT'])
@@ -23,6 +23,9 @@ except Exception as E:
     raise E
 
 class ExperimenterDriver:
+    """
+    This is the main class for running the experimenter.  Command line options for running this file are found at the bottom of the file.
+    """
 
     def __init__(self, datasets_dir: str, volumes_dir: str, run_type: str ="all",
                  stored_pipeline_loc=None, distributed=False, generate_automl_pipelines=False, fit_only=False):
@@ -57,26 +60,10 @@ class ExperimenterDriver:
             except:
                 raise ConnectionRefusedError
 
-
-    def primitive_list_from_pipeline_object(self, pipeline):
-        primitives = []
-        for p in pipeline.steps:
-            primitives.append(p.to_json_structure()['primitive']['python_path'])
-        return primitives
-
-    def get_list_vertically(self, list):
-        return '\n'.join(list)
-
-    def pretty_print_json(self, json_string):
-        logger.info("\n\n These are the problems that weren't regression or classification:")
-        logger.info(json.dumps(json_string, indent=4))
-
-    def print_pipeline_and_problem(self, pipeline, problem):
-        logger.info("Pipeline:")
-        logger.info(self.get_list_vertically(self.primitive_list_from_pipeline_object(pipeline)))
-        logger.info("on problem {} \n\n".format(problem))
-
     def handle_keyboard_interrupt(self):
+        """
+        Used for getting a stack trace before exiting on a keyboard interrupt
+        """
         logger.info('Interrupted')
         traceback.print_exc()
         try:
@@ -85,6 +72,12 @@ class ExperimenterDriver:
             os._exit(0)
 
     def handle_failed_pipeline_run(self, pipeline, problem, error):
+        """
+        The main function for handline failed pipeline runs
+        :param pipeline: the pipeline that failed
+        :param problem: the problem that the pipeline failed on
+        :param error: the reason for failure
+        """
         logger.info("\nFailed to run pipeline:\n" + self.get_list_vertically(
             self.primitive_list_from_pipeline_object(pipeline)) + "\n")
         logger.info("On the problem:\n{}\n".format(problem))
@@ -92,7 +85,12 @@ class ExperimenterDriver:
         traceback.print_exc()
         logger.info("\n\n")
 
-    def get_pipelines_from_path(self, pipeline_location):
+    def get_pipelines_from_path(self, pipeline_location: str):
+        """
+        Used to gather pipelines from a file location
+        TODO: is this deprecated?
+        :param pipelione_location: the location to gather the pipelines from
+        """
         pipeline_list = {"classification": [], "regression": []}
         for pipeline_name in os.listdir(pipeline_location):
             if pipeline_name.find("regression") != -1:
@@ -167,7 +165,7 @@ class ExperimenterDriver:
                             # pipeline didn't work.  Try the next one
                             raise e
 
-        self.pretty_print_json(experimenter.incorrect_problem_types)  # For debugging purposes
+        _pretty_print_json(experimenter.incorrect_problem_types)  # For debugging purposes
 
 
 
@@ -201,7 +199,7 @@ python3 experimenter.py -r generate -b (creates AutoML system pipelines and stor
 python3 experimenter_driver.py -r distribute -b (takes AutoML pipelines from the database and adds jobs to the RQ queue)
 python3 experimenter.py -r execute -b (takes AutoML pipelines from the database and executes them)
 """
-def main(run_type, pipeline_folder, run_baselines, only_run_fit):
+def main(run_type: str, pipeline_folder: str, run_baselines: bool, only_run_fit: bool):
 
     datasets_dir = '/datasets'
     volumes_dir = '/volumes'

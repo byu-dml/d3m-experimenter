@@ -22,6 +22,10 @@ from experimenter.autosklearn.pipelines import get_classification_pipeline, Auto
 from experimenter import utils
 
 def register_primitives():
+    """
+    Registers the AutoSKlearn pipeline
+    TODO: remove all autoML code
+    """
     with d3m_utils.silence():
         d3m_index.register_primitive(
             AutoSklearnClassifierPrimitive.metadata.query()['python_path'],
@@ -33,8 +37,6 @@ class Experimenter:
     This class is initialized with all the paths info needed to find and create pipelines.
     It first finds all possible problems in the datasets_dir/problem_directories/* and then
     generates pipelines.  This class is used by the ExperimenterDriver class to run the pipelines.
-    @:param input_models: a dictionary of two items, "classification" and "regression", each a list of primitive machine
-    learning models
     """
 
     def __init__(self, datasets_dir: str, volumes_dir: str, input_problem_directory=None,
@@ -92,21 +94,20 @@ class Experimenter:
             self.output_automl_pipelines_to_mongodb()
 
 
-    """
-    Pretty prints a JSON object to make it readable
-    """
-    def _pretty_print_json(self, json):
+    def _pretty_print_json(self, json_obj: str):
+        """
+        Pretty prints a JSON object to make it readable
+        """
         import pprint
         pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(json)
+        pp.pprint(json_obj)
 
-    """
-    :param pipeline_description: an empty pipeline object that we can add steps to.
-    :param step_counter: a integer representing the number of the next step we are on.
-    :return pipeline_description: a Pipeline object that contains the initial steps to being a pipeline
-    """
-    def _add_initial_steps(self, pipeline_description: Pipeline, step_counter):
-
+    def _add_initial_steps(self, pipeline_description: Pipeline, step_counter: int) -> Pipeline:
+        """
+        :param pipeline_description: an empty pipeline object that we can add steps to.
+        :param step_counter: a integer representing the number of the next step we are on.
+        :return pipeline_description: a Pipeline object that contains the initial steps to being a pipeline
+        """
         # Creating pipeline
         pipeline_description.add_input(name='inputs')
 
@@ -157,7 +158,12 @@ class Experimenter:
 
         return step_counter
 
-    def _add_predictions_constructor(self, pipeline_description, step_counter):
+    def _add_predictions_constructor(self, pipeline_description: Pipeline, step_counter: int):
+        """
+        Adds the predictions constructor to a pipeline description and increments the step counter
+        :param pipeline_description: the pipeline-to-be
+        :param step_counter: the int representing what step we're on
+        """
         # Step 6: PredictionsConstructor
         predictions_constructor: PrimitiveBase = d3m_index.get_primitive("d3m.primitives.data_transformation.construct_predictions.DataFrameCommon")
         step_6 = PrimitiveStep(primitive_description=predictions_constructor.metadata.query())
@@ -169,7 +175,12 @@ class Experimenter:
 
         return step_counter
 
-    def _get_required_args(self, p: PrimitiveBase):
+    def _get_required_args(self, p: PrimitiveBase) -> list:
+        """
+        Gets the required arguments for a primitive
+        :param p: the primitive to get arguments for
+        :return a list of the required args
+        """
         required_args = []
         metadata_args = p.metadata.to_json_structure()['primitive_code']['arguments']
         for arg, arg_info in metadata_args.items():
@@ -177,7 +188,13 @@ class Experimenter:
                 required_args.append(arg)
         return required_args
 
-    def _generate_standard_pipeline(self, preprocessor: PrimitiveBase, classifier: PrimitiveBase):
+    def _generate_standard_pipeline(self, preprocessor: PrimitiveBase, classifier: PrimitiveBase) -> Pipeline:
+        """
+        Adds the crucial preprocess or classifier steps to a basic pipeline description and returns the pipeline
+        :param preprocessor: the primitive to use as a preprocessor
+        :param classifier: the primitive to use as a classifier
+        :return a newly created pipeline
+        """
         step_counter = 0
 
         # Creating Pipeline
@@ -228,7 +245,12 @@ class Experimenter:
 
         return pipeline_description
 
-    def get_possible_problems(self):
+    def get_possible_problems(self) -> dict:
+        """
+        The high level function to get all problems.  It seperates them into classification and regression problems and ignores the rest
+        This function also adds the problem docs and dataset docs to our database if they do not already exist
+        :return a dictionary containing two keys of file paths: `classification` and `regression`.  Each key is a list of file paths.
+        """
         problems_list = {"classification": [], "regression": []}
         for problem_directory in self.problem_directories:
             datasets_dir = os.path.join(self.datasets_dir, problem_directory)
@@ -246,7 +268,13 @@ class Experimenter:
                     problems_list[problem_type].append(os.path.join(datasets_dir, dataset_name))
         return problems_list
 
-    def generate_pipelines(self, preprocessors: List[str], models: dict):
+    def generate_pipelines(self, preprocessors: List[str], models: dict) -> dict:
+        """
+        A high level function to create numerous pipelines for a list of preprocessor and model
+        :param preprocessors: a list of preprocessors to generate pipelines with
+        :param models: a dict containing two keys of `classification` and `regression` each with a list of model primitive names
+        :return a dict containing two keys of `classification` and `regression` each a list of pipeline objects
+        """
         preprocessors = list(set(preprocessors))
 
         generated_pipelines = {"classification": [], "regression": []}
@@ -268,7 +296,12 @@ class Experimenter:
 
         return generated_pipelines
 
-    def get_problem_type(self, problem_name, absolute_paths):
+    def get_problem_type(self, problem_name: str, absolute_paths: List[str]):
+        """
+        Gathers the type of the problem from the name and path
+        :param problem_name: the name of the problem to get the type of
+        :param absolute_paths: the absolute_paths containing seed, LL0, and LL1 datasets
+        """
         if problem_name in blacklist_non_tabular_data:
             return "skip"
 
@@ -296,7 +329,11 @@ class Experimenter:
             logger.info(e)
             return False
 
-    def output_values_to_folder(self, location="default"):
+    def output_values_to_folder(self, location: str = "default"):
+        """
+        Exports pipelines files as json to a folder
+        :param location: the path to export the files
+        """
         if location == "default":
             location = "experimenter/created_pipelines/"
         # Write the pipeline to a file for the runtime
@@ -310,6 +347,9 @@ class Experimenter:
         logger.info("Pipeline json files exported to: {}".format(location))
 
     def output_pipelines_to_mongodb(self):
+        """
+        Writes pipelines to mongo, if they don't already exist
+        """
         added_pipeline_sum = 0
         for pipeline_type in self.generated_pipelines:
             for pipe in self.generated_pipelines[pipeline_type]:
@@ -319,12 +359,20 @@ class Experimenter:
                                                                                self.num_pipelines - added_pipeline_sum))
 
     def generate_baseline_pipelines(self):
+        """
+        A wrapper function to generate a AutoSklearn pipeline
+        TODO: should be deprecated and removed
+        """
         register_primitives()
         autosklearn_pipeline = get_classification_pipeline(time_limit=60)
         # TODO: get other baseline primitives here
         return {"classification": [autosklearn_pipeline]}
 
     def output_automl_pipelines_to_mongodb(self):
+        """
+        Writes automl pipelines to mongo
+        TODO: should be deprecated and removed
+        """
         added_pipeline_sum = 0
         for pipeline_type in self.generated_pipelines:
             for pipe in self.generated_pipelines[pipeline_type]:
@@ -333,7 +381,7 @@ class Experimenter:
         logger.info("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                            self.num_pipelines - added_pipeline_sum))
 
-    def _wrap_generate_all_ensembles(self, k_ensembles=3, p_preprocessors=1):
+    def _wrap_generate_all_ensembles(self, k_ensembles: int = 3, p_preprocessors: int = 1) -> dict:
         """
         This function does differing preprocessors and same model, or differing models and same preprocessor
         It does NOT vary both.
@@ -373,9 +421,9 @@ class Experimenter:
         return all_ensembles
 
 
-    def generate_k_ensembles(self, k_ensembles: int, p_preprocessors, n_generated_pipelines: int = 1, model=None,
+    def generate_k_ensembles(self, k_ensembles: int, p_preprocessors, n_generated_pipelines: int = 1, model: str = None,
                              same_model: bool = True, same_preprocessor_order: bool = True,
-                             problem_type="classification", given_preprocessors: list = None):
+                             problem_type: str = "classification", given_preprocessors: list = None) -> dict:
         """
         This function takes all the options on how to generate ensembles and then returns the created pipelines
         :param k_ensembles: the number of pipelines that will be ensembles together to form one big pipeline.
@@ -491,7 +539,8 @@ class Experimenter:
 
         return generated_pipes
 
-    def create_ensemble_pipeline(self, k, p, preprocessor_list, model_list, concatenator, ensembler):
+    def create_ensemble_pipeline(self, k: int, p: int, preprocessor_list: List[str], model_list: List[str], concatenator: PrimitiveBase, 
+                                 ensembler: PrimitiveBase) -> Pipeline:
         """
         This function does the nitty gritty work of preparing the pipeline and returning it
         :param k: the number of pipelines that will be ensembled
@@ -605,7 +654,7 @@ class Experimenter:
 
 
 
-    def generate_default_pipeline(self):
+    def generate_default_pipeline(self) -> Pipeline:
         """
         Example from https://docs.datadrivendiscovery.org/devel/pipeline.html#pipeline-description-example
         :return: the sample pipeline
@@ -669,6 +718,9 @@ class Experimenter:
         return {"classification": [pipeline_description], "regression": []}
 
     def generate_metafeatures_pipeline(self):
+        """
+        Generates the standard metafeature pipeline
+        """
         # Creating pipeline
         pipeline_description = Pipeline(context=Context.TESTING)
         pipeline_description.add_input(name='inputs')

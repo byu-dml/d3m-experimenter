@@ -43,17 +43,18 @@ class RunPipeline:
                          "context": metadata_base.Context.PRODUCTION
                          }
 
-    """
-    This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
-    Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
-    function does not allow for returning the data, so it did not fit in the workflow.
     
-    :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
-    :param random_seed: the random seed that the runtime will use to evalutate the pipeline
-    :returns results_list: a list containing, in order, the scores from the pipeline predictions, the fit pipeline_run 
-        and the produce pipeline_run.
-    """
-    def run(self, pipeline, random_seed: int=0):
+    def run(self, pipeline: Pipeline, random_seed: int=0) -> list:
+        """
+        This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
+        Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
+        function does not allow for returning the data, so it did not fit in the workflow.
+        
+        :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
+        :param random_seed: the random seed that the runtime will use to evalutate the pipeline
+        :returns results_list: a list containing, in order, the scores from the pipeline predictions, the fit pipeline_run 
+            and the produce pipeline_run.
+        """
 
         arguments = self.run_args
 
