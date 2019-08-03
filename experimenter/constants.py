@@ -68,6 +68,7 @@ problem_directories = [
 ]
 
 blacklist_non_tabular_data = [
+    "57_hypothyroid"
     "31_urbansound",
     "LL1_3476_HMDB_actio_recognition",
     "uu1_datasmash",

@@ -61,17 +61,17 @@ or specific db commands see `get_documents.py`.
 7. The outputs from the above step will be placed in the directory passed into the command line OR the default location (currently the home directory)
 
 ## Run Options ##
-* To generate and execute pipelines in one command run `python3 experimenter_driver.py` 
-* To generate only pipelines and store them, run `python3 experimenter_driver.py -r generate`.  It will store them in the MongoDB.
-* To run pipelines from mongodb and not generate new ones, run `python3 experimenter_driver.py -r execute`
+* To generate and execute pipelines in one command run `python3 experimenter_driver.py -v` 
+* To generate only pipelines and store them, run `python3 experimenter_driver.py -r generate -v`.  It will store them in the MongoDB.
+* To run pipelines from mongodb and not generate new ones, run `python3 experimenter_driver.py -r execute -v`
 * To only execute created pipelines stored in a folder, add the `-f folder_name/` flag.
-* To distribute pipelines run `python3 experimenter_driver.py -r distribute`.
+* To distribute pipelines run `python3 experimenter_driver.py -r distribute -v`.
 * To run AutoML systems for comparisons add the `-b` flag.  Note this will turn any command into ONLY executing AutoML systems
 * For more information, see the documentation in `experimenter_driver.py`.
 
 
 ## Lab Distribution Options ##
-1. Create jobs by runninng `python3 experimenter_driver.py -r distribute`.  This adds jobs to the RQ queue.
+1. Create jobs by runninng `python3 experimenter_driver.py -r distribute -v`.  This adds jobs to the RQ queue.
 2. Join machines to the queue by using cssh (Clustered SSH). Install it, if it is not installed (`sudo apt-get install cssh`).
 3. Execute the command `cssh` followed the by all the names of the machine you want it to run on.  For example `cssh lab1 lab2`
 4. If you encounter an error about not being able to authenticate with the other machine, make sure you can regular SSH into it first and then try again.
