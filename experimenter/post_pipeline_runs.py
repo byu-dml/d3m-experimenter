@@ -4,6 +4,8 @@ from pprint import pprint
 import urllib.request
 from hidden_constants import username, password
 
+import logging
+logger = logging.getLogger(__name__)
 
 import yaml
 filepath = "/users/guest/o/orionw/database/pipelines/first.json"
@@ -28,10 +30,10 @@ headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 url = 'https://metalearning.datadrivendiscovery.org/1.0/pipeline/'
 
 payload = json.dumps(results)
-pprint(payload)
-print(len(str(payload)))
+plogger.info(payload)
+logger.info(len(str(payload)))
 
 r = requests.post(url, data=payload, auth=(username, password), headers=headers)
 
-print(r.status_code)
-print(r.text)
+logger.info(r.status_code)
+logger.info(r.text)

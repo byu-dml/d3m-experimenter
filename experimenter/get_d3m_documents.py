@@ -2,11 +2,14 @@ import os
 import json
 import elasticsearch as el
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     username = os.environ['USERNAME']
     password = int(os.environ['PASSWORD'])
 except Exception as E:
-    print("Exception: environment variables not set")
+    logger.info("Exception: environment variables not set")
     raise E
 
 
@@ -60,4 +63,4 @@ def get_documents_elastic(name_of_index) -> list:
 #     with open('d3m_data/pipeline_runs/{}.json'.format(index), 'w') as outfile:
 #         json.dump(data, outfile)
 
-print("Done")
+logger.info("Done")

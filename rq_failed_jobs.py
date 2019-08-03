@@ -45,6 +45,8 @@ with Connection(connection=conn):
     total_workhorse = 0
     print("Going through failed queue")
     for index, job in enumerate(fq.jobs):
+        if index == 500000:
+            break
         if not index % 1000:
             print("At {} failed jobs".format(index))
             print("Out of {} failures. {} were from NANs, {} were timeouts, {} memory too large errors, {} bad combinations, "

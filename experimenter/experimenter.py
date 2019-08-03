@@ -1,5 +1,7 @@
-from random import sample
 
+import logging
+logger = logging.getLogger(__name__)
+from random import sample
 from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data
 from d3m import index as d3m_index
 from d3m import utils as d3m_utils
@@ -18,9 +20,6 @@ from d3m.metadata import base as metadata_base, problem as base_problem
 from experimenter.autosklearn.pipelines import get_classification_pipeline, AutoSklearnClassifierPrimitive
 
 from experimenter import utils
-
-logger = logging.getLogger(__name__)
-
 
 def register_primitives():
     """
@@ -61,14 +60,14 @@ class Experimenter:
         self.incorrect_problem_types = {}
 
         if generate_problems:
-            print("Generating problems...")
+            logger.info("Generating problems...")
             self.problems = self.get_possible_problems()
             self.num_problems = len(self.problems["classification"]) + len(self.problems["regression"])
 
-            print("There are {} problems".format(self.num_problems))
+            logger.info("There are {} problems".format(self.num_problems))
 
         if generate_pipelines:
-            print("Generating pipelines...")
+            logger.info("Generating pipelines...")
             # self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
             pipeline = self.generate_metafeatures_pipeline()
             # TODO: create a system for how to use the next line
@@ -79,14 +78,14 @@ class Experimenter:
             self.num_pipelines = len(self.generated_pipelines["classification"]) + \
                                  len(self.generated_pipelines["regression"])
 
-            print("There are {} pipelines".format(self.num_pipelines))
+            logger.info("There are {} pipelines".format(self.num_pipelines))
 
             if location is None:
                 self.mongo_database = PipelineDB()
-                print('Exporting pipelines to mongodb...')
+                logger.info('Exporting pipelines to mongodb...')
                 self.output_pipelines_to_mongodb()
             else:
-                print("Exporting pipelines to {}".format(location))
+                logger.info("Exporting pipelines to {}".format(location))
                 self.output_values_to_folder(location)
 
         if generate_automl_pipelines:
@@ -262,7 +261,7 @@ class Experimenter:
                     dataset_doc = utils.get_dataset_doc(dataset_name, datasets_dir)
                     self.mongo_database.add_to_datasets(dataset_doc)
                 except Exception as e:
-                    print("ERROR: failed to get dataset document: {}".format(e))
+                    logger.info("ERROR: failed to get dataset document: {}".format(e))
 
                 problem_type = self.get_problem_type(dataset_name, [problem_description_path])
                 if problem_type in problems_list:
@@ -327,7 +326,7 @@ class Experimenter:
                             self.incorrect_problem_types[problem_name] = [problem_doc['about']['taskType']]
                         return False
         except Exception as e:
-            print(e)
+            logger.info(e)
             return False
 
     def output_values_to_folder(self, location: str = "default"):
@@ -345,7 +344,7 @@ class Experimenter:
                               pipe_json["id"] + ".json"
                 with open(output_path, 'w') as write_file:
                     write_file.write(pipe.to_json(indent=4, sort_keys=True, ensure_ascii=False))
-        print("Pipeline json files exported to: {}".format(location))
+        logger.info("Pipeline json files exported to: {}".format(location))
 
     def output_pipelines_to_mongodb(self):
         """
@@ -356,7 +355,7 @@ class Experimenter:
             for pipe in self.generated_pipelines[pipeline_type]:
                 added_pipeline_sum += self.mongo_database.add_to_pipelines_mongo(pipe)
 
-        print("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
+        logger.info("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                self.num_pipelines - added_pipeline_sum))
 
     def generate_baseline_pipelines(self):
@@ -379,7 +378,7 @@ class Experimenter:
             for pipe in self.generated_pipelines[pipeline_type]:
                 added_pipeline_sum += self.mongo_database.add_to_automl_pipelines(pipe)
 
-        print("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
+        logger.info("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                            self.num_pipelines - added_pipeline_sum))
 
     def _wrap_generate_all_ensembles(self, k_ensembles: int = 3, p_preprocessors: int = 1) -> dict:
@@ -394,7 +393,7 @@ class Experimenter:
         preprocessor_combinations = list(combinations(self.preprocessors, k_ensembles))
 
 
-        print("Starting different models, same preprocessor")
+        logger.info("Starting different models, same preprocessor")
 
         # use K different models and the same preprocessor
         for problem_type in self.models:
@@ -407,7 +406,7 @@ class Experimenter:
                                                           problem_type=problem_type)
                     all_ensembles[problem_type] += generated[problem_type]
 
-        print("Starting same models, different preprocessor")
+        logger.info("Starting same models, different preprocessor")
         # use the same model and a all possible combinations of K preprocessors
         for problem_type in self.models:
             for model in self.models[problem_type]:
@@ -440,7 +439,7 @@ class Experimenter:
         """
 
         if model is None and same_model:
-            print("Error: did not specify a model to ensemble with.  Please enter a valid model name.")
+            logger.info("Error: did not specify a model to ensemble with.  Please enter a valid model name.")
             raise Exception
 
         if k_ensembles == -1:
@@ -472,7 +471,7 @@ class Experimenter:
             # Create the pipelines
             for _ in range(n_generated_pipelines):
                 if same_model:
-                    print("Using the same model order")
+                    logger.info("Using the same model order")
                     # is there only one model? If so use it all the time
                     if type(models_to_use) == str or len(models_to_use) == 1:
                         if type(models_to_use) == list:
@@ -489,7 +488,7 @@ class Experimenter:
                             model_list.append(predictor)
 
                 else:
-                    print("Randomly sampling models")
+                    logger.info("Randomly sampling models")
                     # Generate k pipelines with randomly sampled models
                     for index in range(len(models_to_use)):
                         algorithm = sample(models_to_use, 1)[0]
@@ -499,16 +498,16 @@ class Experimenter:
                         model_list.append(predictor)
 
                 if same_preprocessor_order:
-                    print("Using the same preprocessor order")
+                    logger.info("Using the same preprocessor order")
                     # is there only one preprocessor? If so use it all the time
                     if given_preprocessors is not None:
                         if len(given_preprocessors) == 1:
-                            print("Only given one preprocessor")
+                            logger.info("Only given one preprocessor")
                             preprocessor_to_use = given_preprocessors[0]
                             preprocessor: PrimitiveBase = d3m_index.get_primitive(preprocessor_to_use)
                             preprocessor_list = [[preprocessor] for x in range(k_ensembles)]
                         else:
-                            print("Only more than one preprocessor")
+                            logger.info("Only more than one preprocessor")
                             # there is more than one preprocessor given
                             for index, p in enumerate(given_preprocessors):
                                 preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
@@ -522,7 +521,7 @@ class Experimenter:
                             preprocessor_list.append([preprocessor])
 
                 else:
-                    print("Randomly sampling preprocessors")
+                    logger.info("Randomly sampling preprocessors")
                     # randomly sample preprocessors - til we have a new one for each model
                     for index in range(k_ensembles):
                         # get p preprocessor for each model
@@ -532,8 +531,8 @@ class Experimenter:
                         for p in pre:
                             preprocessor: PrimitiveBase = d3m_index.get_primitive(p)
                             preprocessor_list.append([preprocessor])
-                print(model_list)
-                print(preprocessor_list)
+                logger.info(model_list)
+                logger.info(preprocessor_list)
                 final_pipeline = self.create_ensemble_pipeline(k_ensembles, p_preprocessors, preprocessor_list,
                                                                model_list, vertical_concat, ensemble)
                 generated_pipes[algorithm_type].append(final_pipeline)
@@ -553,7 +552,7 @@ class Experimenter:
         :return: the ensembled pipeline
         """
 
-        print("Creating {} pipelines of length {}".format(k, p+1))
+        logger.info("Creating {} pipelines of length {}".format(k, p+1))
         step_counter = 0
 
         # Creating Pipeline

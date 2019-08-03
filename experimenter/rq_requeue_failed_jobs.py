@@ -5,6 +5,9 @@ from rq import Connection, Worker, get_failed_queue, Queue
 import redis
 import re
 
+import logging
+logger = logging.getLogger(__name__)
+
 def is_phrase_in(phrase, text):
     return re.search(r"\b{}\b".format(phrase), text, re.IGNORECASE) is not None
 
@@ -13,7 +16,7 @@ try:
     redis_host = os.environ['REDIS_HOST']
     redis_port = int(os.environ['REDIS_PORT'])
 except Exception as E:
-    print("Exception: environment variables not set")
+    logger.info("Exception: environment variables not set")
     raise E
 
 conn = redis.StrictRedis(
@@ -27,12 +30,12 @@ with Connection(connection=conn):
     job_ids = []
     # registry = queue.failed_job_registry
     requeued_jobs = 0
-    print("Going through failed queue")
+    logger.info("Going through failed queue")
     for index, job in enumerate(fq.jobs):
         if index == 800000:
             break
         if not index % 1000:
-            print("At {} failed jobs".format(index))
+            logger.info("At {} failed jobs".format(index))
 
         error = job.__dict__["exc_info"]
         try:
@@ -62,7 +65,7 @@ with Connection(connection=conn):
                 requeued_jobs += 1
 
         except Exception:
-            print("Exception")
+            logger.info("Exception")
             job_ids.append(job.id)
             requeued_jobs += 1
 
@@ -73,5 +76,5 @@ with Connection(connection=conn):
 
 
 
-    print("We requeued {} failed jobs".format(requeued_jobs))
+    logger.info("We requeued {} failed jobs".format(requeued_jobs))
 

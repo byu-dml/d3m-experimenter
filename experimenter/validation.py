@@ -1,11 +1,13 @@
-import typing
 
+import logging
+logger = logging.getLogger(__name__)
+
+import typing
 from d3m import exceptions
 
 from d3m.utils import load_schema_validators
 from d3m.metadata import base as metadata_base
 import jsonschema
-
 
 SUCCESS = metadata_base.PipelineRunStatusState.SUCCESS.name
 FAILURE = metadata_base.PipelineRunStatusState.FAILURE.name
@@ -23,7 +25,7 @@ def validate_pipeline_run(new_pipeline_json: dict) -> bool:
         _validate_pipeline_run_status_consistency(new_pipeline_json)
         return True
     except Exception as error:
-        print('\n', error, '\n')
+        logger.info('\n {} \n'.format(error))
         return False
 
 def _validate_pipeline_run_status_consistency(

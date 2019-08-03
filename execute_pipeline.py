@@ -10,6 +10,9 @@ from experimenter.database_communication import PipelineDB
 from experimenter.run_fit_pipeline import RunFitPipeline
 from experimenter.run_pipeline import RunPipeline
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def execute_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: str, volumes_dir: str):
     """
@@ -22,19 +25,19 @@ def execute_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: str,
     :param volumes_dir: a string containing the path to the volumes directory
     """
     # Attempt to run the pipeline
-    print("\n On problem {}".format(problem))
+    logger.info("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
     collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
 
     # check if the pipeline has been run:
     if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name):
-        print("Documents are missing or pipeline has already been run. SKIPPING")
+        logger.info("Documents are missing or pipeline has already been run. SKIPPING")
         return
     run_pipeline = RunPipeline(datasets_dir, volumes_dir, problem)
     try:
         results = run_pipeline.run(pipeline=pipe)[0]
     except Exception as e:
-        print("ERROR: pipeline was not successfully run due to {}".format(e))
+        logger.info("ERROR: pipeline was not successfully run due to {}".format(e))
         print_pipeline_run(pipe.to_json_structure())
         raise e
 
@@ -62,23 +65,23 @@ def execute_fit_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: 
     :param volumes_dir: a string containing the path to the volumes directory
     """
     # Attempt to run the pipeline
-    print("\n On problem {}".format(problem))
+    logger.info("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
     collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
     # check if the pipeline has been run:
     if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name, skip_pipeline=True)\
             or mongo_db.metafeature_run_already_exists(problem, pipe.to_json_structure()):
-        print("Documents are missing or pipeline has already been run. SKIPPING")
+        logger.info("Documents are missing or pipeline has already been run. SKIPPING")
         return
     run_pipeline = RunFitPipeline(datasets_dir, volumes_dir, problem)
     try:
         results = run_pipeline.run(pipeline=pipe)
     except Exception as e:
-        print("ERROR: pipeline was not successfully run due to {}".format(e))
+        logger.info("ERROR: pipeline was not successfully run due to {}".format(e))
         print_pipeline_run(pipe._to_json_structure())
         raise e
 
-    print(results)
+    logger.info(results)
     fit_pipeline_run = results
     mongo_db.add_to_metafeatures(fit_pipeline_run._to_json_structure())
 
@@ -120,9 +123,9 @@ def print_pipeline_and_problem(pipeline: dict, problem: str):
     :param pipeline: the pipeline that was executed
     :param problem: the dataset/problem that was used
     """
-    print("Pipeline:")
-    print(get_list_vertically(primitive_list_from_pipeline_object(pipeline)))
-    print("on problem {} \n\n".format(problem))
+    logger.info("Pipeline:")
+    logger.info(get_list_vertically(primitive_list_from_pipeline_object(pipeline)))
+    logger.info("on problem {} \n\n".format(problem))
 
 def get_primitive_combo_string(pipeline):
     prim_string = ''
@@ -151,10 +154,10 @@ def print_pipeline_run(pipeline: dict, score: float = None) -> List[str]:
     :return primitive_list: a list of all the primitives used in the pipeline
     """
     primitive_list = primitive_list_from_pipeline_json(pipeline)
-    print("Ran pipeline:\n")
-    print(get_list_vertically(primitive_list))
+    logger.info("Ran pipeline:\n")
+    logger.info(get_list_vertically(primitive_list))
     if score is not None:
-        print("With a {} of {}".format(score["metric"][0], score["value"][0]))
+        logger.info("With a {} of {}".format(score["metric"][0], score["value"][0]))
     return primitive_list
 
 

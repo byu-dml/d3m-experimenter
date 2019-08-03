@@ -1,5 +1,9 @@
+
+import logging
+logger = logging.getLogger(__name__)
 from experimenter.database_communication import PipelineDB
 import argparse
+
 """
 COMMAND LINE ARGUMENTS:
 
@@ -41,8 +45,8 @@ def main(type_of_run: str, folder_directory: str):
         df_time = pd.DataFrame(values)
         df_time.to_csv("all_pipeline_runs")
         df_time.groupby("dataset").mean().to_csv("aggregate_all_pipeline_runs.csv")
-        print("The datasets with means over 20:")
-        print(np.mean(df_time["time"] > 20*60))
+        logger.info("The datasets with means over 20:")
+        logger.info(np.mean(df_time["time"] > 20*60))
 
     elif type_of_run == "visualize-score":
         values = db.get_pipeline_run_score_distribution()
