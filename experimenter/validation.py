@@ -1,24 +1,31 @@
-import typing
 
+import logging
+logger = logging.getLogger(__name__)
+
+import typing
 from d3m import exceptions
 
 from d3m.utils import load_schema_validators
 from d3m.metadata import base as metadata_base
 import jsonschema
 
-
 SUCCESS = metadata_base.PipelineRunStatusState.SUCCESS.name
 FAILURE = metadata_base.PipelineRunStatusState.FAILURE.name
 
 
-def validate_pipeline_run(new_pipeline_json):
+def validate_pipeline_run(new_pipeline_json: dict) -> bool:
+    """
+    High level function to validate a pipeline_run schema
+    :param new_pipeline_json: the pipeline_run_json to validate
+    :return a bool indicating whether or not the pipeline_run was validated
+    """
     PIPELINE_RUN_SCHEMA_VALIDATOR, = load_schema_validators(metadata_base.SCHEMAS, ('pipeline_run.json',))
     try:
         PIPELINE_RUN_SCHEMA_VALIDATOR.validate(new_pipeline_json)
         _validate_pipeline_run_status_consistency(new_pipeline_json)
         return True
     except Exception as error:
-        print('\n', error, '\n')
+        logger.info('\n {} \n'.format(error))
         return False
 
 def _validate_pipeline_run_status_consistency(

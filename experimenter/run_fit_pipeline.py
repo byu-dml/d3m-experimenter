@@ -1,13 +1,15 @@
 import json
 import typing
 
+import logging
+logger = logging.getLogger(__name__)
+
 from d3m import exceptions, container
 from d3m.metadata import (base as metadata_base, problem as base_problem, pipeline as pipeline_module,
                           pipeline_run as pipeline_run_module)
 from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import fit, get_dataset, Runtime
-
 
 
 class RunFitPipeline:
@@ -43,19 +45,18 @@ class RunFitPipeline:
                          "context": metadata_base.Context.PRODUCTION
                          }
 
-    """
-    This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
-    Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
-    function does not allow for returning the data, so it did not fit in the workflow.
 
-    :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
-    :param random_seed: the random seed that the runtime will use to evalutate the pipeline
-    :returns results_list: a list containing, in order, scores from the pipeline predictions, the fit pipeline_run 
-        and the produce pipeline_run.
-    """
+    def run(self, pipeline: pipeline_module.Pipeline, random_seed: int = 0) -> list:
+         """
+        This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
+        Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
+        function does not allow for returning the data, so it did not fit in the workflow.
 
-    def run(self, pipeline, random_seed: int = 0):
-
+        :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
+        :param random_seed: the random seed that the runtime will use to evalutate the pipeline
+        :returns results_list: a list containing, in order, scores from the pipeline predictions, the fit pipeline_run 
+            and the produce pipeline_run.
+        """
         arguments = self.run_args
 
         runtime_environment = RuntimeEnvironment()
@@ -75,7 +76,7 @@ class RunFitPipeline:
             for input_uri in arguments['inputs']
         ]
 
-        print(inputs)
+        logger.info(inputs)
 
         try:
             runtime, outputs, results_list = self.our_fit(
@@ -85,7 +86,7 @@ class RunFitPipeline:
                 runtime_environment=runtime_environment,
             )
         except exceptions.PipelineRunError as error:
-            print("ERROR: {}".format(error.pipeline_runs))
+            logger.info("ERROR: {}".format(error.pipeline_runs))
             raise error
 
         return results_list
@@ -95,6 +96,9 @@ class RunFitPipeline:
     context: metadata_base.Context, hyperparams: typing.Sequence = None, random_seed: int = 0, volumes_dir: str = None,
     runtime_environment: pipeline_run_module.RuntimeEnvironment = None,
     ) -> typing.Tuple[Runtime, container.DataFrame, pipeline_run_module.PipelineRun]:
+        """
+        Our version of D3M's fit so that we can modify it. See the D3M module for documentation
+        """
         for input in inputs:
             if not isinstance(input, container.Dataset):
                 raise TypeError(

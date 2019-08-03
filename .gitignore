@@ -1,2 +1,6 @@
 *.pyc
 .env
+*hidden*
+*pycache*
+.idea/*
+tests/.cache/

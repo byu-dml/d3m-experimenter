@@ -2,15 +2,22 @@ import os
 import json
 import elasticsearch as el
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     username = os.environ['USERNAME']
     password = int(os.environ['PASSWORD'])
 except Exception as E:
-    print("Exception: environment variables not set")
+    logger.info("Exception: environment variables not set")
     raise E
 
 
-def get_documents_elastic(name_of_index):
+def get_documents_elastic(name_of_index) -> list:
+    """
+    Gets documents from an index of D3M's elastic search
+    TODO: deprecated due to the MtL database repo?
+    """
     es = el.Elasticsearch(
           ['https://metalearning.datadrivendiscovery.org/es/'],
           http_auth=(username, password))
@@ -56,4 +63,4 @@ def get_documents_elastic(name_of_index):
 #     with open('d3m_data/pipeline_runs/{}.json'.format(index), 'w') as outfile:
 #         json.dump(data, outfile)
 
-print("Done")
+logger.info("Done")
