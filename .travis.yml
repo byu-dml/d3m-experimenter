@@ -7,7 +7,12 @@ services:
   - docker-compose
 
 install:
+  - docker login -u $D3M_REGISTRY_USER -p $D3M_REGISTRY_PASSWORD registry.datadrivendiscovery.org/
+  - cd test
+  - bash create_envs.sh
+  - cat .env
   - docker-compose up -d
 
 script:
-  - docker ps -f name=experimenter | grep -w experimenter
+  - docker exec -it test bash
+  - python3 run_tests.py

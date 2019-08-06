@@ -1,0 +1,57 @@
+{
+  "about": {
+    "datasetID": "60_jester_dataset_TEST",
+    "datasetName": "NULL",
+    "license": "Unknown (Public Dataset)",
+    "approximateSize": "78 MB",
+    "datasetSchemaVersion": "3.2.0",
+    "redacted": true,
+    "datasetVersion": "2.0",
+    "digest": "805b1d29b938d75fcce87f85d542a7fcbc8339b3c0d426e4ecf50a62657fab12"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "user_id",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "item_id",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "rating",
+          "colType": "real",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

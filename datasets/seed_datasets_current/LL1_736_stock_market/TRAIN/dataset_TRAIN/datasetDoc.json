@@ -1,0 +1,71 @@
+{
+  "about": {
+    "datasetID": "LL1_736_stock_market_dataset_TRAIN",
+    "datasetName": "Stock market - daily closing data",
+    "description": "Historical stock market closing data for 10 companies in the U.S. for years ranging from 2009 to 2017",
+    "source": "Kaggle",
+    "sourceURI": "https://www.kaggle.com/borismarjanovic/price-volume-data-for-all-us-stocks-etfs",
+    "approximateSize": "",
+    "datasetSchemaVersion": "3.2.0",
+    "license": "CC0",
+    "redacted": false,
+    "digest": "9f87367ad15ce388af8b3e591fd98c679f13583467e38d00a934b3e2ebce7762",
+    "datasetVersion": "2.0"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "Company",
+          "colType": "categorical",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "Year",
+          "colType": "categorical",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "Date",
+          "colType": "dateTime",
+          "role": [
+            "attribute",
+            "timeIndicator"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "Close",
+          "colType": "real",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

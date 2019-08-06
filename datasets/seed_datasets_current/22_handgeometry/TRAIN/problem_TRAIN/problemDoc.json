@@ -1,0 +1,39 @@
+{
+  "about": {
+    "problemID": "22_handgeometry_problem_TRAIN",
+    "problemName": "NULL",
+    "taskType": "regression",
+    "taskSubType": "univariate",
+    "problemSchemaVersion": "3.2.0",
+    "problemVersion": "2.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "22_handgeometry_dataset_TRAIN",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 2,
+            "colName": "WRISTBREADTH"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.3,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "meanSquaredError"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

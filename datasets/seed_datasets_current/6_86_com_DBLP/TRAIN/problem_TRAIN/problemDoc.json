@@ -1,0 +1,39 @@
+{
+  "about": {
+    "problemID": "6_86_com_DBLP_problem_TRAIN",
+    "problemName": "NULL",
+    "taskType": "communityDetection",
+    "taskSubType": "nonOverlapping",
+    "problemVersion": "2.0",
+    "problemSchemaVersion": "3.2.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "6_86_com_DBLP_dataset_TRAIN",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 2,
+            "colName": "community"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.05,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "normalizedMutualInformation"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "about": {
+    "problemID": "60_jester_problem_TRAIN",
+    "problemName": "NULL",
+    "taskType": "collaborativeFiltering",
+    "problemSchemaVersion": "3.2.0",
+    "problemVersion": "2.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "60_jester_dataset_TRAIN",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 3,
+            "colName": "rating"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.5,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "meanAbsoluteError"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

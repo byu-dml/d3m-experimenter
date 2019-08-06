@@ -1,0 +1,61 @@
+{
+  "about": {
+    "datasetID": "6_86_com_DBLP_dataset_TEST",
+    "datasetName": "NULL",
+    "license": "Unknown Public",
+    "datasetSchemaVersion": "3.2.0",
+    "datasetVersion": "2.0",
+    "redacted": true,
+    "digest": "b9aae9458e4ad00e65b055e7c31a16134c97abb3ebe9c7f604ac819957ede34f"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "graphs/G1.gml",
+      "resType": "graph",
+      "resFormat": [
+        "text/gml"
+      ],
+      "isCollection": false
+    },
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "G1.nodeID",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ],
+          "refersTo": {
+            "resID": "0",
+            "resObject": "node"
+          }
+        },
+        {
+          "colIndex": 2,
+          "colName": "community",
+          "colType": "categorical",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+NETBEGIN 1
+CLUBEGIN 1
+PERBEGIN 1
+CLSBEGIN 1
+HIEBEGIN 1
+VECBEGIN 1
+
+% Reading Network   ---    G.net
+N 1 RDN "G.net" (334863)
+% # Louvain Community Detection. Coarsening only.                              #
+% Level=1
+% Shrinking
+% Level=2
+% Shrinking
+% Level=3
+% Shrinking
+% Level=4
+% Shrinking
+% Level=5
+% Shrinking
+% Level=6
+%  Single Refinement on the Original Network.
+% Level=6
+%  Final partition
+C 1 MODULARITY 1 20 50 1 2.7000000000 0.500000 (334863)
+% Saving partition to file   ---    partitions.clu
+C 1 WC "partitions.clu" (334863)
+
+EXIT

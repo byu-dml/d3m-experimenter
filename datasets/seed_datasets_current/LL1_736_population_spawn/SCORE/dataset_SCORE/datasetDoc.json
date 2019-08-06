@@ -1,0 +1,68 @@
+{
+  "about": {
+    "datasetID": "LL1_736_population_spawn_dataset_SCORE",
+    "datasetName": "synthetic species spawn data",
+    "description": "synthetic species spawn data",
+    "source": "MIT-LL",
+    "datasetSchemaVersion": "3.3.0",
+    "redacted": false,
+    "digest": "66bcf82b844193b949f0bfc938ff79d6c704e40d117213de378ff44284707c45",
+    "datasetVersion": "1.0"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "species",
+          "colType": "categorical",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "sector",
+          "colType": "categorical",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "day",
+          "colType": "integer",
+          "role": [
+            "attribute",
+            "timeIndicator"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "count",
+          "colType": "integer",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

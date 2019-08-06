@@ -1,0 +1,150 @@
+{
+  "about": {
+    "datasetID": "32_wikiqa_dataset_TRAIN",
+    "datasetName": "NULL",
+    "license": "MICROSOFT RESEARCH DATA LICENSE AGREEMENT",
+    "approximateSize": "5 MB",
+    "datasetSchemaVersion": "3.2.0",
+    "redacted": true,
+    "datasetVersion": "2.0",
+    "digest": "3c1e7faead91020cc59dcd21bc30e84a438a5be69d4074ab90a6bc8357b25d23"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/questions.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "qIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "question",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ]
+        }
+      ]
+    },
+    {
+      "resID": "1",
+      "resPath": "tables/sentences.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "sIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "sentence",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ]
+        }
+      ]
+    },
+    {
+      "resID": "2",
+      "resPath": "tables/vocabulary.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "index",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "word",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ]
+        }
+      ]
+    },
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "qIndex",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ],
+          "refersTo": {
+            "resID": "0",
+            "resObject": {
+              "columnName": "qIndex"
+            }
+          }
+        },
+        {
+          "colIndex": 2,
+          "colName": "sIndex",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ],
+          "refersTo": {
+            "resID": "1",
+            "resObject": {
+              "columnName": "sIndex"
+            }
+          }
+        },
+        {
+          "colIndex": 3,
+          "colName": "isAnswer",
+          "colType": "categorical",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

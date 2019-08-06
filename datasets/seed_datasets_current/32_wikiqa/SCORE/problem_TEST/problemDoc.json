@@ -1,0 +1,40 @@
+{
+  "about": {
+    "problemID": "32_wikiqa_problem_TEST",
+    "problemName": "NULL",
+    "taskType": "classification",
+    "taskSubType": "binary",
+    "problemSchemaVersion": "3.2.0",
+    "problemVersion": "2.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "32_wikiqa_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 3,
+            "colName": "isAnswer"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.3,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1",
+        "posLabel": "1"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

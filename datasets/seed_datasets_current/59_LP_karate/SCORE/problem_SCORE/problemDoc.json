@@ -1,0 +1,39 @@
+{
+  "about": {
+    "problemID": "59_LP_karate_problem_SCORE",
+    "problemName": "Karate Link prediction problem",
+    "problemDescription": "",
+    "taskType": "linkPrediction",
+    "problemSchemaVersion": "3.3.1",
+    "problemVersion": "1.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "59_LP_karate_dataset_SCORE",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 3,
+            "colName": "linkExists"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.5,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

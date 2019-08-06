@@ -1,0 +1,166 @@
+{
+  "about": {
+    "datasetID": "LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction_dataset",
+    "datasetName": "Bus service rating dataset",
+    "description": "Bus service rating data including trip GPS data",
+    "license": "Unknown",
+    "citation": "\n@inproceedings{cruz2015grouping,\n  title={Grouping similar trajectories for carpooling purposes},\n  author={Cruz, Michael O and Macedo, Hendrik and Guimaraes, Adolfo},\n  booktitle={Intelligent Systems (BRACIS), 2015 Brazilian Conference on},\n  pages={234--239},\n  year={2015},\n  organization={IEEE}\n}\n@misc{Dua:2017 ,\nauthor = \"Dheeru, Dua and Karra Taniskidou, Efi\",\nyear = \"2017\",\ntitle = \"{UCI} Machine Learning Repository\",\nurl = \"http://archive.ics.uci.edu/ml\",\ninstitution = \"University of California, Irvine, School of Information and Computer Sciences\" } \n",
+    "datasetSchemaVersion": "3.2.0",
+    "redacted": false,
+    "datasetVersion": "2.0",
+    "digest": "18165774b7ee911cc7e165c1fde85eb65bf6dc8d3b043345bd0c8ab6acb1e963"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "id_trip",
+          "colType": "integer",
+          "role": [
+            "attribute",
+            "key"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "id_android",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "distance",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "speed",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 5,
+          "colName": "time",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 6,
+          "colName": "traffic",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 7,
+          "colName": "weather",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 8,
+          "colName": "car_or_bus",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 9,
+          "colName": "bus_company",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 10,
+          "colName": "bus_service_rating",
+          "colType": "categorical",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    },
+    {
+      "resID": "1",
+      "resPath": "tables/gpsData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "id",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "id_trip",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ],
+          "refersTo": {
+            "resID": "learningData",
+            "resObject": {
+              "columnName": "id_trip"
+            }
+          }
+        },
+        {
+          "colIndex": 2,
+          "colName": "lat_lon",
+          "colType": "realVector",
+          "role": [
+            "attribute",
+            "locationIndicator"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "date_time",
+          "colType": "dateTime",
+          "role": [
+            "attribute",
+            "timeIndicator"
+          ]
+        }
+      ]
+    }
+  ]
+}

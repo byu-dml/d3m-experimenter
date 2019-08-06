@@ -1,0 +1,77 @@
+{
+  "about": {
+    "datasetID": "59_LP_karate_dataset_TRAIN",
+    "datasetName": "karate network",
+    "description": "These are data collected from the members of a university karate club by Wayne Zachary.",
+    "license": "Creative Commons Attribution-NonCommercial-ShareAlike 2.5 License (http://vlado.fmf.uni-lj.si/pub/networks/data/)",
+    "citation": "\n@inproceedings{kemp2006learning,\n  title={Learning systems of concepts with an infinite relational model},\n  author={Kemp, Charles and Tenenbaum, Joshua B and Griffiths, Thomas L and Yamada, Takeshi and Ueda, Naonori},\n  booktitle={AAAI},\n  volume={3},\n  pages={5},\n  year={2006}\n}\n",
+    "source": "UCINET IV DATASETS",
+    "sourceURI": "http://vlado.fmf.uni-lj.si/pub/networks/data/ucinet/ucidata.htm",
+    "datasetSchemaVersion": "3.3.1",
+    "redacted": false,
+    "datasetVersion": "1.0",
+    "digest": "f85fea89eca1f50c319587ea79dd2cb515e949a10dfb4e440280a39ec2310edc"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "graphs/G.gml",
+      "resType": "graph",
+      "resFormat": [
+        "text/gml"
+      ],
+      "isCollection": false
+    },
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "sourceNode",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ],
+          "refersTo": {
+            "resID": "0",
+            "resObject": "node"
+          }
+        },
+        {
+          "colIndex": 2,
+          "colName": "targetNode",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ],
+          "refersTo": {
+            "resID": "0",
+            "resObject": "node"
+          }
+        },
+        {
+          "colIndex": 3,
+          "colName": "linkExists",
+          "colType": "categorical",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

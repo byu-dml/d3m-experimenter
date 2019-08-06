@@ -1,0 +1,38 @@
+{
+  "about": {
+    "problemID": "LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon_problem_TEST",
+    "problemName": "MS Geolife transportation mode prediction problem",
+    "problemDescription": "The data contains GPS trajectory info collected in (Microsoft Research Asia) Geolife project by 182 users in a period of over three years (from April 2007 to August 2012). A GPS trajectory of this dataset is represented by a sequence of time-stamped points, each of which contains the information of latitude, longitude and altitude. This dataset contains a users trajectories labeled with transportation mode.",
+    "taskType": "classification",
+    "taskSubType": "multiClass",
+    "problemSchemaVersion": "3.3.1",
+    "problemVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 8,
+            "colName": "Transportation"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "splitsFile": "dataSplits.csv",
+      "splitScript": "splitScript.py"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}
