@@ -25,42 +25,21 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     def test_get_classification_problems(self):
         
-        known_seed_classification_problems = set([
-            '/datasets/seed_datasets_current/LL1_ElectricDevices', 
-            '/datasets/seed_datasets_current/LL1_ArrowHead',
-            '/datasets/seed_datasets_current/LL1_HandOutlines',
-            '/datasets/seed_datasets_current/124_174_cifar10',
-            '/datasets/seed_datasets_current/LL1_ECG200',
-            '/datasets/seed_datasets_current/LL1_TXT_CLS_airline_opinion',
-            '/datasets/seed_datasets_current/LL1_50words',
-            '/datasets/seed_datasets_current/uu6_hepatitis',
-            '/datasets/seed_datasets_current/LL1_Adiac',
-            '/datasets/seed_datasets_current/LL1_multilearn_emotions',
-            '/datasets/seed_datasets_current/LL1_FaceFour',
-            '/datasets/seed_datasets_current/uu_101_object_categories',
-            '/datasets/seed_datasets_current/uu7_pima_diabetes',
-            '/datasets/seed_datasets_current/31_urbansound',
-            '/datasets/seed_datasets_current/uu10_posts_3',
-            '/datasets/seed_datasets_current/124_188_usps',
-            '/datasets/seed_datasets_current/LL1_Haptics',
-            '/datasets/seed_datasets_current/LL1_OSULeaf',
-            '/datasets/seed_datasets_current/LL1_CinC_ECG_torso',
-            '/datasets/seed_datasets_current/124_214_coil20',
+        known_seed_classification_problems_test = set([
+            '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
+            '/datasets/seed_datasets_current/1567_poker_hand',
+            '/datasets/seed_datasets_current/185_baseball',
+            '/datasets/seed_datasets_current/196_autoMpg',
+            '/datasets/seed_datasets_current/22_handgeometry',
+            '/datasets/seed_datasets_current/27_wordLevels',
             '/datasets/seed_datasets_current/299_libras_move',
-            '/datasets/seed_datasets_current/loan_status',
-            '/datasets/seed_datasets_current/LL1_Meat',
-            '/datasets/seed_datasets_current/32_fma',
-            '/datasets/seed_datasets_current/LL1_ItalyPowerDemand',
-            '/datasets/seed_datasets_current/LL1_FordA',
-            '/datasets/seed_datasets_current/LL1_VID_UCF11',
-            '/datasets/seed_datasets_current/LL1_TXT_CLS_apple_products_sentiment',
-            '/datasets/seed_datasets_current/LL1_TXT_CLS_3746_newsgroup',
-            '/datasets/seed_datasets_current/LL1_Cricket_Y',
-            '/datasets/seed_datasets_current/LL1_FISH'
+            '/datasets/seed_datasets_current/313_spectrometer',
+            '/datasets/seed_datasets_current/32_wikiqa',
+            '/datasets/seed_datasets_current/38_sick',
         ])
 
         found_problems = set(self.experimenter_driver.problems['classification'])
-        for known_problem in known_seed_classification_problems:
+        for known_problem in known_seed_classification_problems_test:
             self.assertTrue(
                 known_problem in found_problems,
                 'known problem {} not found'.format(known_problem)

@@ -1,8 +1,10 @@
 version: '3.3'
 services:
   d3m:
-    build: .
-    container_name: experimenter
+    build: 
+      context: .
+      dockerfile: build/test-Dockerfile
+    container_name: experimenter-test
     stdin_open: true
     tty: true
     env_file:
@@ -23,8 +25,6 @@ services:
     image: 'mongo:4.0.4'
     ports:
       - '27017:27017'
-    volumes:
-      - 'mongo:/data/db'
 
 networks:
   host:

@@ -2,4 +2,3 @@ FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-artful-p
 ADD . /d3m-experimenter
 WORKDIR /d3m-experimenter
 RUN pip3 install -r requirements.txt
-CMD python3 run_tests.py

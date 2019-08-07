@@ -1,1 +1,0 @@
-This baseline solution uses PajekXXL package (http://mrvar.fdv.uni-lj.si/pajek/PajekXXL.htm) to perform community detection. PajekXXL is a MS Windows-based application. This baseline was developed and tested on Windows platform. Therefore, Windows 7 is one of the requirements for running this baseline.
