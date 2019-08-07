@@ -13,4 +13,3 @@ install:
 
 script:
   - docker exec -it experimenter-test bash
-  - travis_wait 30 python3 run_tests.py
