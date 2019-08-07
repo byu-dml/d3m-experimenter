@@ -11,4 +11,4 @@ install:
   - cd test
 
 script:
-  - bash create_and_test.shd
+  - bash create_and_test.sh
