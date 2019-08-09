@@ -2,8 +2,8 @@ version: '3.3'
 services:
   d3m:
     build: 
-      context: ../
-      dockerfile: test/build/test-Dockerfile
+      context: .
+      dockerfile: build/test-Dockerfile
     container_name: experimenter-test
     stdin_open: true
     tty: true
