@@ -5,7 +5,8 @@ import unittest
 import yaml
 
 from d3m import runtime as runtime_module
-from d3m.runtime import get_pipeline, handler, configure_parser
+from d3m.cli import runtime_handler, runtime_configure_parser
+from d3m.runtime import get_pipeline
 from d3m.metadata import pipeline as pipeline_module
 from experimenter.run_pipeline import RunPipeline
 
@@ -79,7 +80,7 @@ class TestExecutingPipelines(unittest.TestCase):
     def run_d3m(self, problem_name):
         # Check that D3M is working and get results
         parser = argparse.ArgumentParser(description="Run D3M pipelines with default hyper-parameters.")
-        configure_parser(parser)
+        runtime_configure_parser(parser)
         test_args = ['evaluate',
                      '-p', self.pipeline_path,
                      '-n', self.scoring_pipeline_path,
@@ -95,7 +96,7 @@ class TestExecutingPipelines(unittest.TestCase):
 
         arguments = parser.parse_args(args=test_args)
 
-        handler(arguments, parser, pipeline_resolver=get_pipeline)
+        runtime_handler(arguments, parser, pipeline_resolver=get_pipeline)
 
     def run_experimenter_from_pipeline(self, problem_path):
         # load pipeline
@@ -105,7 +106,7 @@ class TestExecutingPipelines(unittest.TestCase):
         # run our system
         run_pipeline = RunPipeline(datasets_dir=self.datasets_dir, volumes_dir=self.volumes_dir,
                                    problem_path=problem_path)
-        results_test = run_pipeline.run(pipeline=pipeline_to_run)[0]
+        scores_test, _ = run_pipeline.run(pipeline=pipeline_to_run)
         # the value of score is in the first document in the first index
-        score = results_test[0]["value"][0]
+        score = scores_test[0]["value"][0]
         return score

@@ -35,15 +35,15 @@ def execute_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: str,
         return
     run_pipeline = RunPipeline(datasets_dir, volumes_dir, problem)
     try:
-        results = run_pipeline.run(pipeline=pipe)[0]
+        scores, results = run_pipeline.run(pipeline=pipe)
     except Exception as e:
         logger.info("ERROR: pipeline was not successfully run due to {}".format(e))
         print_pipeline_run(pipe.to_json_structure())
         raise e
 
-    score = results[0]
-    fit_pipeline_run = results[1]
-    produce_pipeline_run = results[2]
+    score = scores[0]
+    fit_pipeline_run = results[0]
+    produce_pipeline_run = results[1]
     # put in the fit pipeline
     handle_successful_pipeline_run(fit_pipeline_run.to_json_structure(),
                                             pipe.to_json_structure(), score, problem, mongo_db, collection_name)
