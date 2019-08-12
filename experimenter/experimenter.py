@@ -440,7 +440,7 @@ class Experimenter:
         model_list = []
         preprocessor_list = []
         vertical_concat = d3m_index.get_primitive("d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat")
-        ensemble = d3m_index.get_primitive("d3m.primitives.data_preprocessing.EnsembleVoting.DSBOX")
+        ensemble = d3m_index.get_primitive("d3m.primitives.classification.ensemble_voting.DSBOX")
 
         for algorithm_type in problem_types:
             # use the model given, or use random ones from all options
@@ -722,7 +722,7 @@ class Experimenter:
 
         # Step 2: column_parser
         step_2 = PrimitiveStep(
-            primitive=d3m_index.get_primitive('d3m.primitives.metafeature_extraction.metafeature_extractor.BYU'))
+            primitive=d3m_index.get_primitive('d3m.primitives.metalearning.metafeature_extractor.BYU'))
         step_2.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.1.produce')
         step_2.add_output('produce')
         pipeline_description.add_step(step_2)

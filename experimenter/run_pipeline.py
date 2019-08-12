@@ -117,17 +117,15 @@ class RunPipeline:
 
         metrics = get_metrics_from_problem_description(problem_description)
 
-        try:
-            results_list = evaluate(
-                pipeline, data_pipeline, scoring_pipeline, problem_description, inputs, data_params, metrics,
-                context=context, random_seed=random_seed,
-                data_random_seed=random_seed,
-                scoring_random_seed=random_seed,
-                volumes_dir=self.volumes_dir,
-                runtime_environment=runtime_environment,
-            )
-        except exceptions.PipelineRunError as error:
-            logger.info("ERROR: {}".format(error.pipeline_runs))
-            raise error
+        all_scores, all_results = evaluate(
+            pipeline, data_pipeline, scoring_pipeline, problem_description, inputs, data_params, metrics,
+            context=context, random_seed=random_seed,
+            data_random_seed=random_seed,
+            scoring_random_seed=random_seed,
+            volumes_dir=self.volumes_dir,
+            runtime_environment=runtime_environment,
+        )
+        
+        all_results.check_success()
 
-        return results_list
+        return all_scores, all_results
