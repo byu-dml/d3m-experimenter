@@ -24,18 +24,11 @@ class PipelineGenerationTestCase(unittest.TestCase):
         )
 
     def test_get_classification_problems(self):
-        
+        # 1567_poker_hand is blacklisted, 196_auto_mpg is regression
         known_seed_classification_problems_test = set([
             '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
-            '/datasets/seed_datasets_current/1567_poker_hand',
-            '/datasets/seed_datasets_current/185_baseball',
-            '/datasets/seed_datasets_current/196_autoMpg',
-            '/datasets/seed_datasets_current/22_handgeometry',
-            '/datasets/seed_datasets_current/27_wordLevels',
-            '/datasets/seed_datasets_current/299_libras_move',
-            '/datasets/seed_datasets_current/313_spectrometer',
             '/datasets/seed_datasets_current/32_wikiqa',
-            '/datasets/seed_datasets_current/38_sick',
+            '/datasets/seed_datasets_current/185_baseball'
         ])
 
         found_problems = set(self.experimenter_driver.problems['classification'])

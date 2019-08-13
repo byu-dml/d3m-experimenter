@@ -14,18 +14,23 @@ services:
       - ${VOLUMES}:/volumes
       - ${DATASETS}:/datasets
       - ${EXPERIMENTER}:/d3m-experimenter
+    network_mode: host
+
 
   redis:
     image: redis
     container_name: cache
+    ports:
+      - '6379:6379'
     expose:
       - 6379
+    network_mode: host
+
 
   mongo:
     image: 'mongo:4.0.4'
     ports:
       - '27017:27017'
-
-networks:
-  host:
-    external: true
+    expose:
+      - 27017
+    network_mode: host

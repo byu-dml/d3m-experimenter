@@ -11,7 +11,7 @@ from experimenter.autosklearn import (
 from experimenter.autosklearn.primitives import AutoSklearnClassifierPrimitive, Hyperparams
 
 
-TEST_DATASET_NAME = 'LL0_1008_analcatdata_reviewer'
+TEST_DATASET_NAME = '185_baseball'
 
 # AutoSklearnClassifierPrimitive.metadata.contribute_to_class(AutoSklearnClassifierPrimitive)
 
