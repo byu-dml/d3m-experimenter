@@ -24,10 +24,9 @@ class PipelineGenerationTestCase(unittest.TestCase):
         )
 
     def test_get_classification_problems(self):
-        # 1567_poker_hand is blacklisted, 196_auto_mpg is regression
+        # 196_auto_mpg is regression
         known_seed_classification_problems_test = set([
             '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
-            '/datasets/seed_datasets_current/32_wikiqa',
             '/datasets/seed_datasets_current/185_baseball'
         ])
 
