@@ -48,16 +48,16 @@ class TestExecutingPipelines(unittest.TestCase):
             pass
 
     def test_d3m_runtime_works(self):
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = "/datasets/seed_datasets_current/1491_one_hundred_plants_margin"
         problem_name = problem_path.split("/")[-1]
         self.run_d3m(problem_name)
 
     def test_experimenter_run_works_from_pipeline(self):
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = "/datasets/seed_datasets_current/1491_one_hundred_plants_margin"
         self.run_experimenter_from_pipeline(problem_path)
 
     def test_systems_output_equal(self):
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = "/datasets/seed_datasets_current/1491_one_hundred_plants_margin"
         problem_name = problem_path.split("/")[-1]
 
         # run both systems
