@@ -1,0 +1,18 @@
+language: python
+sudo: true
+python:
+  - "3.6"
+
+services:
+  - docker-compose
+
+install:
+  - docker login -u $D3M_REGISTRY_USER -p $D3M_REGISTRY_PASSWORD registry.datadrivendiscovery.org/
+  - cd test
+
+script:
+  - bash create_and_test.sh
+  - cd ..
+  - pip3 install codecov
+  - export CODECOV_TOKEN='66edf814-d6e1-40ae-b98a-dfea63a7e197'
+  - codecov

@@ -1,0 +1,36 @@
+version: '3.3'
+services:
+  d3m:
+    build: 
+      context: .
+      dockerfile: build/test-Dockerfile
+    container_name: experimenter-test
+    stdin_open: true
+    tty: true
+    env_file:
+    - .env
+    entrypoint: /bin/bash
+    volumes:
+      - ${VOLUMES}:/volumes
+      - ${DATASETS}:/datasets
+      - ${EXPERIMENTER}:/d3m-experimenter
+    network_mode: host
+
+
+  redis:
+    image: redis
+    container_name: cache
+    ports:
+      - '6379:6379'
+    expose:
+      - 6379
+    network_mode: host
+
+
+  mongo:
+    image: 'mongo:4.0.4'
+    ports:
+      - '27017:27017'
+    expose:
+      - 27017
+    network_mode: host

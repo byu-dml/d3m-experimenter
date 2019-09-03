@@ -11,7 +11,7 @@ from experimenter.autosklearn import (
 from experimenter.autosklearn.primitives import AutoSklearnClassifierPrimitive, Hyperparams
 
 
-TEST_DATASET_NAME = 'LL0_1008_analcatdata_reviewer'
+TEST_DATASET_NAME = '185_baseball'
 
 # AutoSklearnClassifierPrimitive.metadata.contribute_to_class(AutoSklearnClassifierPrimitive)
 
@@ -25,9 +25,9 @@ class AutoSklearnClassifierPrimitiveTestCase(unittest.TestCase):
                 AutoSklearnClassifierPrimitive.metadata.query()['python_path'],
                 AutoSklearnClassifierPrimitive
             )
-
-        cls.dataset_doc_path = utils.get_dataset_doc_path(TEST_DATASET_NAME)
-        cls.problem_path = utils.get_problem_path(TEST_DATASET_NAME)
+        cls.dataset_seed_dir = "/datasets/seed_datasets_current"
+        cls.dataset_doc_path = utils.get_dataset_doc_path(TEST_DATASET_NAME, cls.dataset_seed_dir)
+        cls.problem_path = utils.get_problem_path(TEST_DATASET_NAME, cls.dataset_seed_dir)
         cls.pipeline_description = get_autosklearn_classification_pipeline()
 
     def test_instantiation(self):
