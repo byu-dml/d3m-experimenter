@@ -616,11 +616,16 @@ class Experimenter:
         pipeline_description.add_step(renamer)
         step_counter += 1
 
-        # finally ensemble them all together
-        step_8 = PrimitiveStep(primitive_description=ensembler.metadata.query())
-        for arg_index, arg in enumerate(self._get_required_args(ensembler)):
-            step_8.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                data_reference='steps.{}.produce'.format(step_counter - 1))
+        # finally ensemble them all together TODO: change the RF to be dynamic
+        ensemble_model = d3m_index.get_primitive('d3m.primitives.regression.random_forest.SKlearn')
+        step_8 = PrimitiveStep(primitive_description=ensemble_model.metadata.query())
+        for arg_index, arg in enumerate(self._get_required_args(ensemble_model)):
+            if arg == "outputs":
+                  step_8.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
+                                    data_reference='steps.{}.produce'.format(3))
+            else:
+                step_8.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
+                                    data_reference='steps.{}.produce'.format(step_counter - 1))
         step_8.add_output('produce')
         pipeline_description.add_step(step_8)
         step_counter += 1
