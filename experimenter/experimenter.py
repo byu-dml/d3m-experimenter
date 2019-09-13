@@ -581,6 +581,7 @@ class Experimenter:
                                     data_reference=data_ref)
             step_5.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
             step_5.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
+            step_5.add_hyperparameter(name='add_index_columns', argument_type=ArgumentType.VALUE, data=True)
             step_5.add_output('produce')
             pipeline_description.add_step(step_5)
             step_counter += 1
