@@ -1,8 +1,8 @@
 preprocessors = [
     "d3m.primitives.data_preprocessing.standard_scaler.SKlearn",
     "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
-    "d3m.primitives.data_transformation.kernel_pca.SKlearn",
-    "d3m.primitives.data_transformation.pca.SKlearn",
+    "d3m.primitives.feature_extraction.kernel_pca.SKlearn",
+    "d3m.primitives.feature_extraction.pca.SKlearn",
     "d3m.primitives.data_transformation.fast_ica.SKlearn",
     "d3m.primitives.feature_selection.select_fwe.SKlearn",
     "d3m.primitives.feature_selection.select_percentile.SKlearn",

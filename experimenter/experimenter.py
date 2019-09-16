@@ -440,7 +440,7 @@ class Experimenter:
         model_list = []
         preprocessor_list = []
         vertical_concat = d3m_index.get_primitive("d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat")
-        ensemble = d3m_index.get_primitive("d3m.primitives.data_preprocessing.EnsembleVoting.DSBOX")
+        ensemble = d3m_index.get_primitive("d3m.primitives.classification.ensemble_voting.DSBOX")
 
         for algorithm_type in problem_types:
             # use the model given, or use random ones from all options
@@ -538,7 +538,6 @@ class Experimenter:
 
         # Creating Pipeline
         pipeline_description = Pipeline(context=Context.TESTING)
-        pipeline_description.add_input(name='inputs')
 
         step_counter = self._add_initial_steps(pipeline_description, step_counter)
         init_step_counter = step_counter
@@ -582,6 +581,7 @@ class Experimenter:
                                     data_reference=data_ref)
             step_5.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
             step_5.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
+            step_5.add_hyperparameter(name='add_index_columns', argument_type=ArgumentType.VALUE, data=True)
             step_5.add_output('produce')
             pipeline_description.add_step(step_5)
             step_counter += 1
@@ -616,11 +616,16 @@ class Experimenter:
         pipeline_description.add_step(renamer)
         step_counter += 1
 
-        # finally ensemble them all together
-        step_8 = PrimitiveStep(primitive_description=ensembler.metadata.query())
-        for arg_index, arg in enumerate(self._get_required_args(ensembler)):
-            step_8.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                data_reference='steps.{}.produce'.format(step_counter - 1))
+        # finally ensemble them all together TODO: change the RF to be dynamic
+        ensemble_model = d3m_index.get_primitive('d3m.primitives.regression.random_forest.SKlearn')
+        step_8 = PrimitiveStep(primitive_description=ensemble_model.metadata.query())
+        for arg_index, arg in enumerate(self._get_required_args(ensemble_model)):
+            if arg == "outputs":
+                  step_8.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
+                                    data_reference='steps.{}.produce'.format(3))
+            else:
+                step_8.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
+                                    data_reference='steps.{}.produce'.format(step_counter - 1))
         step_8.add_output('produce')
         pipeline_description.add_step(step_8)
         step_counter += 1
@@ -722,7 +727,7 @@ class Experimenter:
 
         # Step 2: column_parser
         step_2 = PrimitiveStep(
-            primitive=d3m_index.get_primitive('d3m.primitives.metafeature_extraction.metafeature_extractor.BYU'))
+            primitive=d3m_index.get_primitive('d3m.primitives.metalearning.metafeature_extractor.BYU'))
         step_2.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='steps.1.produce')
         step_2.add_output('produce')
         pipeline_description.add_step(step_2)

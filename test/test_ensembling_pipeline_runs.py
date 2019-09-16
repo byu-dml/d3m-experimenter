@@ -91,7 +91,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
         # run our system
         run_pipeline = RunPipeline(datasets_dir=self.datasets_dir, volumes_dir=self.volumes_dir,
                                    problem_path=problem_path)
-        results_test = run_pipeline.run(pipeline=pipeline_to_run)[0]
+        scores_test, _ = run_pipeline.run(pipeline=pipeline_to_run)
         # the value of score is in the first document in the first index
-        score = results_test[0]["value"][0]
+        score = scores_test[0]["value"][0]
         return score
