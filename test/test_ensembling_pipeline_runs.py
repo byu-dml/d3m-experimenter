@@ -74,7 +74,6 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_LARGE(self):
-        self.fail("testing")
         generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=6, p_preprocessors=4,
                                                                    n_generated_pipelines=1, same_model=False,
                                                                    same_preprocessor_order=False,
