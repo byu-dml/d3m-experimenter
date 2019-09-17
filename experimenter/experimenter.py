@@ -114,12 +114,22 @@ class Experimenter:
         )
 
         # imputer step
-        attributes_step_i = step_counter
         step_counter = add_pipeline_step(
             pipeline_description,
             step_counter,
             'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
         )
+
+        # extract_columns_by_semantic_types(attributes) step
+        extract_attributes_step = create_pipeline_step(
+            step_counter,
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'
+        )
+        extract_attributes_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                  data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
+        pipeline_description.add_step(extract_attributes_step)
+        attributes_step_i = step_counter
+        step_counter += 1
 
         # extract_columns_by_semantic_types(targets) step
         extract_targets_step = create_pipeline_step(
@@ -135,17 +145,15 @@ class Experimenter:
 
         return step_counter, attributes_step_i, target_step_i
 
-    def _add_predictions_constructor(self, pipeline_description: Pipeline, step_counter: int, reference_step: int) -> int:
+    def _add_predictions_constructor(self, pipeline_description: Pipeline, step_counter: int) -> int:
         """
         Adds the predictions constructor to a pipeline description and increments the step counter
         :param pipeline_description: the pipeline-to-be
         :param step_counter: the int representing what step we're on
-        :param reference_step: the number of the step whose output can be used as a reference data frame
-            for reconstructing any missing metadata.
         """
         # PredictionsConstructor step
         step = create_pipeline_step(step_counter, "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon")
-        step.add_argument(name='reference', argument_type=ArgumentType.CONTAINER, data_reference=f'steps.{reference_step}.produce')
+        step.add_argument(name='reference', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
         pipeline_description.add_step(step)
         step_counter += 1
 
@@ -213,7 +221,7 @@ class Experimenter:
         pipeline_description.add_step(classifier_step)
         step_counter += 1
 
-        step_counter = self._add_predictions_constructor(pipeline_description, step_counter, attributes_step_i)
+        step_counter = self._add_predictions_constructor(pipeline_description, step_counter)
 
         # Adding output step to the pipeline
         pipeline_description.add_output(name='Output', data_reference='steps.{}.produce'.format(step_counter - 1))
@@ -565,7 +573,10 @@ class Experimenter:
             classifier_step = PrimitiveStep(primitive_description=model.metadata.query())
             for arg in self._get_required_args(model):
                 # if no preprocessors make sure we are getting the data from the imputer
-                data_ref = 'steps.{}.produce'.format(step_counter - 1 if preprocessor_used else attributes_step_i)
+                if arg == "outputs":
+                    data_ref = f'steps.{target_step_i}.produce'
+                else:
+                    data_ref = 'steps.{}.produce'.format(step_counter - 1 if preprocessor_used else attributes_step_i)
                 classifier_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
                                     data_reference=data_ref)
             classifier_step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
@@ -575,7 +586,7 @@ class Experimenter:
             pipeline_description.add_step(classifier_step)
             step_counter += 1
 
-            step_counter = self._add_predictions_constructor(pipeline_description, step_counter, attributes_step_i)
+            step_counter = self._add_predictions_constructor(pipeline_description, step_counter)
             list_of_outputs.append(step_counter - 1)
 
 
@@ -610,7 +621,7 @@ class Experimenter:
         ensemble_step = PrimitiveStep(primitive_description=ensemble_model.metadata.query())
         for arg_index, arg in enumerate(self._get_required_args(ensemble_model)):
             if arg == "outputs":
-                  ensemble_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
+                ensemble_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
                                     data_reference='steps.{}.produce'.format(target_step_i))
             else:
                 ensemble_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
@@ -620,7 +631,7 @@ class Experimenter:
         step_counter += 1
 
         # output them as predictions
-        step_counter = self._add_predictions_constructor(pipeline_description, step_counter, attributes_step_i)
+        step_counter = self._add_predictions_constructor(pipeline_description, step_counter)
 
         # Adding output step to the pipeline
         pipeline_description.add_output(name='Output', data_reference='steps.{}.produce'.format(step_counter - 1))

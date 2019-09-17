@@ -114,8 +114,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
 
         primitives = primitive_list_from_pipeline_json(generated_pipelines["classification"][0].to_json_structure())
         primitives_used = set(primitives)
-        primitives_repeated = 16  # preprocessor repeats 5 times, model repeats 5 times, concat repeats 2 times and
-                                 # construct predictiond repeats 5 times
+        # extract by semantic types repeats 2 times, preprocessor repeats 5 times, model repeats 5 times,
+        # concat repeats 2 times, and construct predictions repeats 5 times
+        primitives_repeated = 17                     
         self.assertEqual(len(primitives_used), len(primitives) - primitives_repeated,
                          msg="The expected number of unique primitives was {} but we got {}".format(len(primitives) -
                                                                                                     primitives_repeated,
