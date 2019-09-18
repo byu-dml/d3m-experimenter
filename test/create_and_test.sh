@@ -8,4 +8,10 @@ sudo docker exec -it experimenter-test bash -c "pip3 install coverage"
 sudo docker exec -it experimenter-test bash -c "pip3 install codecov"
 sudo docker exec -it experimenter-test bash -c "export CODECOV_TOKEN='66edf814-d6e1-40ae-b98a-dfea63a7e197'"
 sudo docker exec -it experimenter-test bash -c "coverage run run_tests.py"
+val=$?
+if [ ${val} -ne  0 ]
+then
+ echo "Tests did not pass"
+ exit 1 
+fi
 rm -rf build/
