@@ -39,10 +39,12 @@ class PipelineGenerationTestCase(unittest.TestCase):
     
     def test_basic_pipeline_structure(self):
 
-        num_pipeline_steps = 6  # DatasetToDataFrame/ColumnParser/SKImputer/ExtractSemanticTypes/
+        num_pipeline_steps = 7  # DatasetToDataFrame/ColumnParser/SKImputer/
+                                # ExtractSemanticTypes(attributes)/
+                                # ExtractSemanticTypes(targets)/
                                 # SKGaussianNB/ConstructPredictions
-        pipeline_step_zero = 'd3m.primitives.data_transformation.dataset_to_dataframe.Common'
-        pipeline_step_four = 'd3m.primitives.data_transformation.construct_predictions.DataFrameCommon'
+        dataset_to_dataframe = 'd3m.primitives.data_transformation.dataset_to_dataframe.Common'
+        construct_predictions = 'd3m.primitives.data_transformation.construct_predictions.DataFrameCommon'
 
         print("Testing that the pipelines are what they should be...")
         # should only make one pipeline with no preprocessor
@@ -56,5 +58,5 @@ class PipelineGenerationTestCase(unittest.TestCase):
         generated_pipelines = self.experimenter_driver.generated_pipelines['classification'][0].to_json_structure()
         # make sure there are the normal number of steps in the pipeline
         self.assertEqual(len(generated_pipelines['steps']), num_pipeline_steps)
-        self.assertEqual(generated_pipelines['steps'][0]['primitive']['python_path'], pipeline_step_zero)
-        self.assertEqual(generated_pipelines['steps'][5]['primitive']['python_path'], pipeline_step_four)
+        self.assertEqual(generated_pipelines['steps'][0]['primitive']['python_path'], dataset_to_dataframe)
+        self.assertEqual(generated_pipelines['steps'][6]['primitive']['python_path'], construct_predictions)
