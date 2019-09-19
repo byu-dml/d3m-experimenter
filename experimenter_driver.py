@@ -7,7 +7,7 @@ log_config.dictConfig({
     'disable_existing_loggers': True,
 })
 logger = logging.getLogger(__name__)
-from experimenter.experimenter import Experimenter, register_primitives
+from experimenter.experimenter import Experimenter
 import os, json, pdb, traceback, sys
 from experimenter.database_communication import PipelineDB
 from experimenter.experimenter import _pretty_print_json
@@ -178,46 +178,47 @@ Options for command line interface
             independently of this one.
 
 Examples:
+TODO: update these examples once this gets stable
 python3 experimenter_driver.py (runs and generates all pipelines from mongodb on all problems)
 python3 experimenter_driver.py -r all (runs all pipelines from mongodb on all problems)
 
 python3 experimenter_driver.py -r execute (runs all pipelines from mongodb on all problems)
-python3 experimenter.py -r execute -f default (takes pipelines from default folder "experimenter/created_pipelines/")
-python3 experimenter.py -r execute -f other_folder/ (takes pipelines from "other_folder/")
+python3 experimenter_driver.py -r execute -f default (takes pipelines from default folder "experimenter/created_pipelines/")
+python3 experimenter_driver.py -r execute -f other_folder/ (takes pipelines from "other_folder/")
 
 python3 experimenter_driver.py -r distribute (takes pipelines from the database and adds jobs to the RQ queue)
 
-python3 experimenter.py -r pipeline_path -f default (takes pipelines from default folder "experimenter/created_pipelines/")
-python3 experimenter.py -r pipeline_path -f other_folder/ (takes pipelines from default folder "other_folder/")
+python3 experimenter_driver.py -r pipeline_path -f default (takes pipelines from default folder "experimenter/created_pipelines/")
+python3 experimenter_driver.py -r pipeline_path -f other_folder/ (takes pipelines from default folder "other_folder/")
 
-python3 experimenter.py -r generate (creates pipelines and stores them in mongodb)
-python3 experimenter.py -r generate -f default (creates pipelines in default folder "experimenter/created_pipelines/")
-python3 experimenter.py -r generate -f other_folder/ (creates pipelines and stores them in "other_folder/")
+python3 experimenter_driver.py -r generate (creates pipelines and stores them in mongodb)
+python3 experimenter_driver.py -r generate -f default (creates pipelines in default folder "experimenter/created_pipelines/")
+python3 experimenter_driver.py -r generate -f other_folder/ (creates pipelines and stores them in "other_folder/")
 
 python3 experimenter_driver.py -r all -b (creates AutoML pipelines on all problems and executes them)
-python3 experimenter.py -r generate -b (creates AutoML system pipelines and stores them in mongodb)
+python3 experimenter_driver.py -r generate -b (creates AutoML system pipelines and stores them in mongodb)
 python3 experimenter_driver.py -r distribute -b (takes AutoML pipelines from the database and adds jobs to the RQ queue)
-python3 experimenter.py -r execute -b (takes AutoML pipelines from the database and executes them)
+python3 experimenter_driver.py -r execute -b (takes AutoML pipelines from the database and executes them)
 """
-def main(run_type: str, pipeline_folder: str, run_baselines: bool, only_run_fit: bool):
+def main(run_type: str, pipeline_folder: str, run_baselines: bool, only_run_fit: bool, args: dict):
 
     datasets_dir = '/datasets'
     volumes_dir = '/volumes'
 
     if run_baselines:
-        register_primitives()
+        raise Exception("Type is deprecated")
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         if run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
             experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
-                                        generate_problems=True, generate_automl_pipelines=run_baselines)
+                                        generate_problems=True, generate_automl_pipelines=run_baselines, args=args)
 
         elif run_type == "generate":
             logger.info("Only generating pipelines...")
             experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
-                                        location=pipeline_folder, generate_automl_pipelines=run_baselines)
+                                        location=pipeline_folder, generate_automl_pipelines=run_baselines, args=args)
             return
 
         elif run_type == "distribute":
@@ -255,10 +256,15 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("--run-custom-fit", '-c', help="Whether or not to run only fit and use given pipelines",
                         action='store_true')
+    parser.add_argument("--pipeline-gen-type", '-p', help="what type of pipelines to generate: ensembles, straight, metafeature, or random",
+                        choices=["ensemble", "straight", "metafeatures", "random"], default="straight")
     parser.add_argument("--verbose", "-v", action="store_true", help="Whether to print for debugging or not", default=False)
+    parser.add_argument("--n_preprocessors", "-np", type=int, help="how many preprocessors to use for generation", default=3)
+    parser.add_argument("--n_classifiers", "-nc", type=int, help="how many classifiers to use for generation", default=3)
+    parser.add_argument("--seed", type=int, help="seed to use for random generation", default=0) 
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.CRITICAL)
-    main(args.run_type, args.pipeline_folder, args.run_baselines, args.run_custom_fit)
+    main(args.run_type, args.pipeline_folder, args.run_baselines, args.run_custom_fit, args)
