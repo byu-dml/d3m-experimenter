@@ -10,11 +10,11 @@ class EZPipeline(Pipeline):
     A subclass of `d3m.metadata.pipeline.Pipeline` that is easier to work
     with when building a pipeline, since it allows for certain steps to be
     tagged with a 'ref', (a.k.a. reference) so they can be easily referenced
-    later on in the building of the pipeline. For example an `EZPipeline`
-    can be used to track which step contains the pipeline's raw dataframe,
-    prepared attributes, prepared targets, etc., and to easily get access to
-    those steps and their output when future steps need to use the output of
-    those steps as input.
+    later on in the building of the pipeline. For example it can be used to
+    track which steps contain the pipeline's raw dataframe, prepared
+    attributes, prepared targets, etc., and to easily get access to those
+    steps and their output when future steps need to use the output of those
+    steps as input.
     """
 
     # Constructor
