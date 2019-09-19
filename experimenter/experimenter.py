@@ -62,9 +62,8 @@ class Experimenter:
             logger.info("Generating pipelines of type {}".format(args.pipeline_gen_type))
             if args.pipeline_gen_type == "metafeatures":
                 self.generated_pipelines: dict = self.generate_metafeatures_pipeline()
-                # TODO: what do we want to do with this?
             elif args.pipeline_gen_type == "random":
-                pass # TODO: add random search
+                raise NotImplementedError("Random has not been implemented") # TODO: add random search
             elif args.pipeline_gen_type == "straight":
                 self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
             elif args.pipeline_gen_type == "ensemble":
