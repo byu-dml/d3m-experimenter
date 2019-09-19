@@ -1,5 +1,5 @@
 [![Build Status](https://api.travis-ci.org/byu-dml/d3m-experimenter.png)](https://travis-ci.org/byu-dml/d3m-experimenter)
-[![codecov](https://codecov.io/gh/byu-dml/d3m-experimenter/branch/master/graph/badge.svg)](https://codecov.io/gh/byu-dml/d3m-experimenter)
+[![codecov](https://codecov.io/gh/byu-dml/d3m-experimenter/branch/develop/graph/badge.svg)](https://codecov.io/gh/byu-dml/d3m-experimenter)
 
 # Current State and Goals (as of 2.13.19)
 1. It runs on all dataset types (seed, LL0, LL1).  It runs on classification (14 counts) and regression (17 counts) type problems that contain tabular data, as well as on many preprocessors (9 counts).
