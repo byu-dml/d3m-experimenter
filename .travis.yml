@@ -7,7 +7,6 @@ services:
   - docker-compose
 
 install:
-  - echo $D3M_REGISTRY_PASSWORD | docker login -u $D3M_REGISTRY_USER --password-stdin registry.datadrivendiscovery.org/
   - cd test
 
 script:
