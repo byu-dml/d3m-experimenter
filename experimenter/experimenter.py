@@ -11,6 +11,7 @@ from d3m.metadata.base import Context, ArgumentType
 from typing import List, Tuple
 import logging
 from d3m.metadata.pipeline import Pipeline
+from experimenter.pipeline_builder import EZPipeline
 import os
 import json
 from .database_communication import PipelineDB
@@ -84,80 +85,74 @@ class Experimenter:
             self.num_pipelines = len(self.generated_pipelines["classification"])
             self.output_automl_pipelines_to_mongodb()
 
-    def _add_initial_steps(self, pipeline_description: Pipeline, step_counter: int) -> Tuple[int, int, int]:
+    def _add_initial_steps(self, pipeline_description: EZPipeline) -> None:
         """
-        :param pipeline_description: an empty pipeline object that we can add steps to.
-        :param step_counter: a integer representing the number of the next step we are on.
-        :return (step_counter, target_step_i): A tuple containing:
-            step_counter: The the number of the next step to be worked on after the call to
-                this method is complete.
-            attributes_step_i: The number of the step whose ouptut holds the final version
-                of the attributes
-            target_step_i: The number of the step whose output holds the target data.
+        :param pipeline_description: an empty pipeline object that we can add
+            the initial data preparation steps to.
         """
         # Creating pipeline
         pipeline_description.add_input(name='inputs')
 
         # dataset_to_dataframe step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
-            input_data_reference='inputs.0'
+            'inputs.0'
         )
+        pipeline_description.set_step_i_of('raw_df')
 
         # column_parser step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
         )
 
         # imputer step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
         )
 
         # extract_columns_by_semantic_types(attributes) step
         extract_attributes_step = create_pipeline_step(
-            step_counter,
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            pipeline_description.curr_step_data_ref
         )
         extract_attributes_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
                                   data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
         pipeline_description.add_step(extract_attributes_step)
-        attributes_step_i = step_counter
-        step_counter += 1
+        pipeline_description.set_step_i_of('attrs')
 
         # extract_columns_by_semantic_types(targets) step
         extract_targets_step = create_pipeline_step(
-            step_counter,
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            input_data_reference='steps.0.produce'
+            pipeline_description.data_ref_of('raw_df')
         )
         extract_targets_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
                                   data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
         pipeline_description.add_step(extract_targets_step)
-        target_step_i = step_counter
-        step_counter += 1
+        pipeline_description.set_step_i_of('target')
 
-        return step_counter, attributes_step_i, target_step_i
-
-    def _add_predictions_constructor(self, pipeline_description: Pipeline, step_counter: int) -> int:
+    def _add_predictions_constructor(self, pipeline_description: EZPipeline, input_data_ref: str = None) -> None:
         """
         Adds the predictions constructor to a pipeline description and increments the step counter
         :param pipeline_description: the pipeline-to-be
-        :param step_counter: the int representing what step we're on
+        :param input_data_ref: the data reference to be used as the input to the predictions primitive.
+            If `None`, the output data reference to the pipeline's most recently added step will be used. 
         """
+        if input_data_ref is None:
+            input_data_ref = pipeline_description.curr_step_data_ref
         # PredictionsConstructor step
-        step = create_pipeline_step(step_counter, "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon")
-        step.add_argument(name='reference', argument_type=ArgumentType.CONTAINER, data_reference='steps.0.produce')
+        step = create_pipeline_step(
+            "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
+            input_data_ref
+        )
+        step.add_argument(
+            name='reference',
+            argument_type=ArgumentType.CONTAINER,
+            data_reference=pipeline_description.data_ref_of('raw_df')
+        )
         pipeline_description.add_step(step)
-        step_counter += 1
-
-        return step_counter
 
     def _get_required_args(self, p: PrimitiveBase) -> list:
         """
@@ -179,12 +174,11 @@ class Experimenter:
         :param classifier: the primitive to use as a classifier
         :return a newly created pipeline
         """
-        step_counter = 0
 
         # Creating Pipeline
-        pipeline_description = Pipeline(context=Context.TESTING)
+        pipeline_description = EZPipeline(context=Context.TESTING)
 
-        step_counter, attributes_step_i, target_step_i = self._add_initial_steps(pipeline_description, step_counter)
+        self._add_initial_steps(pipeline_description)
         preprocessor_used = False
 
         # Preprocessor Step
@@ -192,9 +186,9 @@ class Experimenter:
             preprocessor_step = PrimitiveStep(primitive_description=preprocessor.metadata.query())
             for arg in self._get_required_args(preprocessor):
                 if arg == "outputs":
-                    data_ref = f'steps.{target_step_i}.produce'
+                    data_ref = pipeline_description.data_ref_of('target')
                 else:
-                    data_ref = f'steps.{attributes_step_i}.produce'
+                    data_ref = pipeline_description.data_ref_of('attrs')
                     preprocessor_used = True
 
                 preprocessor_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
@@ -203,28 +197,28 @@ class Experimenter:
             preprocessor_step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
             preprocessor_step.add_output('produce')
             pipeline_description.add_step(preprocessor_step)
-            step_counter += 1
 
         # Classifier Step
         classifier_step = PrimitiveStep(primitive_description=classifier.metadata.query())
         for arg in self._get_required_args(classifier):
             if arg == "outputs":
-                data_ref = f'steps.{target_step_i}.produce'
+                data_ref = pipeline_description.data_ref_of('target')
             else:
-                # if we haven't used a preprocessor, we have to go back two to get the full dataframe
-                data_ref = f'steps.{step_counter - 1 if preprocessor_used else attributes_step_i}.produce'
+                if preprocessor_used:
+                    data_ref = pipeline_description.curr_step_data_ref
+                else:
+                    data_ref = pipeline_description.data_ref_of('attrs')
             classifier_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
                                 data_reference=data_ref)
         classifier_step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
         classifier_step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
         classifier_step.add_output('produce')
         pipeline_description.add_step(classifier_step)
-        step_counter += 1
 
-        step_counter = self._add_predictions_constructor(pipeline_description, step_counter)
+        self._add_predictions_constructor(pipeline_description)
 
         # Adding output step to the pipeline
-        pipeline_description.add_output(name='Output', data_reference='steps.{}.produce'.format(step_counter - 1))
+        pipeline_description.add_output(name='Output', data_reference=pipeline_description.curr_step_data_ref)
 
         return pipeline_description
 
@@ -539,9 +533,9 @@ class Experimenter:
         step_counter = 0
 
         # Creating Pipeline
-        pipeline_description = Pipeline(context=Context.TESTING)
+        pipeline_description = EZPipeline(context=Context.TESTING)
 
-        step_counter, attributes_step_i, target_step_i = self._add_initial_steps(pipeline_description, step_counter)
+        self._add_initial_steps(pipeline_description)
         list_of_outputs = []
         preprocessor_used = False
 
@@ -557,9 +551,9 @@ class Experimenter:
                 preprocessor_step = PrimitiveStep(primitive_description=pre.metadata.query())
                 for arg in self._get_required_args(pre):
                     if arg == "outputs":
-                        data_ref = f'steps.{target_step_i}.produce'
+                        data_ref = pipeline_description.data_ref_of('target')
                     else:
-                        data_ref = f'steps.{attributes_step_i}.produce'
+                        data_ref = pipeline_description.data_ref_of('attrs')
                         preprocessor_used = True
                     preprocessor_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
                                         data_reference=data_ref)
@@ -567,16 +561,18 @@ class Experimenter:
                 preprocessor_step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
                 preprocessor_step.add_output('produce')
                 pipeline_description.add_step(preprocessor_step)
-                step_counter += 1
 
             # Classifier Step
             classifier_step = PrimitiveStep(primitive_description=model.metadata.query())
             for arg in self._get_required_args(model):
                 # if no preprocessors make sure we are getting the data from the imputer
                 if arg == "outputs":
-                    data_ref = f'steps.{target_step_i}.produce'
+                    data_ref = pipeline_description.data_ref_of('target')
                 else:
-                    data_ref = 'steps.{}.produce'.format(step_counter - 1 if preprocessor_used else attributes_step_i)
+                    if preprocessor_used:
+                        data_ref = pipeline_description.curr_step_data_ref
+                    else:
+                        data_ref = pipeline_description.data_ref_of('attrs')
                 classifier_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
                                     data_reference=data_ref)
             classifier_step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
@@ -584,26 +580,24 @@ class Experimenter:
             classifier_step.add_hyperparameter(name='add_index_columns', argument_type=ArgumentType.VALUE, data=True)
             classifier_step.add_output('produce')
             pipeline_description.add_step(classifier_step)
-            step_counter += 1
 
-            step_counter = self._add_predictions_constructor(pipeline_description, step_counter)
-            list_of_outputs.append(step_counter - 1)
+            self._add_predictions_constructor(pipeline_description)
+            list_of_outputs.append(pipeline_description.curr_step_data_ref)
 
 
         # concatenate k - 1 times
         for concat_num in range(k-1):
             if concat_num == 0:
-                steps_list = [list_of_outputs[concat_num], list_of_outputs[concat_num + 1]]
+                steps_data_ref_list = [list_of_outputs[concat_num], list_of_outputs[concat_num + 1]]
             else:
-                steps_list = [step_counter - 1, list_of_outputs[concat_num + 1]]
+                steps_data_ref_list = [pipeline_description.curr_step_data_ref, list_of_outputs[concat_num + 1]]
 
             concat_step = PrimitiveStep(primitive_description=concatenator.metadata.query())
             for arg_index, arg in enumerate(self._get_required_args(concatenator)):
                 concat_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                    data_reference='steps.{}.produce'.format(steps_list[arg_index]))
+                                    data_reference=steps_data_ref_list[arg_index])
             concat_step.add_output('produce')
             pipeline_description.add_step(concat_step)
-            step_counter += 1
 
 
         # finally ensemble them all together
@@ -611,10 +605,9 @@ class Experimenter:
             primitive=d3m_index.get_primitive('d3m.primitives.data_transformation.rename_duplicate_name.DataFrameCommon'))
         for arg_index, arg in enumerate(self._get_required_args(ensembler)):
             renamer.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                data_reference='steps.{}.produce'.format(step_counter - 1))
+                                data_reference=pipeline_description.curr_step_data_ref)
         renamer.add_output('produce')
         pipeline_description.add_step(renamer)
-        step_counter += 1
 
         # finally ensemble them all together TODO: change the RF to be dynamic
         ensemble_model = d3m_index.get_primitive('d3m.primitives.regression.random_forest.SKlearn')
@@ -622,19 +615,18 @@ class Experimenter:
         for arg_index, arg in enumerate(self._get_required_args(ensemble_model)):
             if arg == "outputs":
                 ensemble_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                    data_reference='steps.{}.produce'.format(target_step_i))
+                                    data_reference=pipeline_description.data_ref_of('target'))
             else:
                 ensemble_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                    data_reference='steps.{}.produce'.format(step_counter - 1))
+                                    data_reference=pipeline_description.curr_step_data_ref)
         ensemble_step.add_output('produce')
         pipeline_description.add_step(ensemble_step)
-        step_counter += 1
 
         # output them as predictions
-        step_counter = self._add_predictions_constructor(pipeline_description, step_counter)
+        self._add_predictions_constructor(pipeline_description)
 
         # Adding output step to the pipeline
-        pipeline_description.add_output(name='Output', data_reference='steps.{}.produce'.format(step_counter - 1))
+        pipeline_description.add_output(name='Output', data_reference=pipeline_description.curr_step_data_ref)
 
         return pipeline_description
 
@@ -646,64 +638,64 @@ class Experimenter:
         :return: the sample pipeline
         """
         # Creating pipeline
-        step_counter = 0
-        pipeline_description = Pipeline(context=Context.TESTING)
+        pipeline_description = EZPipeline(context=Context.TESTING)
         pipeline_description.add_input(name='inputs')
 
         # dataset_to_dataframe step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
-            input_data_reference='inputs.0'
+            'inputs.0'
         )
+        pipeline_description.set_step_i_of('raw_df')
 
         # column_parser step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.data_transformation.column_parser.DataFrameCommon',
         )
 
         # extract_columns_by_semantic_types(attributes) step
-        attributes_ref = f'steps.{step_counter}.produce'
         extract_attributes_step = create_pipeline_step(
-            step_counter,
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            pipeline_description.curr_step_data_ref
         )
         extract_attributes_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
                                   data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
         pipeline_description.add_step(extract_attributes_step)
-        step_counter += 1
+        pipeline_description.set_step_i_of('attrs')
 
         # extract_columns_by_semantic_types(targets) step
         extract_targets_step = create_pipeline_step(
-            step_counter,
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            input_data_reference='steps.0.produce'
+            pipeline_description.data_ref_of('raw_df')
         )
         extract_targets_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
                                   data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
         pipeline_description.add_step(extract_targets_step)
-        targets_ref = f'steps.{step_counter}.produce'
-        step_counter += 1
+        pipeline_description.set_step_i_of('target')
 
         # imputer step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.data_cleaning.imputer.SKlearn',
-            input_data_reference=attributes_ref
+            pipeline_description.data_ref_of('attrs')
         )
 
         # random_forest step
-        rf_step = create_pipeline_step(step_counter, 'd3m.primitives.regression.random_forest.SKlearn')
-        rf_step.add_argument(name='outputs', argument_type=ArgumentType.CONTAINER, data_reference=targets_ref)
+        rf_step = create_pipeline_step(
+            'd3m.primitives.regression.random_forest.SKlearn',
+            pipeline_description.curr_step_data_ref
+        )
+        rf_step.add_argument(
+            name='outputs',
+            argument_type=ArgumentType.CONTAINER,
+            data_reference=pipeline_description.data_ref_of('target')
+        )
         pipeline_description.add_step(rf_step)
-        step_counter += 1
 
         # Final Output
-        pipeline_description.add_output(name='output predictions', data_reference=f'steps.{step_counter}.produce')
+        pipeline_description.add_output(name='output predictions', data_reference=pipeline_description.curr_step_data_ref)
 
         # Output to YAML
         return {"classification": [pipeline_description], "regression": []}
@@ -713,33 +705,29 @@ class Experimenter:
         Generates the standard metafeature pipeline
         """
         # Creating pipeline
-        step_counter = 0
-        pipeline_description = Pipeline(context=Context.TESTING)
+        pipeline_description = EZPipeline(context=Context.TESTING)
         pipeline_description.add_input(name='inputs')
 
         # dataset_to_dataframe step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
-            input_data_reference='inputs.0'
+            'inputs.0'
         )
 
         # column_parser step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
         )
 
         # metafeature_extractor step
-        step_counter = add_pipeline_step(
+        add_pipeline_step(
             pipeline_description,
-            step_counter,
             'd3m.primitives.metalearning.metafeature_extractor.BYU'
         )
 
-        pipeline_description.add_output(name='output predictions', data_reference=f'steps.{step_counter}.produce')
+        pipeline_description.add_output(name='output predictions', data_reference=pipeline_description.curr_step_data_ref)
 
         with open("metafeature_extractor_pipeline.json", "w") as file:
             json.dump(pipeline_description.to_json_structure(), file, indent=2, default=json_util.default)
