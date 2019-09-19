@@ -32,7 +32,7 @@ class Experimenter:
     """
 
     def __init__(self, datasets_dir: str, volumes_dir: str, input_problem_directory=None,
-                 input_models=None, input_preprocessors=None, generate_pipelines=True,
+                 input_models=None, input_preprocessors=None, generate_pipelines=True, args: dict = None,
                  location=None, generate_problems=False, generate_automl_pipelines=False):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
@@ -59,16 +59,20 @@ class Experimenter:
             logger.info("There are {} problems".format(self.num_problems))
 
         if generate_pipelines:
-            logger.info("Generating pipelines...")
-            self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
-            # pipeline = self.generate_metafeatures_pipeline()
-            # TODO: create a system for how to use the next line
-            # self.generated_pipelines: dict = self._wrap_generate_all_ensembles()
-            # self.generated_pipelines: dict = self.generate_k_ensembles(k_ensembles=3, p_preprocessors=0,
-            #                                                            n_generated_pipelines=50, same_model=False,
-            #                                                            same_preprocessor_order=False, problem_type="all")
-            self.num_pipelines = len(self.generated_pipelines["classification"]) + \
-                                 len(self.generated_pipelines["regression"])
+            logger.info("Generating pipelines of type {}".format(args.pipeline_gen_type))
+            if args.pipeline_gen_type == "metafeatures":
+                self.generated_pipelines: dict = self.generate_metafeatures_pipeline()
+                # TODO: what do we want to do with this?
+            elif args.pipeline_gen_type == "random":
+                pass # TODO: add random search
+            elif args.pipeline_gen_type == "straight":
+                self.generated_pipelines: dict = self.generate_pipelines(self.preprocessors, self.models)
+            elif args.pipeline_gen_type == "ensemble":
+                self.generated_pipelines: dict = self._wrap_generate_all_ensembles(k_ensembles=args.n_classifiers, p_preprocessors=args.n_preprocessors)
+            else:
+                raise Exception("Cannot parse generation type {}".format(args.pipeline_gen_type))
+
+            self.num_pipelines = len(self.generated_pipelines["classification"]) + len(self.generated_pipelines["regression"])
 
             logger.info("There are {} pipelines".format(self.num_pipelines))
 
@@ -340,7 +344,7 @@ class Experimenter:
         A wrapper function to generate a AutoSklearn pipeline
         TODO: should be deprecated and removed
         """
-        register_primitives()
+        raise Exception("This function is deprecated")
         autosklearn_pipeline = get_classification_pipeline(time_limit=60)
         # TODO: get other baseline primitives here
         return {"classification": [autosklearn_pipeline]}
@@ -367,8 +371,7 @@ class Experimenter:
         :return: a dict containing the ensemble pipelines
         """
         all_ensembles = {"classification": [], "regression": []}
-        preprocessor_combinations = list(combinations(self.preprocessors, k_ensembles))
-
+        preprocessor_combinations = list(combinations(self.preprocessors, p_preprocessors))
 
         logger.info("Starting different models, same preprocessor")
 
@@ -700,7 +703,7 @@ class Experimenter:
         # Output to YAML
         return {"classification": [pipeline_description], "regression": []}
 
-    def generate_metafeatures_pipeline(self):
+    def generate_metafeatures_pipeline(self) -> dict:
         """
         Generates the standard metafeature pipeline
         """
@@ -732,7 +735,7 @@ class Experimenter:
         with open("metafeature_extractor_pipeline.json", "w") as file:
             json.dump(pipeline_description.to_json_structure(), file, indent=2, default=json_util.default)
 
-        return {"classification": [pipeline_description], "regression": [pipeline_description]}, 1
+        return {"classification": [pipeline_description], "regression": [pipeline_description]}
 
 
 def _pretty_print_json(self, json_obj: str):
