@@ -10,7 +10,5 @@ sudo docker exec -it experimenter-test bash -c "pip3 install coverage"
 sudo docker exec -it experimenter-test bash -c "pip3 install codecov"
 sudo docker exec -it experimenter-test bash -c "export CODECOV_TOKEN='66edf814-d6e1-40ae-b98a-dfea63a7e197'"
 sudo docker exec -it experimenter-test bash -c "coverage run run_tests.py"
-sudo docker exec -it experimenter-test bash -c "mv coverage.txt /d3m-experimenter"
-# now run codecov in project directory to discover reports in shared folder
-bash <(curl -s https://codecov.io/bash)
+ sudo docker exec -it experimenter-test bash -c "bash <(curl -s https://codecov.io/bash)"
 rm -rf build/
