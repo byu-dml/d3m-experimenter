@@ -28,7 +28,8 @@ class ExperimenterDriver:
     """
 
     def __init__(self, datasets_dir: str, volumes_dir: str, run_type: str ="all",
-                 stored_pipeline_loc=None, distributed=False, generate_automl_pipelines=False, fit_only=False):
+                 stored_pipeline_loc=None, distributed=False, generate_automl_pipelines=False,
+                 fit_only=False, args: dict):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.run_type = run_type
@@ -112,13 +113,19 @@ class ExperimenterDriver:
             else:
                 pipes = self.get_pipelines_from_path(self.pipeline_location)
                 experimenter = Experimenter(self.datasets_dir, self.volumes_dir,
-                                            generate_pipelines=False, generate_problems=True)
+                                            generate_pipelines=False, generate_problems=True,
+                                            pipeline_gen_type=args.pipeline_gen_type,
+                                            n_classifiers=args.n_classifiers,
+                                            n_preprocessors=args.n_preprocessors)
                 problems = experimenter.problems
         # run type is pipelines from mongodb or "all"
         else:
             # generating the pipelines has already been taken care of
             experimenter = Experimenter(self.datasets_dir, self.volumes_dir,
-                                        generate_problems=True, generate_pipelines=False)
+                                        generate_problems=True, generate_pipelines=False
+                                        pipeline_gen_type=args.pipeline_gen_type,
+                                        n_classifiers=args.n_classifiers,
+                                        n_preprocessors=args.n_preprocessors)
             problems: dict = experimenter.problems
             if self.fit_only:
                 logger.info("Using only the fit pipeline")
@@ -213,12 +220,16 @@ def main(run_type: str, pipeline_folder: str, run_baselines: bool, only_run_fit:
         if run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
             experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
-                                        generate_problems=True, generate_automl_pipelines=run_baselines, args=args)
+                                        generate_problems=True, generate_automl_pipelines=run_baselines,
+                                        pipeline_gen_type=args.pipeline_gen_type, n_classifiers=args.n_classifiers,
+                                        n_preprocessors=args.n_preprocessors)
 
         elif run_type == "generate":
             logger.info("Only generating pipelines...")
             experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
-                                        location=pipeline_folder, generate_automl_pipelines=run_baselines, args=args)
+                                        location=pipeline_folder, generate_automl_pipelines=run_baselines,
+                                        pipeline_gen_type=args.pipeline_gen_type, n_classifiers=args.n_classifiers,
+                                        n_preprocessors=args.n_preprocessors)
             return
 
         elif run_type == "distribute":

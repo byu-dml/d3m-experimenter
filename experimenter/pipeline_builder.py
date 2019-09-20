@@ -4,6 +4,7 @@ from d3m import index as d3m_index
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.pipeline import PrimitiveStep
 from d3m.metadata.base import ArgumentType
+from d3m.primitive_interfaces.base import PrimitiveBase
 
 class EZPipeline(Pipeline):
     """
@@ -138,3 +139,88 @@ def add_pipeline_step(
         input_data_reference = pipeline_description.curr_step_data_ref
     step = create_pipeline_step(python_path, input_data_reference, **kwargs)
     pipeline_description.add_step(step)
+    
+
+def add_initial_steps(pipeline_description: EZPipeline) -> None:
+    """
+    :param pipeline_description: an empty pipeline object that we can add
+        the initial data preparation steps to.
+    """
+    # Creating pipeline
+    pipeline_description.add_input(name='inputs')
+
+    # dataset_to_dataframe step
+    add_pipeline_step(
+        pipeline_description,
+        'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
+        'inputs.0'
+    )
+    pipeline_description.set_step_i_of('raw_df')
+
+    # column_parser step
+    add_pipeline_step(
+        pipeline_description,
+        'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
+    )
+
+    # imputer step
+    add_pipeline_step(
+        pipeline_description,
+        'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
+    )
+
+    # extract_columns_by_semantic_types(attributes) step
+    extract_attributes_step = create_pipeline_step(
+        'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+        pipeline_description.curr_step_data_ref
+    )
+    extract_attributes_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
+    pipeline_description.add_step(extract_attributes_step)
+    pipeline_description.set_step_i_of('attrs')
+
+    # extract_columns_by_semantic_types(targets) step
+    extract_targets_step = create_pipeline_step(
+        'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+        pipeline_description.data_ref_of('raw_df')
+    )
+    extract_targets_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
+                                data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+    pipeline_description.add_step(extract_targets_step)
+    pipeline_description.set_step_i_of('target')
+
+
+def add_predictions_constructor(pipeline_description: EZPipeline, input_data_ref: str = None) -> None:
+    """
+    Adds the predictions constructor to a pipeline description
+    :param pipeline_description: the pipeline-to-be
+    :param input_data_ref: the data reference to be used as the input to the predictions primitive.
+        If `None`, the output data reference to the pipeline's most recently added step will be used. 
+    """
+    if input_data_ref is None:
+        input_data_ref = pipeline_description.curr_step_data_ref
+    # PredictionsConstructor step
+    step = create_pipeline_step(
+        "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
+        input_data_ref
+    )
+    step.add_argument(
+        name='reference',
+        argument_type=ArgumentType.CONTAINER,
+        data_reference=pipeline_description.data_ref_of('raw_df')
+    )
+    pipeline_description.add_step(step)
+
+
+def get_required_args(p: PrimitiveBase) -> list:
+    """
+    Gets the required arguments for a primitive
+    :param p: the primitive to get arguments for
+    :return a list of the required args
+    """
+    required_args = []
+    metadata_args = p.metadata.to_json_structure()['primitive_code']['arguments']
+    for arg, arg_info in metadata_args.items():
+        if 'default' not in arg_info and arg_info['kind'] == 'PIPELINE':  # If yes, it is a required argument
+            required_args.append(arg)
+    return required_args
