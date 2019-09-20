@@ -45,6 +45,23 @@ class PipelineGenerationTestCase(unittest.TestCase):
             pipeline.set_step_i_of('Jar Jar Binks')
         with self.assertRaises(Exception):
             pipeline.data_ref_of('Han Solo')
+    
+    def test_can_output_to_json(self) -> None:
+        # Its important to ensure EZPipline can still
+        # use the `d3m.metadata.pipeline.Pipeline.to_json_structure`
+        # method.
+        pipeline = self._make_no_steps_pipeline()
+
+        self._add_dataset_to_df_step(pipeline)
+        pipeline.set_step_i_of('raw_df')
+
+        self._add_column_parser_step(pipeline)
+
+        self._add_extract_attrs_step(pipeline)
+        pipeline.set_step_i_of('attrs')
+
+        json_rep = pipeline.to_json_structure()
+        self.assertEqual(len(json_rep["steps"]), 3)
         
     # Private methods
 
