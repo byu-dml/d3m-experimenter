@@ -5,6 +5,7 @@ from experimenter.constants import models, preprocessors
 from d3m import runtime as runtime_module
 from d3m.metadata import pipeline as pipeline_module
 from experimenter.run_pipeline import RunPipeline
+from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
 
 
 def get_pipeline(
@@ -37,8 +38,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
         self.pipeline_path = './experimenter/pipelines/ensemble_test.json'
         self.data_pipeline_path = './experimenter/pipelines/fixed-split-tabular-split.yml'
         self.scoring_pipeline_path = './experimenter/pipelines/scoring.yml'
-        self.experiment = Experimenter(self.datasets_dir, self.volumes_dir, generate_pipelines=False,
-                                       generate_problems=False, generate_automl_pipelines=False)
+        self.experiment = EnsembleArchitectureExperimenter()
         self.preprocessors = preprocessors
         self.models = models
 
@@ -54,7 +54,9 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
         self.run_experimenter_from_pipeline(problem_path)
 
     def test_experimenter_run_works_and_generates_random(self):
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=3, p_preprocessors=2,
+        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=2,
+                                                                   preprocessors=preprocessors,
+                                                                   models=models,
                                                                    n_generated_pipelines=1, same_model=False,
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification")
@@ -64,7 +66,9 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
 
     def test_experimenter_run_works_and_generates_fixed(self):
         model = "d3m.primitives.classification.random_forest.SKlearn"
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=3, p_preprocessors=2,
+        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=2,
+                                                                   preprocessors=preprocessors,
+                                                                   models=models,
                                                                    n_generated_pipelines=1, same_model=True,
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification",
@@ -74,7 +78,9 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_LARGE(self):
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=6, p_preprocessors=4,
+        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=6, n_preprocessors=4,
+                                                                   preprocessors=preprocessors,
+                                                                   models=models,
                                                                    n_generated_pipelines=1, same_model=False,
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification")

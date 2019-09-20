@@ -19,8 +19,10 @@ class PipelineGenerationTestCase(unittest.TestCase):
         preprocessors = []  # give no preprocessors
         self.experimenter_driver = Experimenter(
             self.datasets_dir, volumes_dir,
-            self.seed_problem_directory, models, preprocessors,
-            generate_problems=True
+            input_problem_directory=self.seed_problem_directory,
+            input_models=models,
+            input_preprocessors=preprocessors,
+            generate_problems=True,
         )
 
     def test_get_classification_problems(self):

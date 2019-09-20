@@ -1,7 +1,9 @@
 import unittest
+from experimenter.constants import models, preprocessors
 from experimenter.experimenter import *
 from experimenter.database_communication import primitive_list_from_pipeline_json
 from experimenter.constants import models, preprocessors
+from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
 
 
 class TestEnsemblingPipelinesGeneration(unittest.TestCase):
@@ -15,8 +17,7 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
         self.data_pipeline_path = './experimenter/pipelines/fixed-split-tabular-split.yml'
         self.scoring_pipeline_path = './experimenter/pipelines/scoring.yml'
         # initialize the experimenter
-        self.experiment = Experimenter(self.datasets_dir, self.volumes_dir, generate_pipelines=False,
-                                  generate_problems=False, generate_automl_pipelines=False)
+        self.experiment = EnsembleArchitectureExperimenter()
         self.preprocessors = preprocessors
         self.models = models
 
@@ -29,7 +30,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
 
     def test_experimenter_can_generate_basic(self):
         # generate the pipelines
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=3, p_preprocessors=1,
+        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=1,
+                                                                        preprocessors=preprocessors,
+                                                                        models=models,
                                                                         n_generated_pipelines=1, same_model=False,
                                                                         same_preprocessor_order=False,
                                                                         problem_type="classification")
@@ -39,7 +42,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
 
     def test_experimenter_can_generate_all_types(self):
         # generate the pipelines
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=3, p_preprocessors=1,
+        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=1,
+                                                                        preprocessors=preprocessors,
+                                                                        models=models,
                                                                         n_generated_pipelines=1, same_model=False,
                                                                         same_preprocessor_order=False,
                                                                         problem_type="all")
@@ -52,7 +57,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
 
     def test_experimenter_can_generate_multiples(self):
         # generate the pipelines
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=3, p_preprocessors=1,
+        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=1,
+                                                                        preprocessors=preprocessors,
+                                                                        models=models,
                                                                         n_generated_pipelines=10, same_model=False,
                                                                         same_preprocessor_order=False,
                                                                         problem_type="classification")
@@ -66,7 +73,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
     #     num_preprocessors = 5
     #     num_ensembles = 3
     #     # generate the pipelines
-    #     generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=num_ensembles, p_preprocessors=num_preprocessors,
+    #     generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=num_ensembles, n_preprocessors=num_preprocessors,
+    #                                                                     preprocessors=preprocessors,
+    #                                                                     models=models,
     #                                                                     n_generated_pipelines=1, same_model=False,
     #                                                                     same_preprocessor_order=True,
     #                                                                     problem_type="classification")
@@ -86,7 +95,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
         """
         num_models = 5
         # generate the pipelines
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=num_models, p_preprocessors=1,
+        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=num_models, n_preprocessors=1,
+                                                                   preprocessors=preprocessors,
+                                                                   models=models,
                                                                    n_generated_pipelines=1, same_model=False,
                                                                    same_preprocessor_order=True,
                                                                    problem_type="classification")
@@ -105,7 +116,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
     def test_experimenter_can_generate_same_models(self):
         num_models = 5
         # generate the pipelines
-        generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=num_models, p_preprocessors=1,
+        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=num_models, n_preprocessors=1,
+                                                                   preprocessors=preprocessors,
+                                                                   models=models,
                                                                    n_generated_pipelines=1, same_model=True,
                                                                    same_preprocessor_order=True,
                                                                    model="d3m.primitives.classification.random_forest.SKlearn",
@@ -125,7 +138,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
     def test_experimenter_has_correct_input(self):
         # Should fail
         try:
-            generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=3, p_preprocessors=1,
+            generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=1,
+                                                                       preprocessors=preprocessors,
+                                                                       models=models,
                                                                        n_generated_pipelines=10, same_model=True,
                                                                        same_preprocessor_order=False,
                                                                        problem_type="classification")
@@ -136,7 +151,9 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
     def test_experimenter_has_correct_input_model_length(self):
         # Should fail
         try:
-            generated_pipelines = self.experiment.generate_k_ensembles(k_ensembles=3, p_preprocessors=1,
+            generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=1,
+                                                                       preprocessors=preprocessors,
+                                                                       models=models,
                                                                        n_generated_pipelines=10, same_model=True,
                                                                        same_preprocessor_order=False,
                                                                        problem_type="classification",
