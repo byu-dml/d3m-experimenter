@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Any, Dict
 
 from d3m import index as d3m_index
 from d3m.metadata.pipeline import Pipeline
@@ -7,6 +7,40 @@ from d3m.metadata.base import ArgumentType
 from d3m.primitive_interfaces.base import PrimitiveBase
 
 from experimenter.constants import EXTRA_HYPEREPARAMETERS
+
+
+class PipelineArchDesc:
+    """
+    Holds data that describes a pipeline's architecture. e.g.
+    `PipelineArchDesc(pipeline_type="ensemble", attributes={"k": 3}) could
+    describe an ensemble pipeline that ensembles three classifiers.
+    """
+
+    def __init__(self, pipeline_type: str, attributes: Dict[str, Any] = None):
+        """
+        :param pipeline_type: The pipeline's high level structural type e.g.
+            "ensemble", "straight", "random", etc.
+        :param attributes: An optional dictionary holding data describing
+            attributes of the pipeline's architecture e.g.
+            { "depth": 4, "max_width": 3 }, etc. Fields in the dictionary
+            will likely vary depending on the pipeline's type.
+        """
+        self.pipeline_type = pipeline_type
+        self.attributes = dict() if attributes is None else attributes
+    
+    def to_json_structure(self, pipeline_digest: str):
+        """
+        :param pipeline_digest: An instance of `PipelineArchDesc` should
+        always be associated with a pipeline. That pipeline is identified
+        by the `pipeline_digest` parameter.
+        """
+        assert pipeline_digest is not None
+        return {
+            "pipeline_digest": pipeline_digest,
+            "pipeline_type": self.pipeline_type,
+            "attributes": self.attributes
+        }
+
 
 class EZPipeline(Pipeline):
     """
@@ -22,11 +56,20 @@ class EZPipeline(Pipeline):
 
     # Constructor
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, arch_desc: PipelineArchDesc = None, **kwargs):
+        """
+        :param *args: All positional args are forwarded to the superclass
+            constructor.
+        :param arch_desc: an optional description of the pipeline's
+        architecture.
+        :param **kwargs: All other keyword args are forwarded to the
+        superclass constructor.
+        """
         super().__init__(*args, **kwargs)
         # The indices of the steps that each ref is associated with.
         # All begin with `None`, just like the value of `self.curr_step_i`.
         self._step_i_of_refs = { name: None for name in self.valid_ref_names }
+        self.arch_desc = arch_desc
     
     # Public properties
 

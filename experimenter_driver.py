@@ -252,7 +252,7 @@ if __name__ == "__main__":
     parser.add_argument("--run-custom-fit", '-c', help="Whether or not to run only fit and use given pipelines",
                         action='store_true')
     parser.add_argument("--pipeline-gen-type", '-p', help="what type of pipelines to generate: ensembles, straight, metafeature, or random",
-                        choices=["ensemble", "straight", "metafeatures", "random"], default="straight")
+                        choices=["ensemble", "straight", "metafeatures", "random", "stacked"], default="straight")
     parser.add_argument("--verbose", "-v", action="store_true", help="Whether to print for debugging or not", default=False)
     parser.add_argument("--n_preprocessors", "-np", type=int, help="how many preprocessors to use for generation", default=3)
     parser.add_argument("--n_classifiers", "-nc", type=int, help="how many classifiers to use for generation", default=3)

@@ -6,7 +6,9 @@ from d3m import index as d3m_index
 from d3m.metadata.base import Context, ArgumentType
 
 from experimenter.experiments.experiment import Experiment
-from experimenter.pipeline_builder import EZPipeline, map_pipeline_step_arguments, add_initial_steps, get_required_args, add_predictions_constructor
+from experimenter.pipeline_builder import (
+    EZPipeline, PipelineArchDesc, map_pipeline_step_arguments, add_initial_steps, get_required_args, add_predictions_constructor
+)
 
 class StraightArchitectureExperimenter(Experiment):
     """
@@ -54,7 +56,8 @@ class StraightArchitectureExperimenter(Experiment):
         """
 
         # Creating Pipeline
-        pipeline_description = EZPipeline(context=Context.TESTING)
+        architecture = PipelineArchDesc("straight")
+        pipeline_description = EZPipeline(arch_desc=architecture, context=Context.TESTING)
 
         add_initial_steps(pipeline_description)
         preprocessor_used = False
@@ -73,6 +76,8 @@ class StraightArchitectureExperimenter(Experiment):
                 req_args
             )
             pipeline_description.add_step(preprocessor_step)
+        
+        pipeline_description.arch_desc.attributes["preprocessor_used"] = preprocessor_used
 
         # Classifier Step
         classifier_step = PrimitiveStep(primitive_description=classifier.metadata.query())

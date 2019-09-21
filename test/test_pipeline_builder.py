@@ -3,7 +3,9 @@ import unittest
 
 from d3m.metadata.base import Context, ArgumentType
 
-from experimenter.pipeline_builder import EZPipeline, create_pipeline_step, add_pipeline_step
+from experimenter.pipeline_builder import (
+    EZPipeline, PipelineArchDesc, create_pipeline_step, add_pipeline_step
+)
 
 
 class PipelineGenerationTestCase(unittest.TestCase):
@@ -61,7 +63,27 @@ class PipelineGenerationTestCase(unittest.TestCase):
         pipeline.set_step_i_of('attrs')
 
         json_rep = pipeline.to_json_structure()
-        self.assertEqual(len(json_rep["steps"]), 3)
+        self.assertEqual(len(json_rep['steps']), 3)
+    
+    def test_arch_desc(self) -> None:
+        architecture = PipelineArchDesc('test', { 'test_attr': None })
+        pipeline = EZPipeline(arch_desc=architecture, context=Context.TESTING)
+
+        # The json form of arch_desc requires a pipeline digest
+        with self.assertRaises(Exception):
+            pipeline.arch_desc.to_json_structure(None)
+        
+        # An architecture description should be able to be altered
+        # once created
+        pipeline.arch_desc.attributes['other_test_attr'] = 'abc'
+
+        # The json form of arch_desc should be complete
+        fake_digest = '1'
+        arch_desc_json = pipeline.arch_desc.to_json_structure(fake_digest)
+
+        self.assertIn('test_attr', arch_desc_json['attributes'])
+        self.assertIsNone(arch_desc_json['attributes']['test_attr'])
+        self.assertEqual(arch_desc_json['attributes']['other_test_attr'], 'abc')
         
     # Private methods
 
