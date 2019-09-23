@@ -18,7 +18,6 @@ from .database_communication import PipelineDB
 from itertools import combinations
 from bson import json_util
 from d3m.metadata import base as metadata_base, problem as base_problem
-from experimenter.autosklearn.pipelines import get_classification_pipeline, AutoSklearnClassifierPrimitive
 from experimenter.pipeline_builder import add_pipeline_step, create_pipeline_step
 from experimenter.experiments.metafeatures import MetafeatureExperimenter
 from experimenter.experiments.random import RandomArchitectureExperimenter
@@ -189,16 +188,6 @@ class Experimenter:
 
         logger.info("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                self.num_pipelines - added_pipeline_sum))
-
-    def generate_baseline_pipelines(self):
-        """
-        A wrapper function to generate a AutoSklearn pipeline
-        TODO: should be deprecated and removed
-        """
-        raise Exception("This function is deprecated")
-        autosklearn_pipeline = get_classification_pipeline(time_limit=60)
-        # TODO: get other baseline primitives here
-        return {"classification": [autosklearn_pipeline]}
 
     def output_automl_pipelines_to_mongodb(self):
         """
