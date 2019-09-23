@@ -89,14 +89,11 @@ def execute_fit_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: 
 def get_pipeline_run_collection_from_primitives(primitive_list: list):
     """
     A helper function to determine if a primitive used for checking baselines was used in the pipeline
+    Kept for future development
     :param primitive_list: a list of string primitive names used in the pipeline
     """
-    baseline_primitives = [ 'd3m.primitives.classification.search.AutoSKLearn']
-    for primitive in baseline_primitives:
-        if primitive in primitive_list:
-            return "automl_pipeline_runs"
-    else:
-        return "pipeline_runs"
+    # TODO: add other types, if needed
+    return "pipeline_runs"
 
 
 def handle_successful_pipeline_run(pipeline_run: dict, pipeline: dict, score: float, problem: str, mongo_db: PipelineDB, collection_name: str):

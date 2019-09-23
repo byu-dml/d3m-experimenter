@@ -28,13 +28,12 @@ class ExperimenterDriver:
     """
 
     def __init__(self, datasets_dir: str, volumes_dir: str, run_type: str ="all",
-                 stored_pipeline_loc=None, distributed=False, generate_automl_pipelines=False,
+                 stored_pipeline_loc=None, distributed=False
                  fit_only=False, args: dict):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.run_type = run_type
         self.distributed = distributed
-        self.run_automl = generate_automl_pipelines
         self.fit_only = fit_only
 
         if run_type == "pipeline_path":
@@ -132,7 +131,7 @@ class ExperimenterDriver:
                 pipes, num_pipes = experimenter.generate_metafeatures_pipeline()
             else:
                 logger.info("\n Gathering pipelines from database...")
-                pipes, num_pipes = self.mongo_db.get_all_pipelines(baselines=self.run_automl)
+                pipes, num_pipes = self.mongo_db.get_all_pipelines()
             logger.info("There are {} pipelines to be executed".format(num_pipes))
 
         logger.info("\nExecuting pipelines now")
@@ -147,8 +146,7 @@ class ExperimenterDriver:
                     sys.stdout.flush()
                     for pipe in pipeline_list:
                         if self.mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(),
-                                                                 collection_name= "automl_pipeline_runs" if
-                                                                 self.run_automl else "pipeline_runs",
+                                                                 collection_name="pipeline_runs",
                                                                  skip_pipeline=self.fit_only):
                             logger.info("\n SKIPPING. Pipeline already run.")
                             self.print_pipeline_and_problem(pipe, problem)
@@ -181,8 +179,6 @@ Options for command line interface
 --run-type: "all", "execute", "generate", "distribute", or "pipelines_path" (controls whether to generate and run 
             pipelines or just to run pipelines from a folder)
 --pipeline-folder: string of the file_path to the folder containing the pipelines. Used in combination with --run-type
---run-baselines: a flag used for choosing to run only AutoML systems. By default this is off.  The previous flags work 
-            independently of this one.
 
 Examples:
 TODO: update these examples once this gets stable
@@ -202,33 +198,24 @@ python3 experimenter_driver.py -r generate (creates pipelines and stores them in
 python3 experimenter_driver.py -r generate -f default (creates pipelines in default folder "experimenter/created_pipelines/")
 python3 experimenter_driver.py -r generate -f other_folder/ (creates pipelines and stores them in "other_folder/")
 
-python3 experimenter_driver.py -r all -b (creates AutoML pipelines on all problems and executes them)
-python3 experimenter_driver.py -r generate -b (creates AutoML system pipelines and stores them in mongodb)
-python3 experimenter_driver.py -r distribute -b (takes AutoML pipelines from the database and adds jobs to the RQ queue)
-python3 experimenter_driver.py -r execute -b (takes AutoML pipelines from the database and executes them)
 """
-def main(run_type: str, pipeline_folder: str, run_baselines: bool, only_run_fit: bool, args: dict):
+def main(run_type: str, pipeline_folder: str, only_run_fit: bool, args: dict):
 
     datasets_dir = '/datasets'
     volumes_dir = '/volumes'
-
-    if run_baselines:
-        raise Exception("Type is deprecated")
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         if run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
             experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
-                                        generate_problems=True, generate_automl_pipelines=run_baselines,
-                                        pipeline_gen_type=args.pipeline_gen_type, n_classifiers=args.n_classifiers,
+                                        generate_problems=True, pipeline_gen_type=args.pipeline_gen_type, n_classifiers=args.n_classifiers,
                                         n_preprocessors=args.n_preprocessors)
 
         elif run_type == "generate":
             logger.info("Only generating pipelines...")
             experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
-                                        location=pipeline_folder, generate_automl_pipelines=run_baselines,
-                                        pipeline_gen_type=args.pipeline_gen_type, n_classifiers=args.n_classifiers,
+                                        location=pipeline_folder, pipeline_gen_type=args.pipeline_gen_type, n_classifiers=args.n_classifiers,
                                         n_preprocessors=args.n_preprocessors)
             return
 
@@ -236,22 +223,21 @@ def main(run_type: str, pipeline_folder: str, run_baselines: bool, only_run_fit:
             if not only_run_fit:
                 experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
                                                          run_type=run_type, stored_pipeline_loc=pipeline_folder,
-                                                         distributed=True, generate_automl_pipelines=run_baselines)
+                                                         distributed=True)
                 experimenter_driver.run()
 
                 return
             else:
                 experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
                                                          run_type=run_type, stored_pipeline_loc=pipeline_folder,
-                                                         distributed=True, generate_automl_pipelines=run_baselines,
+                                                         distributed=True,
                                                          fit_only=only_run_fit)
                 experimenter_driver.run()
 
                 return
 
         experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
-                                                 run_type=run_type, stored_pipeline_loc=pipeline_folder,
-                                                 generate_automl_pipelines=run_baselines)
+                                                 run_type=run_type, stored_pipeline_loc=pipeline_folder)
         experimenter_driver.run()
 
 
@@ -261,10 +247,8 @@ if __name__ == "__main__":
                                                  "only executes pipelines from the database, 'pipeline_path' "
                                                  "executes pipelines from a specific folder and 'generate' only "
                                                  "creates pipelines and stores them in the database",
-                        choices=["all", "execute", "generate", "pipeline_path", "distribute", "baselines"], default="all")
+                        choices=["all", "execute", "generate", "pipeline_path", "distribute"], default="all")
     parser.add_argument("--pipeline-folder", '-f', help="The path of the folder containing/to receive the pipelines")
-    parser.add_argument("--run-baselines", '-b', help="Whether or not to exclusively run automl system pipelines",
-                        action='store_true')
     parser.add_argument("--run-custom-fit", '-c', help="Whether or not to run only fit and use given pipelines",
                         action='store_true')
     parser.add_argument("--pipeline-gen-type", '-p', help="what type of pipelines to generate: ensembles, straight, metafeature, or random",
@@ -278,4 +262,4 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.CRITICAL)
-    main(args.run_type, args.pipeline_folder, args.run_baselines, args.run_custom_fit, args)
+    main(args.run_type, args.pipeline_folder, args.run_custom_fit, args)

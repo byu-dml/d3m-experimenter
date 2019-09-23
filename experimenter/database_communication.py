@@ -55,8 +55,7 @@ class PipelineDB:
             logger.info("Cannot connect to the Mongo Client at port {}. Error is {}".format(self.mongo_port, e))
 
     def export_pipeline_runs_to_folder(self, folder_directory: str = '~/database/',
-                                       collection_names: list = ["pipeline_runs", "pipelines", "datasets", "problems",
-                                                         "automl_pipelines", "automl_pipeline_runs"]):
+                                       collection_names: list = ["pipeline_runs", "pipelines", "datasets", "problems"]):
         """
         This function will create or find the directory given and export all pipeline runs from the database to
         the folder.  The pipeline runs are saved as JSON files.
@@ -79,11 +78,11 @@ class PipelineDB:
             pipeline_runs_cursor = collection.find({})
             # go through each pipeline run
             for doc in pipeline_runs_cursor:
-                if collection_name in ["pipeline_runs", "automl_pipeline_runs"]:
+                if collection_name in ["pipeline_runs"]:
                     location, problem_name = self._get_location_of_dataset(doc)
                     file_path = os.path.join(output_directory, "{}_{}_{}{}".format(location, problem_name,
                                                                                    doc['id'], '.json'))
-                elif collection_name in ["pipelines", "automl_pipelines"]:
+                elif collection_name in ["pipelines"]:
                     predictor_model = doc['steps'][-2]['primitive']['python_path'].split('.')[-2]
                     try:
                         type = doc['steps'][-2]['primitive']['python_path'].split('.')[-3]
@@ -115,8 +114,7 @@ class PipelineDB:
         """
 
         collection_names = ["pipeline_runs", "pipelines", "datasets", "problems",
-                            "automl_pipelines", "automl_pipeline_runs", "metafeatures",
-                            "pipeline_runs_old"]
+                            "metafeatures", "pipeline_runs_old"]
         # connect to the database
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
@@ -140,10 +138,6 @@ class PipelineDB:
             # db.datasets.remove({})
             # logger.info("Clearing problems collection")
             # db.problems.remove({})
-            # logger.info("Clearing automl_pipelines collection")
-            # db.automl_pipelines.remove({})
-            # logger.info("Clearing automl pipeline_runs collection")
-            # db.automl_pipeline_runs.remove({})
             # logger.info("Clearing metafeatures collection")
             # db.metafeatures.remove({})
 
@@ -318,15 +312,14 @@ class PipelineDB:
         """
         return re.search(r"\b{}\b".format(phrase), text, re.IGNORECASE) is not None
 
-    def get_all_pipelines(self, baselines: bool = False) -> dict:
+    def get_all_pipelines(self) -> dict:
         """
         Used to gather pipelines for the experimenter_driver.py
-        :param baselines: a bool, indicating whether or not to grab the regular pipelines or the automl pipelines
         :returns a dictionary with two keys "classification" and "regression" each full of pipelines from the database
         """
         pipelines = {"classification": [], "regression": []}
         db = self.mongo_client.metalearning
-        collection = db.pipelines if not baselines else db.automl_pipelines
+        collection = db.pipelines
         pipeline_cursor = collection.find({})
         for index, pipeline in enumerate(pipeline_cursor):
             if index % 1000 == 0:
@@ -384,41 +377,6 @@ class PipelineDB:
         pipeline_id = collection.insert_one(dataset_doc).inserted_id
         logger.info("Wrote PROBLEM to the database with inserted_id from mongo: {}".format(pipeline_id))
         return True
-
-    def add_to_automl_pipelines(self, new_pipeline: Pipeline) -> bool:
-        """
-        Function to add a pipeline to the mongodb collection of automl_pipelines.
-        :param new_pipeline: the new pipeline to add to the AutoML baselines
-        :return False if the database already contains it, True if the pipeline was added to the database
-        TODO: I think this is deprecated/could be
-        """
-        db = self.mongo_client.metalearning
-        collection = db.automl_pipelines
-        new_pipeline_json = new_pipeline.to_json_structure()
-        new_pipeline_steps = primitive_list_from_pipeline_json(new_pipeline_json)
-        digest = new_pipeline_json["digest"]
-        id = new_pipeline_json["id"]
-
-        # validate pipeline
-        new_pipeline.check()
-
-        # simple checks to validate pipelines and potentially save time
-        if collection.find({"digest": digest}).count():
-            return False
-
-        if collection.find({"id": id}).count():
-            return False
-
-        # deep comparison of equality
-        pipelines_cursor = collection.find({})
-        for pipeline in pipelines_cursor:
-            pipeline_steps_to_compare = primitive_list_from_pipeline_json(pipeline)
-            if pipeline_steps_to_compare == new_pipeline_steps:
-                return False
-        else:
-            pipeline_id = collection.insert_one(new_pipeline.to_json_structure()).inserted_id
-            logger.info("Wrote automl pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
-            return True
 
     def remove_pipelines_containing(self, bad_primitives: List[str]):
         """
