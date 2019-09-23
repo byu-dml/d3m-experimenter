@@ -5,6 +5,8 @@ from d3m.primitive_interfaces.base import PrimitiveBase
 from d3m import index as d3m_index
 from d3m.metadata.base import Context, ArgumentType
 
+from experimenter.constants import EXTRA_HYPEREPARAMETERS
+
 from experimenter.experiments.experiment import Experiment
 from experimenter.pipeline_builder import EZPipeline, add_initial_steps, get_required_args, add_predictions_constructor
 
@@ -90,6 +92,10 @@ class StraightArchitectureExperimenter(Experiment):
                                 data_reference=data_ref)
         classifier_step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
         classifier_step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
+        # handle any extra hyperparams needed
+        if classifier in EXTRA_HYPEREPARAMETERS:
+            params = EXTRA_HYPEREPARAMETERS[classifier]
+            classifier_step.add_hyperparameter(name=params["name"], argument_type=params["type"], data=params["data"])
         classifier_step.add_output('produce')
         pipeline_description.add_step(classifier_step)
 

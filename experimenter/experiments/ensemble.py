@@ -127,6 +127,10 @@ class EnsembleArchitectureExperimenter(Experiment):
             classifier_step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
             classifier_step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
             classifier_step.add_hyperparameter(name='add_index_columns', argument_type=ArgumentType.VALUE, data=True)
+            # handle any extra hyperparams needed
+            if model in EXTRA_HYPEREPARAMETERS:
+                params = EXTRA_HYPEREPARAMETERS[model]
+                classifier_step.add_hyperparameter(name=params["name"], argument_type=params["type"], data=params["data"])
             classifier_step.add_output('produce')
             pipeline_description.add_step(classifier_step)
 

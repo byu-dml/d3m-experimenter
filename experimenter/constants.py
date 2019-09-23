@@ -11,7 +11,7 @@ preprocessors = [
 ]
 
 not_working_preprocessors = [
-    # These preprocessors have not been fixed yet by JPL:
+    # These preprocessors have not been fixed yet by JPL: TODO: check this, it's old
     # "d3m.primitives.data_preprocessing.feature_agglomeration.SKlearn",
     # "d3m.primitives.data_preprocessing.rbf_sampler.SKlearn",
     # "d3m.primitives.data_preprocessing.truncated_svd.SKlearn",
@@ -28,7 +28,6 @@ models = {
     'classification': [
         "d3m.primitives.classification.random_forest.SKlearn",
         "d3m.primitives.classification.gradient_boosting.SKlearn",
-        "d3m.primitives.classification.bagging.SKlearn",
         "d3m.primitives.classification.bernoulli_naive_bayes.SKlearn",
         "d3m.primitives.classification.decision_tree.SKlearn",
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn",
@@ -38,8 +37,9 @@ models = {
         "d3m.primitives.classification.linear_svc.SKlearn",
         "d3m.primitives.classification.sgd.SKlearn",
         "d3m.primitives.classification.svc.SKlearn",
-        "d3m.primitives.classification.extra_trees.SKlearn",
-        "d3m.primitives.classification.passive_aggressive.SKlearn",
+        "d3m.primitives.classification.extra_trees.SKlearn", # randomly splits - different than random forest
+        "d3m.primitives.classification.passive_aggressive.SKlearn", # an mlp with regularization
+        # "d3m.primitives.classification.bagging.SKlearn", # only uses decision trees, which is redudant
     ],
     'regression': [
         # "d3m.primitives.regression.random_forest.SKlearn",
@@ -66,6 +66,19 @@ problem_directories = [
     "training_datasets/LL0/",
     # "training_datasets/LL1/",
 ]
+
+EXTRA_HYPEREPARAMETERS = {
+    "d3m.primitives.feature_extraction.kernel_pca.SKlearn": {
+        "name": "kernel",
+        "type": "ArgumentType.VALUE",
+        "data": "sigmoid"
+    },
+    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": {
+        "name": "mode",
+        "type": "ArgumentType.VALUE",
+        "data": "k_best"
+    },
+}
 
 blacklist_non_tabular_data = [
     "57_hypothyroid"
