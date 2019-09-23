@@ -459,6 +459,7 @@ class EZPipeline(Pipeline):
         from n to 2) to find a match in the pipeline cache, that is to say, a set
         of data refs in `data_refs` who have already been concatenated.
 
+<<<<<<< HEAD
         :param data_refs: The set of data_refs to search in the cache for.
         :return: If a match is found, the matching data ref pair is returned, else
             None is returned. 
@@ -471,3 +472,101 @@ class EZPipeline(Pipeline):
                 if subset in self.concat_cache:
                     return subset
         return None
+=======
+def add_initial_steps(pipeline_description: EZPipeline) -> None:
+    """
+    :param pipeline_description: an empty pipeline object that we can add
+        the initial data preparation steps to.
+    """
+    # Creating pipeline
+    pipeline_description.add_input(name='inputs')
+
+    # dataset_to_dataframe step
+    add_pipeline_step(
+        pipeline_description,
+        'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
+        'inputs.0'
+    )
+    pipeline_description.set_step_i_of('raw_df')
+
+    # column_parser step
+    add_pipeline_step(
+        pipeline_description,
+        'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
+    )
+
+    # imputer step
+    add_pipeline_step(
+        pipeline_description,
+        'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
+    )
+
+    # Save the imputer step data reference so it can be an input into the extract attributes step
+    imputer_step_data_ref: str = pipeline_description.curr_step_data_ref
+
+    # extract_columns_by_semantic_types(targets) step
+    _add_extract_columns_by_semantic_types_step(
+        pipeline_description, ['https://metadata.datadrivendiscovery.org/types/TrueTarget'],
+        pipeline_description.data_ref_of('raw_df')
+    )
+    pipeline_description.set_step_i_of('target')
+
+    # attribute preprocessing steps
+    _add_attribute_preprocessing_steps(pipeline_description, imputer_step_data_ref)
+
+
+def _add_extract_columns_by_semantic_types_step(
+    pipeline_description: EZPipeline, data: list, input_data_reference: str
+):
+    extract_step = create_pipeline_step(
+        'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+        input_data_reference
+    )
+    extract_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE, data=data)
+    pipeline_description.add_step(extract_step)
+
+
+def _add_attribute_preprocessing_steps(pipeline_description: EZPipeline, imputer_step_data_ref: str):
+    # extract_columns_by_semantic_types(attributes) step
+    _add_extract_columns_by_semantic_types_step(
+        pipeline_description, ['https://metadata.datadrivendiscovery.org/types/Attribute'],
+        imputer_step_data_ref
+    )
+    pipeline_description.set_step_i_of('attrs')
+
+
+def add_predictions_constructor(pipeline_description: EZPipeline, input_data_ref: str = None) -> None:
+    """
+    Adds the predictions constructor to a pipeline description
+    :param pipeline_description: the pipeline-to-be
+    :param input_data_ref: the data reference to be used as the input to the predictions primitive.
+        If `None`, the output data reference to the pipeline's most recently added step will be used. 
+    """
+    if input_data_ref is None:
+        input_data_ref = pipeline_description.curr_step_data_ref
+    # PredictionsConstructor step
+    step = create_pipeline_step(
+        "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
+        input_data_ref
+    )
+    step.add_argument(
+        name='reference',
+        argument_type=ArgumentType.CONTAINER,
+        data_reference=pipeline_description.data_ref_of('raw_df')
+    )
+    pipeline_description.add_step(step)
+
+
+def get_required_args(p: PrimitiveBase) -> list:
+    """
+    Gets the required arguments for a primitive
+    :param p: the primitive to get arguments for
+    :return a list of the required args
+    """
+    required_args = []
+    metadata_args = p.metadata.to_json_structure()['primitive_code']['arguments']
+    for arg, arg_info in metadata_args.items():
+        if 'default' not in arg_info and arg_info['kind'] == 'PIPELINE':  # If yes, it is a required argument
+            required_args.append(arg)
+    return required_args
+>>>>>>> Started defining _add_attribute_preprocessing_steps()
