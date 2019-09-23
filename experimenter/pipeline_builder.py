@@ -122,7 +122,7 @@ def map_pipeline_step_arguments(
     pl: EZPipeline,
     step: PrimitiveStep,
     required_args: list,
-    pre_used: bool = False
+    use_current_step_data_ref: bool = False
 ) -> None:
     """
     Helper used to add arguments to a PrimitiveStep.
@@ -131,8 +131,9 @@ def map_pipeline_step_arguments(
     :param step: The pipeline step to add arguments and hyperparameters to.
         Either a preprocessor or a classifier.
     :param required_args: The required arguments for step.
-    :param pre_used: If step is a classifier, pre_used indicates whether a
-        preprocessor was used.
+    :param use_current_step_data_ref: For arguments other than 'outputs', this
+        boolean indicates whether to use the data reference of the current step
+        rather than 'attrs'.
 
     :rtype: None
     """
@@ -140,7 +141,7 @@ def map_pipeline_step_arguments(
         if arg == "outputs":
             data_ref = pl.data_ref_of('target')
         else:
-            if pre_used:
+            if use_current_step_data_ref:
                 data_ref = pl.curr_step_data_ref
             else:
                 data_ref = pl.data_ref_of('attrs')
