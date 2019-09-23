@@ -10,10 +10,7 @@ from d3m.metadata.base import Context, ArgumentType
 from d3m import index as d3m_index
 
 from experimenter.experiments.experiment import Experiment
-from experimenter.pipeline_builder import EZPipeline, add_initial_steps, get_required_args, add_predictions_constructor
-
-from experimenter.constants import EXTRA_HYPEREPARAMETERS
-
+from experimenter.pipeline_builder import EZPipeline, map_pipeline_step_arguments, add_initial_steps, get_required_args, add_predictions_constructor
 
 class EnsembleArchitectureExperimenter(Experiment):
     """
@@ -100,40 +97,27 @@ class EnsembleArchitectureExperimenter(Experiment):
                 if index == p:
                     break
                 preprocessor_step = PrimitiveStep(primitive_description=pre.metadata.query())
-                for arg in get_required_args(pre):
-                    if arg == "outputs":
-                        data_ref = pipeline_description.data_ref_of('target')
-                    else:
-                        data_ref = pipeline_description.data_ref_of('attrs')
+                req_args = get_required_args(pre)
+                for arg in req_args:
+                    if arg != "outputs":
                         preprocessor_used = True
-                    preprocessor_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                        data_reference=data_ref)
-                preprocessor_step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
-                preprocessor_step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
-                preprocessor_step.add_output('produce')
+                        break
+                map_pipeline_step_arguments(
+                    pipeline_description,
+                    preprocessor_step,
+                    req_args
+                )
                 pipeline_description.add_step(preprocessor_step)
 
             # Classifier Step
             classifier_step = PrimitiveStep(primitive_description=model.metadata.query())
-            for arg in get_required_args(model):
-                # if no preprocessors make sure we are getting the data from the imputer
-                if arg == "outputs":
-                    data_ref = pipeline_description.data_ref_of('target')
-                else:
-                    if preprocessor_used:
-                        data_ref = pipeline_description.curr_step_data_ref
-                    else:
-                        data_ref = pipeline_description.data_ref_of('attrs')
-                classifier_step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                                    data_reference=data_ref)
-            classifier_step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
-            classifier_step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
+            map_pipeline_step_arguments(
+                pipeline_description,
+                classifier_step,
+                get_required_args(model),
+                preprocessor_used
+            )
             classifier_step.add_hyperparameter(name='add_index_columns', argument_type=ArgumentType.VALUE, data=True)
-            # handle any extra hyperparams needed
-            if model in EXTRA_HYPEREPARAMETERS:
-                params = EXTRA_HYPEREPARAMETERS[model]
-                classifier_step.add_hyperparameter(name=params["name"], argument_type=params["type"], data=params["data"])
-            classifier_step.add_output('produce')
             pipeline_description.add_step(classifier_step)
 
             add_predictions_constructor(pipeline_description)
