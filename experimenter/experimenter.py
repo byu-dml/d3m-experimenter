@@ -37,15 +37,10 @@ class Experimenter:
 
     def __init__(self, datasets_dir: str, volumes_dir: str, *, input_problem_directory=None,
                  input_models=None, input_preprocessors=None, generate_pipelines=True,
-                 location=None, generate_problems=False, generate_automl_pipelines=False,
-                 pipeline_gen_type: str = "straight", n_classifiers: int = 3, n_preprocessors: int = 1):
+                 location=None, generate_problems=False, pipeline_gen_type: str = "straight", n_classifiers: int = 3, n_preprocessors: int = 1):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.mongo_database = PipelineDB()
-
-        # If we want to run automl systems, don't run regular pipelines
-        if generate_automl_pipelines:
-            generate_pipelines = False
 
         # set up the primitives according to parameters
         self.preprocessors = preprocessors if input_preprocessors is None else input_preprocessors
@@ -98,11 +93,6 @@ class Experimenter:
             else:
                 logger.info("Exporting pipelines to {}".format(location))
                 self.output_values_to_folder(location)
-
-        if generate_automl_pipelines:
-            self.generated_pipelines = self.generate_baseline_pipelines()
-            self.num_pipelines = len(self.generated_pipelines["classification"])
-            self.output_automl_pipelines_to_mongodb()
 
     def get_possible_problems(self) -> dict:
         """
@@ -188,21 +178,7 @@ class Experimenter:
 
         logger.info("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
                                                                                self.num_pipelines - added_pipeline_sum))
-
-    def output_automl_pipelines_to_mongodb(self):
-        """
-        Writes automl pipelines to mongo
-        TODO: should be deprecated and removed
-        """
-        added_pipeline_sum = 0
-        for pipeline_type in self.generated_pipelines:
-            for pipe in self.generated_pipelines[pipeline_type]:
-                added_pipeline_sum += self.mongo_database.add_to_automl_pipelines(pipe)
-
-        logger.info("Results: {} pipelines added. {} pipelines already exist in database".format(added_pipeline_sum,
-                                                                                           self.num_pipelines - added_pipeline_sum))
-
-
+                                                                            
     def generate_default_pipeline(self) -> Pipeline:
         """
         Example from https://docs.datadrivendiscovery.org/devel/pipeline.html#pipeline-description-example

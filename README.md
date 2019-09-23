@@ -69,7 +69,6 @@ or specific db commands see `get_documents.py`.
 * To run pipelines from mongodb and not generate new ones, run `python3 experimenter_driver.py -r execute -v`
 * To only execute created pipelines stored in a folder, add the `-f folder_name/` flag.
 * To distribute pipelines run `python3 experimenter_driver.py -r distribute -v`.
-* To run AutoML systems for comparisons add the `-b` flag.  Note this will turn any command into ONLY executing AutoML systems
 * For more information, see the documentation in `experimenter_driver.py`.
 
 
