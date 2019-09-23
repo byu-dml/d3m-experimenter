@@ -117,6 +117,42 @@ def create_pipeline_step(
 
     return step
 
+
+def map_pipeline_step_arguments(
+    pl: EZPipeline,
+    step: PrimitiveStep,
+    required_args: list,
+    use_current_step_data_ref: bool = False
+) -> None:
+    """
+    Helper used to add arguments to a PrimitiveStep.
+
+    :param pl: The pipeline to which step belongs.
+    :param step: The pipeline step to add arguments and hyperparameters to.
+        Either a preprocessor or a classifier.
+    :param required_args: The required arguments for step.
+    :param use_current_step_data_ref: For arguments other than 'outputs', this
+        boolean indicates whether to use the data reference of the current step
+        rather than 'attrs'.
+
+    :rtype: None
+    """
+    for arg in required_args:
+        if arg == "outputs":
+            data_ref = pl.data_ref_of('target')
+        else:
+            if use_current_step_data_ref:
+                data_ref = pl.curr_step_data_ref
+            else:
+                data_ref = pl.data_ref_of('attrs')
+
+        step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
+                            data_reference=data_ref)
+    step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
+    step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
+    step.add_output('produce')
+
+
 def add_pipeline_step(
     pipeline_description: EZPipeline,
     python_path: str,
