@@ -204,8 +204,7 @@ class PipelineDB:
         :return False if the database already contains it, True if the pipeline was added to the database
         """
         db = self.mongo_client.metalearning
-        pipeline_collection = db.pipelines
-        pipeline_arch_desc_collection = db.arch_descs
+        collection = db.pipelines
         new_pipeline_json = new_pipeline.to_json_structure()
         digest = new_pipeline_json["digest"]
         id = new_pipeline_json["id"]
@@ -214,14 +213,14 @@ class PipelineDB:
         new_pipeline.check()
 
         # simple checks to validate pipelines and potentially save time
-        if pipeline_collection.find({"digest": digest}).count():
+        if collection.find({"digest": digest}).count():
             return False
 
-        if pipeline_collection.find({"id": id}).count():
+        if collection.find({"id": id}).count():
             return False
         #
         # # deep comparison of equality
-        # pipelines_cursor = pipeline_collection.find({})
+        # pipelines_cursor = collection.find({})
         # for index, pipeline in enumerate(pipelines_cursor):
         #     try:
         #         # forgo this for now until we can get it to work.
@@ -237,10 +236,7 @@ class PipelineDB:
         #         raise(e)
         #
         # else:
-        pipeline_id = pipeline_collection.insert_one(new_pipeline_json).inserted_id
-        if new_pipeline.arch_desc is not None:
-            arch_desc_json_structure = new_pipeline.arch_desc.to_json_structure(digest)
-            pipeline_arch_desc_collection.insert_one(arch_desc_json_structure)
+        pipeline_id = collection.insert_one(new_pipeline_json).inserted_id
         logger.info("Wrote pipeline to the database with inserted_id from mongo: {}".format(pipeline_id))
         return True
 

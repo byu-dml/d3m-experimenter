@@ -1,6 +1,6 @@
 from typing import Tuple, List, Any, Dict
 
-from d3m import index as d3m_index
+from d3m import utils as d3m_utils, index as d3m_index
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.pipeline import PrimitiveStep
 from d3m.metadata.base import ArgumentType
@@ -12,33 +12,26 @@ from experimenter.constants import EXTRA_HYPEREPARAMETERS
 class PipelineArchDesc:
     """
     Holds data that describes a pipeline's architecture. e.g.
-    `PipelineArchDesc(pipeline_type="ensemble", attributes={"k": 3}) could
+    `PipelineArchDesc(generation_method="ensemble", generation_parameters={"k": 3}) could
     describe an ensemble pipeline that ensembles three classifiers.
     """
 
-    def __init__(self, pipeline_type: str, attributes: Dict[str, Any] = None):
+    def __init__(self, generation_method: str, generation_parameters: Dict[str, Any] = None):
         """
-        :param pipeline_type: The pipeline's high level structural type e.g.
+        :param generation_method: The pipeline's high level structural type e.g.
             "ensemble", "straight", "random", etc.
-        :param attributes: An optional dictionary holding data describing
+        :param generation_parameters: An optional dictionary holding data describing
             attributes of the pipeline's architecture e.g.
             { "depth": 4, "max_width": 3 }, etc. Fields in the dictionary
             will likely vary depending on the pipeline's type.
         """
-        self.pipeline_type = pipeline_type
-        self.attributes = dict() if attributes is None else attributes
+        self.generation_method = generation_method
+        self.generation_parameters = dict() if generation_parameters is None else generation_parameters
     
-    def to_json_structure(self, pipeline_digest: str):
-        """
-        :param pipeline_digest: An instance of `PipelineArchDesc` should
-        always be associated with a pipeline. That pipeline is identified
-        by the `pipeline_digest` parameter.
-        """
-        assert pipeline_digest is not None
+    def to_json_structure(self):
         return {
-            "pipeline_digest": pipeline_digest,
-            "pipeline_type": self.pipeline_type,
-            "attributes": self.attributes
+            "generation_method": self.generation_method,
+            "generation_parameters": self.generation_parameters
         }
 
 
@@ -103,8 +96,8 @@ class EZPipeline(Pipeline):
             self._step_i_of_refs[ref_name] = self.curr_step_i
         else:
             self._step_i_of_refs[ref_name] = step_i
-            
     
+
     def data_ref_of(self, ref_name: str) -> str:
         """
         Returns a data reference to the output of the step associated
@@ -117,6 +110,20 @@ class EZPipeline(Pipeline):
         if ref_step_i is None:
             raise ValueError(f'{ref_name} has not been set yet')
         return self._data_ref_by_step_i(ref_step_i)
+    
+    def to_json_structure(self, *args, **kwargs) -> Dict:
+        """
+        An overriden version of the parent class `Pipeline`'s method.
+        Adds the pipeline architecture description to the json.
+        """
+        pipeline_json = super().to_json_structure(*args, **kwargs)
+        if self.arch_desc is not None:
+            pipeline_json['pipeline_generation_description'] = self.arch_desc.to_json_structure()
+            # Update the digest since new information has been added to the description
+            pipeline_json['digest'] = d3m_utils.compute_digest(pipeline_json)
+        
+        return pipeline_json
+
     
     # Private methods
     

@@ -65,7 +65,7 @@ class StraightArchitectureExperimenter(Experiment):
         # Preprocessor Step
         if preprocessor:
             preprocessor_step = PrimitiveStep(primitive_description=preprocessor.metadata.query())
-            req_args = get_required_args(pre)
+            req_args = get_required_args(preprocessor)
             for arg in req_args:
                 if arg != "outputs":
                     preprocessor_used = True
@@ -77,7 +77,7 @@ class StraightArchitectureExperimenter(Experiment):
             )
             pipeline_description.add_step(preprocessor_step)
         
-        pipeline_description.arch_desc.attributes["preprocessor_used"] = preprocessor_used
+        pipeline_description.arch_desc.generation_parameters["preprocessor_used"] = preprocessor_used
 
         # Classifier Step
         classifier_step = PrimitiveStep(primitive_description=classifier.metadata.query())

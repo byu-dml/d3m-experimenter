@@ -2,6 +2,7 @@ import sys
 import unittest
 
 from d3m.metadata.base import Context, ArgumentType
+import d3m.utils as d3m_utils
 
 from experimenter.pipeline_builder import (
     EZPipeline, PipelineArchDesc, create_pipeline_step, add_pipeline_step
@@ -68,22 +69,32 @@ class PipelineGenerationTestCase(unittest.TestCase):
     def test_arch_desc(self) -> None:
         architecture = PipelineArchDesc('test', { 'test_attr': None })
         pipeline = EZPipeline(arch_desc=architecture, context=Context.TESTING)
-
-        # The json form of arch_desc requires a pipeline digest
-        with self.assertRaises(Exception):
-            pipeline.arch_desc.to_json_structure(None)
+        pipeline.add_input(name='inputs')
+        self._add_dataset_to_df_step(pipeline)
         
         # An architecture description should be able to be altered
         # once created
-        pipeline.arch_desc.attributes['other_test_attr'] = 'abc'
+        pipeline.arch_desc.generation_parameters['other_test_attr'] = 'abc'
 
-        # The json form of arch_desc should be complete
-        fake_digest = '1'
-        arch_desc_json = pipeline.arch_desc.to_json_structure(fake_digest)
+        # Pipeline should be valid in D3M's eyes, even with the custom
+        # architecture description fields
+        try:
+            pipeline.check()
+        except Exception as e:
+            self.fail(f'pipeline is not a valid d3m pipeline: {repr(e)}')
 
-        self.assertIn('test_attr', arch_desc_json['attributes'])
-        self.assertIsNone(arch_desc_json['attributes']['test_attr'])
-        self.assertEqual(arch_desc_json['attributes']['other_test_attr'], 'abc')
+        # The pipeline json should include the architecture description added above
+        pipeline_json = pipeline.to_json_structure()
+        self.assertIn('steps', pipeline_json)
+        self.assertIn('pipeline_generation_description', pipeline_json)
+
+        arch_desc_json = pipeline_json['pipeline_generation_description']
+        self.assertIn('test_attr', arch_desc_json['generation_parameters'])
+        self.assertIsNone(arch_desc_json['generation_parameters']['test_attr'])
+        self.assertEqual(arch_desc_json['generation_parameters']['other_test_attr'], 'abc')
+
+        # The pipeline's digest should be correct
+        self.assertEqual(pipeline_json['digest'], d3m_utils.compute_digest(pipeline_json))
         
     # Private methods
 
