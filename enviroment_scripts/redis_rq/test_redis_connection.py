@@ -17,4 +17,4 @@ try:
     print('Connected!')
 except Exception as ex:
     print('Error:', ex)
-    exit('Failed to connect, terminating.')
+    raise Exception('Failed to connect, terminating.')

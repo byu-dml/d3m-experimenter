@@ -12,7 +12,6 @@ from d3m import index as d3m_index
 from experimenter.experiments.experiment import Experiment
 from experimenter.pipeline_builder import EZPipeline, map_pipeline_step_arguments, add_initial_steps, get_required_args, add_predictions_constructor
 
-
 class EnsembleArchitectureExperimenter(Experiment):
     """
     Generates diverse pipelines with ensemble architectures.

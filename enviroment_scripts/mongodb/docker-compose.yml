@@ -1,0 +1,19 @@
+version: '3.3'
+services:
+  metalearning-database:
+    image: mongo:latest
+    container_name: "metalearning-database"
+    environment:
+      - MONGO_DATA_DIR=/data/db
+    volumes:
+      - ./data:/data
+      - ./data/configdb:/data/configdb
+      - ./data/db:/data/db
+      - ./data/db/diagnostic.data:/data/db/diagnostic.data
+      - ./data/db/journal:/data/db/journal
+    ports:
+      - ${MONGODB_PORT}:27017
+
+networks:
+  host:
+    external: true

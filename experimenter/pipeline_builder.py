@@ -6,6 +6,8 @@ from d3m.metadata.pipeline import PrimitiveStep
 from d3m.metadata.base import ArgumentType
 from d3m.primitive_interfaces.base import PrimitiveBase
 
+from experimenter.constants import EXTRA_HYPEREPARAMETERS
+
 class EZPipeline(Pipeline):
     """
     A subclass of `d3m.metadata.pipeline.Pipeline` that is easier to work
@@ -150,6 +152,10 @@ def map_pipeline_step_arguments(
                             data_reference=data_ref)
     step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
     step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
+    # handle any extra hyperparams needed
+    if step in EXTRA_HYPEREPARAMETERS:
+        params = EXTRA_HYPEREPARAMETERS[step]
+        step.add_hyperparameter(name=params["name"], argument_type=params["type"], data=params["data"])
     step.add_output('produce')
 
 
