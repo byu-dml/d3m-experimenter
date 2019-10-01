@@ -172,7 +172,8 @@ def map_pipeline_step_arguments(
     pl: EZPipeline,
     step: PrimitiveStep,
     required_args: list,
-    use_current_step_data_ref: bool = False
+    use_current_step_data_ref: bool = False,
+    custom_data_ref: str = None
 ) -> None:
     """
     Helper used to add arguments to a PrimitiveStep.
@@ -184,6 +185,8 @@ def map_pipeline_step_arguments(
     :param use_current_step_data_ref: For arguments other than 'outputs', this
         boolean indicates whether to use the data reference of the current step
         rather than 'attrs'.
+    :param custom_data_ref: If provided, this will be used as the data reference
+        for all arguments other than 'outputs'.
 
     :rtype: None
     """
@@ -191,7 +194,9 @@ def map_pipeline_step_arguments(
         if arg == "outputs":
             data_ref = pl.data_ref_of('target')
         else:
-            if use_current_step_data_ref:
+            if custom_data_ref:
+                data_ref = custom_data_ref
+            elif use_current_step_data_ref:
                 data_ref = pl.curr_step_data_ref
             else:
                 data_ref = pl.data_ref_of('attrs')
