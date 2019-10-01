@@ -201,9 +201,11 @@ def map_pipeline_step_arguments(
     step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
     step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
     # handle any extra hyperparams needed
-    if step in EXTRA_HYPEREPARAMETERS:
-        params = EXTRA_HYPEREPARAMETERS[step]
-        step.add_hyperparameter(name=params["name"], argument_type=params["type"], data=params["data"])
+    step_python_path = step.primitive.metadata.query()["python_path"]
+    if step_python_path in EXTRA_HYPEREPARAMETERS:
+        params = EXTRA_HYPEREPARAMETERS[step_python_path]
+        for param in params:
+            step.add_hyperparameter(name=param["name"], argument_type=param["type"], data=param["data"])
     step.add_output('produce')
 
 

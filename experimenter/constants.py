@@ -1,3 +1,5 @@
+from d3m.metadata.base import ArgumentType
+
 preprocessors = [
     "d3m.primitives.data_preprocessing.standard_scaler.SKlearn",
     "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
@@ -73,16 +75,25 @@ problem_directories = [
 ]
 
 EXTRA_HYPEREPARAMETERS = {
-    "d3m.primitives.feature_extraction.kernel_pca.SKlearn": {
+    "d3m.primitives.feature_extraction.kernel_pca.SKlearn": [
+        {
         "name": "kernel",
-        "type": "ArgumentType.VALUE",
-        "data": "sigmoid"
-    },
-    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": {
+            "type": ArgumentType.VALUE,
+            "data": "rbf"
+        }
+    ],
+    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": [
+        {
         "name": "mode",
-        "type": "ArgumentType.VALUE",
-        "data": "k_best"
+            "type": ArgumentType.VALUE,
+            "data": "fpr"
     },
+        {
+            "name": "param",
+            "type": ArgumentType.VALUE,
+            "data": 0.05
+        }
+    ],
 }
 
 blacklist_non_tabular_data = [
