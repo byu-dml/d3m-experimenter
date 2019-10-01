@@ -6,7 +6,7 @@ from d3m.metadata.base import Context
 from bson import json_util
 
 from experimenter.experiments.experiment import Experiment
-from experimenter.pipeline_builder import EZPipeline, add_pipeline_step
+from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc, add_pipeline_step
 
 class MetafeatureExperimenter(Experiment):
     """
@@ -23,7 +23,8 @@ class MetafeatureExperimenter(Experiment):
         Generates the standard metafeature pipeline
         """
         # Creating pipeline
-        pipeline_description = EZPipeline(context=Context.TESTING)
+        architecture = PipelineArchDesc("metafeatures")
+        pipeline_description = EZPipeline(arch_desc=architecture, context=Context.TESTING)
         pipeline_description.add_input(name='inputs')
 
         # dataset_to_dataframe step

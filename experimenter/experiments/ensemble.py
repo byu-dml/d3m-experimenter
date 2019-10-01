@@ -10,7 +10,10 @@ from d3m.metadata.base import Context, ArgumentType
 from d3m import index as d3m_index
 
 from experimenter.experiments.experiment import Experiment
-from experimenter.pipeline_builder import EZPipeline, map_pipeline_step_arguments, add_initial_steps, get_required_args, add_predictions_constructor
+from experimenter.pipeline_builder import (
+    EZPipeline, PipelineArchDesc, map_pipeline_step_arguments, add_initial_steps, get_required_args, add_predictions_constructor
+)
+
 
 class EnsembleArchitectureExperimenter(Experiment):
     """
@@ -81,7 +84,11 @@ class EnsembleArchitectureExperimenter(Experiment):
         logger.info("Creating {} pipelines of length {}".format(k, p+1))
 
         # Creating Pipeline
-        pipeline_description = EZPipeline(context=Context.TESTING)
+        architecture = PipelineArchDesc(
+            "ensemble",
+            { "width": k, "subpipeline_length": p+1 }
+        )
+        pipeline_description = EZPipeline(arch_desc=architecture, context=Context.TESTING)
 
         add_initial_steps(pipeline_description)
         list_of_outputs = []

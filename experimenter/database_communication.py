@@ -13,6 +13,7 @@ from d3m.metadata.pipeline import Pipeline
 import datetime
 from dateutil.parser import parse
 from experimenter.validation import validate_pipeline_run
+from experimenter.pipeline_builder import EZPipeline
 
 try:
     real_mongo_port = int(os.environ['REAL_MONGO_PORT'])
@@ -196,7 +197,7 @@ class PipelineDB:
         else:
             logger.info("\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n")
 
-    def add_to_pipelines_mongo(self, new_pipeline: Pipeline) -> bool:
+    def add_to_pipelines_mongo(self, new_pipeline: EZPipeline) -> bool:
         """
         Function to add a pipeline to the mongodb database of pipelines.
         :param new_pipeline: the new pipeline to add to mongo
@@ -204,10 +205,7 @@ class PipelineDB:
         """
         db = self.mongo_client.metalearning
         collection = db.pipelines
-        if type(new_pipeline) != dict:
-            new_pipeline_json = new_pipeline.to_json_structure()
-        else:
-            new_pipeline_json = new_pipeline
+        new_pipeline_json = new_pipeline.to_json_structure()
         digest = new_pipeline_json["digest"]
         id = new_pipeline_json["id"]
 
