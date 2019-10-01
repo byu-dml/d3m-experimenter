@@ -3,11 +3,13 @@ preprocessors = [
     "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
     "d3m.primitives.feature_extraction.kernel_pca.SKlearn",
     "d3m.primitives.feature_extraction.pca.SKlearn",
-    "d3m.primitives.data_transformation.fast_ica.SKlearn",
     "d3m.primitives.feature_selection.select_fwe.SKlearn",
     "d3m.primitives.feature_selection.select_percentile.SKlearn",
     "d3m.primitives.data_preprocessing.min_max_scaler.SKlearn",
     "d3m.primitives.data_preprocessing.nystroem.SKlearn",
+    "d3m.primitives.data_preprocessing.quantile_transformer.SKlearn",
+    "d3m.primitives.data_preprocessing.random_trees_embedding.SKlearn",
+    "d3m.primitives.feature_selection.variance_threshold.SKlearn"
 ]
 
 not_working_preprocessors = [
@@ -20,8 +22,7 @@ not_working_preprocessors = [
     # "d3m.primitives.data_preprocessing.polynomial_features.SKlearn",
     # "d3m.primitives.data_transformation.ordinal_encoder.SKlearn",
     # "d3m.primitives.data_transformation.one_hot_encoder.SKlearn",
-    # "d3m.primitives.data_preprocessing.rfe.SKlearn",  # Crashes the terminal
-
+    # "d3m.primitives.data_transformation.fast_ica.SKlearn", # Can't handle a column with all the same values
 ]
 
 models = {
@@ -32,13 +33,17 @@ models = {
         "d3m.primitives.classification.decision_tree.SKlearn",
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn",
         "d3m.primitives.classification.k_neighbors.SKlearn",
-        "d3m.primitives.classification.linear_discriminant_analysis.SKlearn",
         "d3m.primitives.classification.logistic_regression.SKlearn",
         "d3m.primitives.classification.linear_svc.SKlearn",
         "d3m.primitives.classification.sgd.SKlearn",
         "d3m.primitives.classification.svc.SKlearn",
         "d3m.primitives.classification.extra_trees.SKlearn", # randomly splits - different than random forest
         "d3m.primitives.classification.passive_aggressive.SKlearn", # an mlp with regularization
+        "d3m.primitives.classification.ada_boost.SKlearn",
+        "d3m.primitives.classification.mlp.SKlearn",
+        "d3m.primitives.classification.nearest_centroid.SKlearn",
+        # "d3m.primitives.classification.multinomial_naive_bayes.SKlearn", # Can't handle negative data
+        # "d3m.primitives.classification.linear_discriminant_analysis.SKlearn", # Fails when the values of X are all the same.
         # "d3m.primitives.classification.bagging.SKlearn", # only uses decision trees, which is redudant
     ],
     'regression': [
