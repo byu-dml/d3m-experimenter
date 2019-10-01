@@ -61,14 +61,10 @@ class EZPipeline(Pipeline):
         super().__init__(*args, **kwargs)
         # The indices of the steps that each ref is associated with.
         # All begin with `None`, just like the value of `self.curr_step_i`.
-        self._step_i_of_refs = { name: None for name in self.valid_ref_names }
+        self._step_i_of_refs: Dict[str, int] = {}
         self.arch_desc = arch_desc
     
     # Public properties
-
-    @property
-    def valid_ref_names(self) -> Tuple[str]:
-        return ('raw_target', 'target', 'raw_df', 'raw_attrs', 'attrs')
 
     @property
     def curr_step_i(self) -> None:
@@ -91,11 +87,17 @@ class EZPipeline(Pipeline):
         If `step_i` is `None`, the ref's step index will be set to the
         index of the current step.
         """
-        self._validate_ref_name(ref_name)
         if step_i is None:
             self._step_i_of_refs[ref_name] = self.curr_step_i
         else:
             self._step_i_of_refs[ref_name] = step_i
+            
+    def step_i_of(self, ref_name: str) -> int:
+        """
+        Returns the index of the step associated with `ref_name`.
+        """
+        self._check_ref_is_set(ref_name)
+        return self._step_i_of_refs[ref_name]
     
 
     def data_ref_of(self, ref_name: str) -> str:
@@ -105,11 +107,7 @@ class EZPipeline(Pipeline):
         ref is 2, and the output method name of step 2 is 'produce',
         then `data_ref_of('raw_attrs')` == 'step.2.produce'`.
         """
-        self._validate_ref_name(ref_name)
-        ref_step_i = self._step_i_of_refs[ref_name]
-        if ref_step_i is None:
-            raise ValueError(f'{ref_name} has not been set yet')
-        return self._data_ref_by_step_i(ref_step_i)
+        return self._data_ref_by_step_i(self.step_i_of(ref_name))
     
     def to_json_structure(self, *args, **kwargs) -> Dict:
         """
@@ -127,9 +125,9 @@ class EZPipeline(Pipeline):
     
     # Private methods
     
-    def _validate_ref_name(self, ref_name: str) -> None:
-        if ref_name not in self.valid_ref_names:
-            raise ValueError(f'{ref_name} is not a valid ref name')
+    def _check_ref_is_set(self, ref_name: str) -> None:
+        if ref_name not in self._step_i_of_refs:
+            raise ValueError(f'{ref_name} has not been set yet')
     
     def _data_ref_by_step_i(self, step_i: int) -> str:
         step_output_names: List[str] = self.steps[step_i].outputs
