@@ -35,9 +35,20 @@ class Experimenter:
     generates pipelines.  This class is used by the ExperimenterDriver class to run the pipelines.
     """
 
-    def __init__(self, datasets_dir: str, volumes_dir: str, *, input_problem_directory=None,
-                 input_models=None, input_preprocessors=None, generate_pipelines=True,
-                 location=None, generate_problems=False, pipeline_gen_type: str = "straight", n_classifiers: int = 3, n_preprocessors: int = 1):
+    def __init__(
+        self,
+        datasets_dir: str,
+        volumes_dir: str,
+        *,
+        input_problem_directory=None,
+        input_models=None,
+        input_preprocessors=None,
+        generate_pipelines=True,
+        generate_problems=False,
+        pipeline_folder=None,
+        pipeline_gen_type: str = "straight",
+        **experiment_args
+    ):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.mongo_database = PipelineDB()
@@ -51,6 +62,14 @@ class Experimenter:
         self.problems = {}
         self.incorrect_problem_types = {}
 
+        self.experiments = {
+            "metafeatures": MetafeatureExperimenter(),
+            "random": RandomArchitectureExperimenter(),
+            "straight": StraightArchitectureExperimenter(),
+            "ensemble": EnsembleArchitectureExperimenter(),
+            "stacked": StackedArchitectureExperimenter()
+        }
+
         if generate_problems:
             logger.info("Generating problems...")
             self.problems = self.get_possible_problems()
@@ -60,39 +79,28 @@ class Experimenter:
 
         if generate_pipelines:            
             logger.info("Generating pipelines of type {}".format(pipeline_gen_type))
-            
-            if pipeline_gen_type == "metafeatures":
-                self.generated_pipelines = MetafeatureExperimenter().generate_pipelines()
-            elif pipeline_gen_type == "random":
-                self.generated_pipelines = RandomArchitectureExperimenter().generate_pipelines()
-            elif pipeline_gen_type == "straight":
-                self.generated_pipelines = StraightArchitectureExperimenter().generate_pipelines(
-                    self.preprocessors,
-                    self.models
-                )
-            elif pipeline_gen_type == "ensemble":
-                self.generated_pipelines = EnsembleArchitectureExperimenter().generate_pipelines(
-                    self.preprocessors,
-                    self.models,
-                    n_classifiers,
-                    n_preprocessors
-                )
-            elif pipeline_gen_type == "stacked":
-                self.generated_pipelines = StackedArchitectureExperimenter().generate_pipelines()
-            else:
+
+            if pipeline_gen_type not in self.experiments:
                 raise Exception("Cannot parse generation type {}".format(pipeline_gen_type))
+            
+            experiment = self.experiments[pipeline_gen_type]
+            self.generated_pipelines = experiment.generate_pipelines(
+                preprocessors=self.preprocessors,
+                models=self.models,
+                **experiment_args
+            )
 
             self.num_pipelines = len(self.generated_pipelines["classification"]) + len(self.generated_pipelines["regression"])
 
             logger.info("There are {} pipelines".format(self.num_pipelines))
 
-            if location is None:
+            if pipeline_folder is None:
                 self.mongo_database = PipelineDB()
                 logger.info('Exporting pipelines to mongodb...')
                 self.output_pipelines_to_mongodb()
             else:
-                logger.info("Exporting pipelines to {}".format(location))
-                self.output_values_to_folder(location)
+                logger.info("Exporting pipelines to {}".format(pipeline_folder))
+                self.output_values_to_folder(pipeline_folder)
 
     def get_possible_problems(self) -> dict:
         """
@@ -248,7 +256,7 @@ class Experimenter:
         return {"classification": [pipeline_description], "regression": []}
 
 
-def _pretty_print_json(self, json_obj: str):
+def pretty_print_json(json_obj: str):
     """
     Pretty prints a JSON object to make it readable
     """

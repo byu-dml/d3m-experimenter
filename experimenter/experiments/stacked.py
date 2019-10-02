@@ -9,7 +9,7 @@ class StackedArchitectureExperimenter(Experiment):
     Generates diverse pipelines of stacked architectures.
     """
 
-    def generate_pipelines(self) -> Dict[str, List[Pipeline]]:
+    def generate_pipelines(self, **unused_args) -> Dict[str, List[Pipeline]]:
         """
         TODO: Implement.
         """

@@ -22,10 +22,12 @@ class EnsembleArchitectureExperimenter(Experiment):
 
     def generate_pipelines(
         self,
+        *,
         preprocessors: list,
         models: Dict[str,str],
         n_classifiers: int,
-        n_preprocessors: int
+        n_preprocessors: int,
+        **unused_args
     ) -> Dict[str, List[Pipeline]]:
         """
         This function does differing preprocessors and same model, or differing models and same preprocessor
