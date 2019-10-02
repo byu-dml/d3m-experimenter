@@ -1,3 +1,4 @@
+from typing import List
 import warnings, argparse, logging
 import logging.config as log_config
 from d3m.metadata.pipeline import Pipeline
@@ -231,21 +232,25 @@ def main(**cli_args):
         elif run_type == "distribute":
             experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, **cli_args)
             experimenter_driver.run(**cli_args)
-                return
+            return
 
         experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, **cli_args)
         experimenter_driver.run(**cli_args)
 
 
-if __name__ == "__main__":
+def get_cli_args(raw_args: List[str] = None):
+    """
+    If `raw_args` is `None`, `sys.argv` will be used. `raw_args`
+    can be supplied when testing.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run-type",
         '-r',
         help=(
             "How to run the driver. 'all' generates and executes, 'execute' "
-                                                 "only executes pipelines from the database, 'pipeline_path' "
-                                                 "executes pipelines from a specific folder and 'generate' only "
+            "only executes pipelines from the database, 'pipeline_path' "
+            "executes pipelines from a specific folder and 'generate' only "
             "creates pipelines and stores them in the database"
         ),
         choices=["all", "execute", "generate", "pipeline_path", "distribute"],
@@ -280,14 +285,14 @@ if __name__ == "__main__":
         "--n-preprocessors",
         "-np",
         type=int,
-        help="how many preprocessors to use for generation",
+        help="how many preprocessors to use for the ensemble experiment",
         default=3
     )
     parser.add_argument(
         "--n-classifiers",
         "-nc",
         type=int,
-        help="how many classifiers to use for generation",
+        help="how many classifiers to use for the ensemble experiment",
         default=3
     )
     parser.add_argument(
@@ -296,7 +301,71 @@ if __name__ == "__main__":
         help="seed to use for random generation",
         default=0
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--n-structures",
+        "-ns",
+        type=int,
+        help="how many pipeline structures to sample for the random experiment"
+    )
+    parser.add_argument(
+        "--n-pipelines-per-structure",
+        "-nps",
+        type=int,
+        help="how many pipelines to sample from each structure for the random experiment",
+        default=8
+    )
+    parser.add_argument(
+        "--depth-sample-range",
+        "-dsr",
+        nargs=2,
+        type=int,
+        help=(
+            "the range to sample pipeline depths from for the random experiment e.g. "
+            "`-dps 2 10` will sample in the integer range [2,10]"
+        ),
+        default=[1,8],
+        metavar=('lower', 'upper')
+    )
+    parser.add_argument(
+        "--max-width-sample-range",
+        "-mwsr",
+        nargs=2,
+        type=int,
+        help=(
+            "the range to sample pipeline max widths from for the random experiment e.g. "
+            "`-mwsr 2 10` will sample in the integer range [2,10]"
+        ),
+        default=[1,8],
+        metavar=('lower', 'upper')
+    )
+    parser.add_argument(
+        "--max-inputs-sample-range",
+        "-misr",
+        nargs=2,
+        type=int,
+        help=(
+            "the range to sample the number of inputs for each primitive in a pipeline from "
+            "for the random experiment e.g. `-misr 2 10` will sample in the integer range [2,10]"
+        ),
+        default=[1,4],
+        metavar=('lower', 'upper')
+    )
+    parser.add_argument(
+        "--max-complexity-factor",
+        "-mcf",
+        type=int,
+        help=(
+            "pipeline structures produced by the random experiment will each honor this constraint: "
+            "`depth * max_width * max_inputs < max_complexity_factor`"
+        ),
+        default=24
+    )
+    args = parser.parse_args(raw_args)
+    return args
+
+
+if __name__ == "__main__":
+    args = get_cli_args()
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
     else:
