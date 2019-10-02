@@ -68,6 +68,12 @@ models = {
         # "d3m.primitives.regression.sgd.SKlearn",
     ]
 }
+
+# All primitives that need more than one column as input
+primitives_needing_gt_one_column = {
+    "d3m.primitives.feature_selection.select_percentile.SKlearn"
+}
+
 problem_directories = [
     "seed_datasets_current/",
     "training_datasets/LL0/",
@@ -77,17 +83,17 @@ problem_directories = [
 EXTRA_HYPEREPARAMETERS = {
     "d3m.primitives.feature_extraction.kernel_pca.SKlearn": [
         {
-        "name": "kernel",
+            "name": "kernel",
             "type": ArgumentType.VALUE,
             "data": "rbf"
         }
     ],
     "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": [
         {
-        "name": "mode",
+            "name": "mode",
             "type": ArgumentType.VALUE,
             "data": "fpr"
-    },
+        },
         {
             "name": "param",
             "type": ArgumentType.VALUE,

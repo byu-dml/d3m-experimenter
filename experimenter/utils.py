@@ -1,6 +1,8 @@
 import inspect
 import json
 import os
+import functools
+from typing import Callable, Any
 
 from d3m.metadata import problem as problem_module
 
@@ -68,3 +70,8 @@ def get_default_args(f):
         k: v.default for k, v in inspect.signature(f).parameters.items()
         # if v.default is not inspect.Parameter.empty
     }
+
+
+def multiply(l: list) -> float:
+    """Multiplies all the elements in a list together"""
+    return functools.reduce((lambda x, y: x * y), l)
