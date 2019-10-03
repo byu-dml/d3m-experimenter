@@ -1,18 +1,32 @@
 from d3m.metadata.base import ArgumentType
 
-preprocessors = [
-    "d3m.primitives.data_preprocessing.standard_scaler.SKlearn",
-    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
-    "d3m.primitives.feature_extraction.kernel_pca.SKlearn",
-    "d3m.primitives.feature_extraction.pca.SKlearn",
+# It is ok to use these temperamental preprocessors in production because
+# we're ok with some pipelines degenerating on some datasets.
+temperamental_preprocessors = [
+    # Note: These primitives return an empty DF when the data doesn't
+    # have enough signal:
     "d3m.primitives.feature_selection.select_fwe.SKlearn",
+    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
     "d3m.primitives.feature_selection.select_percentile.SKlearn",
+    "d3m.primitives.feature_selection.variance_threshold.SKlearn",
+    "d3m.primitives.feature_extraction.kernel_pca.SKlearn",
+    # Note: These primitives return an empty DF when the data doesn't
+    # have enough signal and only has one column:
+    "d3m.primitives.data_preprocessing.quantile_transformer.SKlearn",
+]
+
+# These preprocessors never throw errors due to degenerate data
+# (i.e. data with no signal). 
+bulletproof_preprocessors = [
+    "d3m.primitives.data_preprocessing.standard_scaler.SKlearn",
+    "d3m.primitives.feature_extraction.pca.SKlearn",
     "d3m.primitives.data_preprocessing.min_max_scaler.SKlearn",
     "d3m.primitives.data_preprocessing.nystroem.SKlearn",
-    "d3m.primitives.data_preprocessing.quantile_transformer.SKlearn",
     "d3m.primitives.data_preprocessing.random_trees_embedding.SKlearn",
-    "d3m.primitives.feature_selection.variance_threshold.SKlearn"
 ]
+
+# All useable preprocessors. Use these in production.
+preprocessors = temperamental_preprocessors + bulletproof_preprocessors
 
 not_working_preprocessors = [
     # These preprocessors have not been fixed yet by JPL: TODO: check this, it's old
