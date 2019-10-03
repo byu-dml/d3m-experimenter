@@ -1,3 +1,4 @@
+from typing import List
 import warnings, argparse, logging
 import logging.config as log_config
 from d3m.metadata.pipeline import Pipeline
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 from experimenter.experimenter import Experimenter
 import os, json, pdb, traceback, sys
 from experimenter.database_communication import PipelineDB
-from experimenter.experimenter import _pretty_print_json
+from experimenter.experimenter import pretty_print_json
 import warnings, argparse
 import redis
 from rq import Queue
@@ -27,27 +28,35 @@ class ExperimenterDriver:
     This is the main class for running the experimenter.  Command line options for running this file are found at the bottom of the file.
     """
 
-    def __init__(self, datasets_dir: str, volumes_dir: str, run_type: str ="all",
-                 stored_pipeline_loc=None, distributed=False
-                 fit_only=False, args: dict):
+    def __init__(
+        self,
+        datasets_dir: str,
+        volumes_dir: str,
+        *,
+        run_type: str ="all",
+        pipeline_folder=None,
+        distribute=False,
+        run_custom_fit=False,
+        **unused_args
+    ):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.run_type = run_type
-        self.distributed = distributed
-        self.fit_only = fit_only
+        self.distribute = distribute
+        self.fit_only = run_custom_fit
 
         if run_type == "pipeline_path":
-            if stored_pipeline_loc is None:
+            if pipeline_folder is None:
                 self.pipeline_location = "created_pipelines/"
             else:
-                self.pipeline_location = stored_pipeline_loc
+                self.pipeline_location = pipeline_folder
         else:
             self.pipeline_location = None
 
         # connect to database
         self.mongo_db = PipelineDB()
 
-        if distributed:
+        if distribute:
             logger.info("Connecting to Redis")
             try:
                 conn = redis.StrictRedis(
@@ -78,8 +87,8 @@ class ExperimenterDriver:
         :param problem: the problem that the pipeline failed on
         :param error: the reason for failure
         """
-        logger.info("\nFailed to run pipeline:\n" + self.get_list_vertically(
-            self.primitive_list_from_pipeline_object(pipeline)) + "\n")
+        logger.info("\nFailed to run pipeline:\n" + get_list_vertically(
+            primitive_list_from_pipeline_object(pipeline)) + "\n")
         logger.info("On the problem:\n{}\n".format(problem))
         logger.info("ERROR: " + str(error))
         traceback.print_exc()
@@ -104,31 +113,35 @@ class ExperimenterDriver:
         return pipeline_list
 
 
-    def run(self):
+    def run(self, **cli_args):
         if self.run_type == "pipeline_path":
             logger.info("Executing pipelines found in {}".format(self.pipeline_location))
             if self.pipeline_location is None:
                 raise NotADirectoryError
             else:
                 pipes = self.get_pipelines_from_path(self.pipeline_location)
-                experimenter = Experimenter(self.datasets_dir, self.volumes_dir,
-                                            generate_pipelines=False, generate_problems=True,
-                                            pipeline_gen_type=args.pipeline_gen_type,
-                                            n_classifiers=args.n_classifiers,
-                                            n_preprocessors=args.n_preprocessors)
+                experimenter = Experimenter(
+                    self.datasets_dir,
+                    self.volumes_dir,
+                    generate_pipelines=False,
+                    generate_problems=True,
+                    **cli_args
+                )
                 problems = experimenter.problems
         # run type is pipelines from mongodb or "all"
         else:
             # generating the pipelines has already been taken care of
-            experimenter = Experimenter(self.datasets_dir, self.volumes_dir,
-                                        generate_problems=True, generate_pipelines=False
-                                        pipeline_gen_type=args.pipeline_gen_type,
-                                        n_classifiers=args.n_classifiers,
-                                        n_preprocessors=args.n_preprocessors)
+            experimenter = Experimenter(
+                self.datasets_dir,
+                self.volumes_dir,
+                generate_problems=True,
+                generate_pipelines=False,
+                **cli_args)
             problems: dict = experimenter.problems
             if self.fit_only:
                 logger.info("Using only the fit pipeline")
-                pipes, num_pipes = experimenter.generate_metafeatures_pipeline()
+                pipes = experimenter.experiments["metafeatures"].generate_pipelines()
+                num_pipes = [len(pipe_list) for pipe_list in pipes.values()]
             else:
                 logger.info("\n Gathering pipelines from database...")
                 pipes, num_pipes = self.mongo_db.get_all_pipelines()
@@ -149,12 +162,12 @@ class ExperimenterDriver:
                                                                  collection_name="pipeline_runs",
                                                                  skip_pipeline=self.fit_only):
                             logger.info("\n SKIPPING. Pipeline already run.")
-                            self.print_pipeline_and_problem(pipe, problem)
+                            print_pipeline_and_problem(pipe, problem)
                             continue
 
                         try:
                             # if we are trying to distribute, add to the RQ
-                            if self.distributed:
+                            if self.distribute:
                                 if not self.fit_only:
                                     async_results = self.queue.enqueue(execute_pipeline_on_problem, pipe, problem,
                                                                        self.datasets_dir, self.volumes_dir, timeout=60*12)
@@ -170,7 +183,7 @@ class ExperimenterDriver:
                             # pipeline didn't work.  Try the next one
                             raise e
 
-        _pretty_print_json(experimenter.incorrect_problem_types)  # For debugging purposes
+        pretty_print_json(experimenter.incorrect_problem_types)  # For debugging purposes
 
 
 
@@ -199,67 +212,162 @@ python3 experimenter_driver.py -r generate -f default (creates pipelines in defa
 python3 experimenter_driver.py -r generate -f other_folder/ (creates pipelines and stores them in "other_folder/")
 
 """
-def main(run_type: str, pipeline_folder: str, only_run_fit: bool, args: dict):
+def main(**cli_args):
 
     datasets_dir = '/datasets'
     volumes_dir = '/volumes'
+    run_type = cli_args["run_type"]
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         if run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
-            experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
-                                        generate_problems=True, pipeline_gen_type=args.pipeline_gen_type, n_classifiers=args.n_classifiers,
-                                        n_preprocessors=args.n_preprocessors)
+            Experimenter(datasets_dir, volumes_dir, generate_pipelines=True, generate_problems=True, **cli_args)
 
         elif run_type == "generate":
             logger.info("Only generating pipelines...")
-            experimenter = Experimenter(datasets_dir, volumes_dir, generate_pipelines=True,
-                                        location=pipeline_folder, pipeline_gen_type=args.pipeline_gen_type, n_classifiers=args.n_classifiers,
-                                        n_preprocessors=args.n_preprocessors)
+            Experimenter(datasets_dir, volumes_dir, generate_pipelines=True, **cli_args)
             return
 
         elif run_type == "distribute":
-            if not only_run_fit:
-                experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
-                                                         run_type=run_type, stored_pipeline_loc=pipeline_folder,
-                                                         distributed=True)
-                experimenter_driver.run()
+            experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, **cli_args)
+            experimenter_driver.run(**cli_args)
+            return
 
-                return
-            else:
-                experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
-                                                         run_type=run_type, stored_pipeline_loc=pipeline_folder,
-                                                         distributed=True,
-                                                         fit_only=only_run_fit)
-                experimenter_driver.run()
+        experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, **cli_args)
+        experimenter_driver.run(**cli_args)
 
-                return
 
-        experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir,
-                                                 run_type=run_type, stored_pipeline_loc=pipeline_folder)
-        experimenter_driver.run()
+def get_cli_args(raw_args: List[str] = None):
+    """
+    If `raw_args` is `None`, `sys.argv` will be used. `raw_args`
+    can be supplied when testing.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--run-type",
+        '-r',
+        help=(
+            "How to run the driver. 'all' generates and executes, 'execute' "
+            "only executes pipelines from the database, 'pipeline_path' "
+            "executes pipelines from a specific folder and 'generate' only "
+            "creates pipelines and stores them in the database"
+        ),
+        choices=["all", "execute", "generate", "pipeline_path", "distribute"],
+        default="all"
+    )
+    parser.add_argument(
+        "--pipeline-folder",
+        '-f',
+        help="The path of the folder containing/to receive the pipelines"
+    )
+    parser.add_argument(
+        "--run-custom-fit",
+        '-c',
+        help="Whether or not to run only fit and use given pipelines",
+        action='store_true'
+    )
+    parser.add_argument(
+        "--pipeline-gen-type",
+        '-p',
+        help="what type of pipelines to generate: ensembles, straight, metafeature, or random",
+        choices=["ensemble", "straight", "metafeatures", "random", "stacked"],
+        default="straight"
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Whether to print for debugging or not",
+        default=False
+    )
+    parser.add_argument(
+        "--n-preprocessors",
+        "-np",
+        type=int,
+        help="how many preprocessors to use for the ensemble experiment",
+        default=3
+    )
+    parser.add_argument(
+        "--n-classifiers",
+        "-nc",
+        type=int,
+        help="how many classifiers to use for the ensemble experiment",
+        default=3
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="seed to use for random generation",
+        default=0
+    )
+    parser.add_argument(
+        "--n-structures",
+        "-ns",
+        type=int,
+        help="how many pipeline structures to sample for the random experiment"
+    )
+    parser.add_argument(
+        "--n-pipelines-per-structure",
+        "-nps",
+        type=int,
+        help="how many pipelines to sample from each structure for the random experiment",
+        default=8
+    )
+    parser.add_argument(
+        "--depth-sample-range",
+        "-dsr",
+        nargs=2,
+        type=int,
+        help=(
+            "the range to sample pipeline depths from for the random experiment e.g. "
+            "`-dps 2 10` will sample in the integer range [2,10]"
+        ),
+        default=[1,8],
+        metavar=('lower', 'upper')
+    )
+    parser.add_argument(
+        "--max-width-sample-range",
+        "-mwsr",
+        nargs=2,
+        type=int,
+        help=(
+            "the range to sample pipeline max widths from for the random experiment e.g. "
+            "`-mwsr 2 10` will sample in the integer range [2,10]"
+        ),
+        default=[1,8],
+        metavar=('lower', 'upper')
+    )
+    parser.add_argument(
+        "--max-inputs-sample-range",
+        "-misr",
+        nargs=2,
+        type=int,
+        help=(
+            "the range to sample the number of inputs for each primitive in a pipeline from "
+            "for the random experiment e.g. `-misr 2 10` will sample in the integer range [2,10]"
+        ),
+        default=[1,4],
+        metavar=('lower', 'upper')
+    )
+    parser.add_argument(
+        "--max-complexity-factor",
+        "-mcf",
+        type=int,
+        help=(
+            "pipeline structures produced by the random experiment will each honor this constraint: "
+            "`depth * max_width * max_inputs < max_complexity_factor`"
+        ),
+        default=24
+    )
+    args = parser.parse_args(raw_args)
+    return args
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--run-type", '-r', help="How to run the driver.  'all' generates and executes, 'execute' "
-                                                 "only executes pipelines from the database, 'pipeline_path' "
-                                                 "executes pipelines from a specific folder and 'generate' only "
-                                                 "creates pipelines and stores them in the database",
-                        choices=["all", "execute", "generate", "pipeline_path", "distribute"], default="all")
-    parser.add_argument("--pipeline-folder", '-f', help="The path of the folder containing/to receive the pipelines")
-    parser.add_argument("--run-custom-fit", '-c', help="Whether or not to run only fit and use given pipelines",
-                        action='store_true')
-    parser.add_argument("--pipeline-gen-type", '-p', help="what type of pipelines to generate: ensembles, straight, metafeature, or random",
-                        choices=["ensemble", "straight", "metafeatures", "random", "stacked"], default="straight")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Whether to print for debugging or not", default=False)
-    parser.add_argument("--n_preprocessors", "-np", type=int, help="how many preprocessors to use for generation", default=3)
-    parser.add_argument("--n_classifiers", "-nc", type=int, help="how many classifiers to use for generation", default=3)
-    parser.add_argument("--seed", type=int, help="seed to use for random generation", default=0) 
-    args = parser.parse_args()
+    args = get_cli_args()
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.CRITICAL)
-    main(args.run_type, args.pipeline_folder, args.run_custom_fit, args)
+    main(**vars(args))

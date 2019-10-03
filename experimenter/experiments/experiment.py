@@ -11,12 +11,17 @@ class Experiment(ABC):
     """
 
     @abstractmethod
-    def generate_pipelines(self) -> Dict[str, List[Pipeline]]:
+    def generate_pipelines(self, **args) -> Dict[str, List[Pipeline]]:
         """
         Should return a mapping of problem type to a list of
         pipelines outfitted for that problem type e.g.
         `{"classification": [Pipeline()], "regression": [Pipeline()]}`.
-        Subclasses can define whatever input parameters they want.
+
+        Subclasses inheriting this method should always gather up the
+        remaining keyword arguments, since all CLI arguments are passed
+        to this function when called by the `Experimenter` class. This
+        function can choose which CLI arguments to subscribe to by
+        adding them as keyword arguments to the function signature.
         """
         pass
     

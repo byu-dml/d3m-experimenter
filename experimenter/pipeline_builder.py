@@ -61,14 +61,10 @@ class EZPipeline(Pipeline):
         super().__init__(*args, **kwargs)
         # The indices of the steps that each ref is associated with.
         # All begin with `None`, just like the value of `self.curr_step_i`.
-        self._step_i_of_refs = { name: None for name in self.valid_ref_names }
+        self._step_i_of_refs: Dict[str, int] = {}
         self.arch_desc = arch_desc
     
     # Public properties
-
-    @property
-    def valid_ref_names(self) -> Tuple[str]:
-        return ('raw_target', 'target', 'raw_df', 'raw_attrs', 'attrs')
 
     @property
     def curr_step_i(self) -> None:
@@ -91,11 +87,17 @@ class EZPipeline(Pipeline):
         If `step_i` is `None`, the ref's step index will be set to the
         index of the current step.
         """
-        self._validate_ref_name(ref_name)
         if step_i is None:
             self._step_i_of_refs[ref_name] = self.curr_step_i
         else:
             self._step_i_of_refs[ref_name] = step_i
+            
+    def step_i_of(self, ref_name: str) -> int:
+        """
+        Returns the index of the step associated with `ref_name`.
+        """
+        self._check_ref_is_set(ref_name)
+        return self._step_i_of_refs[ref_name]
     
 
     def data_ref_of(self, ref_name: str) -> str:
@@ -105,11 +107,7 @@ class EZPipeline(Pipeline):
         ref is 2, and the output method name of step 2 is 'produce',
         then `data_ref_of('raw_attrs')` == 'step.2.produce'`.
         """
-        self._validate_ref_name(ref_name)
-        ref_step_i = self._step_i_of_refs[ref_name]
-        if ref_step_i is None:
-            raise ValueError(f'{ref_name} has not been set yet')
-        return self._data_ref_by_step_i(ref_step_i)
+        return self._data_ref_by_step_i(self.step_i_of(ref_name))
     
     def to_json_structure(self, *args, **kwargs) -> Dict:
         """
@@ -127,9 +125,9 @@ class EZPipeline(Pipeline):
     
     # Private methods
     
-    def _validate_ref_name(self, ref_name: str) -> None:
-        if ref_name not in self.valid_ref_names:
-            raise ValueError(f'{ref_name} is not a valid ref name')
+    def _check_ref_is_set(self, ref_name: str) -> None:
+        if ref_name not in self._step_i_of_refs:
+            raise ValueError(f'{ref_name} has not been set yet')
     
     def _data_ref_by_step_i(self, step_i: int) -> str:
         step_output_names: List[str] = self.steps[step_i].outputs
@@ -174,7 +172,8 @@ def map_pipeline_step_arguments(
     pl: EZPipeline,
     step: PrimitiveStep,
     required_args: list,
-    use_current_step_data_ref: bool = False
+    use_current_step_data_ref: bool = False,
+    custom_data_ref: str = None
 ) -> None:
     """
     Helper used to add arguments to a PrimitiveStep.
@@ -186,6 +185,8 @@ def map_pipeline_step_arguments(
     :param use_current_step_data_ref: For arguments other than 'outputs', this
         boolean indicates whether to use the data reference of the current step
         rather than 'attrs'.
+    :param custom_data_ref: If provided, this will be used as the data reference
+        for all arguments other than 'outputs'.
 
     :rtype: None
     """
@@ -193,19 +194,23 @@ def map_pipeline_step_arguments(
         if arg == "outputs":
             data_ref = pl.data_ref_of('target')
         else:
-            if use_current_step_data_ref:
+            if custom_data_ref:
+                data_ref = custom_data_ref
+            elif use_current_step_data_ref:
                 data_ref = pl.curr_step_data_ref
             else:
                 data_ref = pl.data_ref_of('attrs')
 
         step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
                             data_reference=data_ref)
-    step.add_hyperparameter(name='use_semantic_types', argument_type=ArgumentType.VALUE, data=True)
-    step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="replace")
+    step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="new")
+
     # handle any extra hyperparams needed
-    if step in EXTRA_HYPEREPARAMETERS:
-        params = EXTRA_HYPEREPARAMETERS[step]
-        step.add_hyperparameter(name=params["name"], argument_type=params["type"], data=params["data"])
+    step_python_path = step.primitive.metadata.query()["python_path"]
+    if step_python_path in EXTRA_HYPEREPARAMETERS:
+        params = EXTRA_HYPEREPARAMETERS[step_python_path]
+        for param in params:
+            step.add_hyperparameter(name=param["name"], argument_type=param["type"], data=param["data"])
     step.add_output('produce')
 
 

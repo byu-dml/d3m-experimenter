@@ -39,13 +39,12 @@ class PipelineGenerationTestCase(unittest.TestCase):
         self._add_extract_attrs_step(pipeline)
         pipeline.set_step_i_of('attrs')
         self.assertEqual(pipeline.data_ref_of('attrs'), 'steps.2.produce')
+        self.assertEqual(pipeline.step_i_of('attrs'), 2)
 
         # setting a different ref should not affect an already set ref
         self.assertEqual(pipeline.data_ref_of('raw_df'), 'steps.0.produce')
 
-        # invalid ref names should be invalid
-        with self.assertRaises(Exception):
-            pipeline.set_step_i_of('Jar Jar Binks')
+        # Unset ref names should throw an error, rather than return a value.
         with self.assertRaises(Exception):
             pipeline.data_ref_of('Han Solo')
     

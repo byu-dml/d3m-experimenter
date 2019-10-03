@@ -1,14 +1,32 @@
-preprocessors = [
-    "d3m.primitives.data_preprocessing.standard_scaler.SKlearn",
-    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
-    "d3m.primitives.feature_extraction.kernel_pca.SKlearn",
-    "d3m.primitives.feature_extraction.pca.SKlearn",
-    "d3m.primitives.data_transformation.fast_ica.SKlearn",
+from d3m.metadata.base import ArgumentType
+
+# It is ok to use these temperamental preprocessors in production because
+# we're ok with some pipelines degenerating on some datasets.
+temperamental_preprocessors = [
+    # Note: These primitives return an empty DF when the data doesn't
+    # have enough signal:
     "d3m.primitives.feature_selection.select_fwe.SKlearn",
+    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
     "d3m.primitives.feature_selection.select_percentile.SKlearn",
+    "d3m.primitives.feature_selection.variance_threshold.SKlearn",
+    "d3m.primitives.feature_extraction.kernel_pca.SKlearn",
+    # Note: These primitives return an empty DF when the data doesn't
+    # have enough signal and only has one column:
+    "d3m.primitives.data_preprocessing.quantile_transformer.SKlearn",
+]
+
+# These preprocessors never throw errors due to degenerate data
+# (i.e. data with no signal). 
+bulletproof_preprocessors = [
+    "d3m.primitives.data_preprocessing.standard_scaler.SKlearn",
+    "d3m.primitives.feature_extraction.pca.SKlearn",
     "d3m.primitives.data_preprocessing.min_max_scaler.SKlearn",
     "d3m.primitives.data_preprocessing.nystroem.SKlearn",
+    "d3m.primitives.data_preprocessing.random_trees_embedding.SKlearn",
 ]
+
+# All useable preprocessors. Use these in production.
+preprocessors = temperamental_preprocessors + bulletproof_preprocessors
 
 not_working_preprocessors = [
     # These preprocessors have not been fixed yet by JPL: TODO: check this, it's old
@@ -20,8 +38,7 @@ not_working_preprocessors = [
     # "d3m.primitives.data_preprocessing.polynomial_features.SKlearn",
     # "d3m.primitives.data_transformation.ordinal_encoder.SKlearn",
     # "d3m.primitives.data_transformation.one_hot_encoder.SKlearn",
-    # "d3m.primitives.data_preprocessing.rfe.SKlearn",  # Crashes the terminal
-
+    # "d3m.primitives.data_transformation.fast_ica.SKlearn", # Can't handle a column with all the same values
 ]
 
 models = {
@@ -32,13 +49,17 @@ models = {
         "d3m.primitives.classification.decision_tree.SKlearn",
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn",
         "d3m.primitives.classification.k_neighbors.SKlearn",
-        "d3m.primitives.classification.linear_discriminant_analysis.SKlearn",
         "d3m.primitives.classification.logistic_regression.SKlearn",
         "d3m.primitives.classification.linear_svc.SKlearn",
         "d3m.primitives.classification.sgd.SKlearn",
         "d3m.primitives.classification.svc.SKlearn",
         "d3m.primitives.classification.extra_trees.SKlearn", # randomly splits - different than random forest
         "d3m.primitives.classification.passive_aggressive.SKlearn", # an mlp with regularization
+        "d3m.primitives.classification.ada_boost.SKlearn",
+        "d3m.primitives.classification.mlp.SKlearn",
+        "d3m.primitives.classification.nearest_centroid.SKlearn",
+        # "d3m.primitives.classification.multinomial_naive_bayes.SKlearn", # Can't handle negative data
+        # "d3m.primitives.classification.linear_discriminant_analysis.SKlearn", # Fails when the values of X are all the same.
         # "d3m.primitives.classification.bagging.SKlearn", # only uses decision trees, which is redudant
     ],
     'regression': [
@@ -61,6 +82,12 @@ models = {
         # "d3m.primitives.regression.sgd.SKlearn",
     ]
 }
+
+# All primitives that need more than one column as input
+primitives_needing_gt_one_column = {
+    "d3m.primitives.feature_selection.select_percentile.SKlearn"
+}
+
 problem_directories = [
     "seed_datasets_current/",
     "training_datasets/LL0/",
@@ -68,16 +95,25 @@ problem_directories = [
 ]
 
 EXTRA_HYPEREPARAMETERS = {
-    "d3m.primitives.feature_extraction.kernel_pca.SKlearn": {
-        "name": "kernel",
-        "type": "ArgumentType.VALUE",
-        "data": "sigmoid"
-    },
-    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": {
-        "name": "mode",
-        "type": "ArgumentType.VALUE",
-        "data": "k_best"
-    },
+    "d3m.primitives.feature_extraction.kernel_pca.SKlearn": [
+        {
+            "name": "kernel",
+            "type": ArgumentType.VALUE,
+            "data": "rbf"
+        }
+    ],
+    "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": [
+        {
+            "name": "mode",
+            "type": ArgumentType.VALUE,
+            "data": "fpr"
+        },
+        {
+            "name": "param",
+            "type": ArgumentType.VALUE,
+            "data": 0.05
+        }
+    ],
 }
 
 blacklist_non_tabular_data = [

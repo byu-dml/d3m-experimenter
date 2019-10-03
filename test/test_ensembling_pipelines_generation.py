@@ -89,30 +89,6 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
     #     self.assertEqual(num_preprocessors * num_ensembles, preprocessor_count, "The expected number of preprocessors was {} but we got"
     #                                                             "{}".format(num_ensembles * num_preprocessors, preprocessor_count))
 
-    def test_experimenter_can_generate_different_models(self):
-        """
-        Technically this test could fail and still work, but the odds are low
-        """
-        num_models = 5
-        # generate the pipelines
-        generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=num_models, n_preprocessors=1,
-                                                                   preprocessors=preprocessors,
-                                                                   models=models,
-                                                                   n_generated_pipelines=1, same_model=False,
-                                                                   same_preprocessor_order=True,
-                                                                   problem_type="classification")
-        self.assertEqual(1, len(generated_pipelines["classification"]))
-
-        primitives = primitive_list_from_pipeline_json(generated_pipelines["classification"][0].to_json_structure())
-        model_list = []
-        for primitive in primitives:
-            if primitive in self.models["classification"]:
-                model_list.append(primitive)
-
-        self.assertAlmostEqual(len(set(model_list)), num_models, delta=1, msg="The expected number of unique "
-                                                                         "models was {} but we "
-                                                                         "got {}".format(num_models, model_list))
-
     def test_experimenter_can_generate_same_models(self):
         num_models = 5
         # generate the pipelines

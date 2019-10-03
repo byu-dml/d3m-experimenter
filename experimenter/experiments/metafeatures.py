@@ -14,7 +14,7 @@ class MetafeatureExperimenter(Experiment):
     a dataset.
     """
 
-    def generate_pipelines(self) -> Dict[str, List[Pipeline]]:
+    def generate_pipelines(self, **unused_args) -> Dict[str, List[Pipeline]]:
         pipeline_description = self.generate_pipeline()
         return {"classification": [pipeline_description], "regression": [pipeline_description]}
     
