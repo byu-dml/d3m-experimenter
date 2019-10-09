@@ -489,6 +489,12 @@ def add_initial_steps(pipeline_description: EZPipeline) -> None:
     )
     pipeline_description.set_step_i_of('raw_df')
 
+    # extract_columns_by_semantic_types(attributes) step
+    _add_extract_columns_by_semantic_types_step(
+        pipeline_description, ['https://metadata.datadrivendiscovery.org/types/Attribute'],
+        pipeline_description.data_ref_of('raw_df')
+    )
+
     # column_parser step
     add_pipeline_step(
         pipeline_description,
@@ -501,8 +507,14 @@ def add_initial_steps(pipeline_description: EZPipeline) -> None:
         'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
     )
 
-    # Save the imputer step data reference so it can be an input into the extract attributes step
-    imputer_step_data_ref: str = pipeline_description.curr_step_data_ref
+    # one-hot encoder step
+    add_pipeline_step(
+        pipeline_description,
+        'd3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon'
+    )
+
+    # Set the attributes step as after they have been one-hot encoded for categorical features, parsed, and imputed
+    pipeline_description.set_step_i_of('attrs')
 
     # extract_columns_by_semantic_types(targets) step
     _add_extract_columns_by_semantic_types_step(
@@ -510,9 +522,6 @@ def add_initial_steps(pipeline_description: EZPipeline) -> None:
         pipeline_description.data_ref_of('raw_df')
     )
     pipeline_description.set_step_i_of('target')
-
-    # attribute preprocessing steps
-    _add_attribute_preprocessing_steps(pipeline_description, imputer_step_data_ref)
 
 
 def _add_extract_columns_by_semantic_types_step(
@@ -524,15 +533,6 @@ def _add_extract_columns_by_semantic_types_step(
     )
     extract_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE, data=data)
     pipeline_description.add_step(extract_step)
-
-
-def _add_attribute_preprocessing_steps(pipeline_description: EZPipeline, imputer_step_data_ref: str):
-    # extract_columns_by_semantic_types(attributes) step
-    _add_extract_columns_by_semantic_types_step(
-        pipeline_description, ['https://metadata.datadrivendiscovery.org/types/Attribute'],
-        imputer_step_data_ref
-    )
-    pipeline_description.set_step_i_of('attrs')
 
 
 def add_predictions_constructor(pipeline_description: EZPipeline, input_data_ref: str = None) -> None:

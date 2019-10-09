@@ -6,6 +6,7 @@ from d3m import runtime as runtime_module
 from d3m.metadata import pipeline as pipeline_module
 from experimenter.run_pipeline import RunPipeline
 from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
+import strings
 
 
 def get_pipeline(
@@ -50,7 +51,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
             pass
 
     def test_experimenter_run_works_from_pipeline(self):
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = strings._38_SICK_PATH
         self.run_experimenter_from_pipeline(problem_path)
 
     def test_experimenter_run_works_and_generates_random(self):
@@ -61,7 +62,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification")
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = strings._38_SICK_PATH
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_fixed(self):
@@ -74,7 +75,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    problem_type="classification",
                                                                    model=model)
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = strings._38_SICK_PATH
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_LARGE(self):
@@ -85,7 +86,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification")
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = strings._38_SICK_PATH
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def run_experimenter_from_pipeline(self, problem_path, pipeline_to_run=None):

@@ -2,6 +2,7 @@ import sys
 import unittest
 
 from experimenter.experimenter import Experimenter
+import strings
 
 
 class PipelineGenerationTestCase(unittest.TestCase):
@@ -28,8 +29,8 @@ class PipelineGenerationTestCase(unittest.TestCase):
     def test_get_classification_problems(self):
         # 196_auto_mpg is regression
         known_seed_classification_problems_test = set([
-            '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
-            '/datasets/seed_datasets_current/185_baseball'
+            strings._1491_ONE_HUNDRED_PLANT_MARGINS_PATH,
+            strings._38_SICK_PATH
         ])
 
         found_problems = set(self.experimenter_driver.problems['classification'])
@@ -40,9 +41,10 @@ class PipelineGenerationTestCase(unittest.TestCase):
             )
     
     def test_basic_pipeline_structure(self):
-
-        num_pipeline_steps = 7  # DatasetToDataFrame/ColumnParser/SKImputer/
+        num_pipeline_steps = 8  # DatasetToDataFrame/
                                 # ExtractSemanticTypes(attributes)/
+                                # OneHotEncoder/
+                                # ColumnParser/SKImputer/
                                 # ExtractSemanticTypes(targets)/
                                 # SKGaussianNB/ConstructPredictions
         dataset_to_dataframe = 'd3m.primitives.data_transformation.dataset_to_dataframe.Common'
@@ -61,4 +63,4 @@ class PipelineGenerationTestCase(unittest.TestCase):
         # make sure there are the normal number of steps in the pipeline
         self.assertEqual(len(generated_pipelines['steps']), num_pipeline_steps)
         self.assertEqual(generated_pipelines['steps'][0]['primitive']['python_path'], dataset_to_dataframe)
-        self.assertEqual(generated_pipelines['steps'][6]['primitive']['python_path'], construct_predictions)
+        self.assertEqual(generated_pipelines['steps'][-1]['primitive']['python_path'], construct_predictions)
