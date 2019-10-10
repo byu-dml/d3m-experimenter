@@ -138,9 +138,9 @@ class EnsembleArchitectureExperimenter(Experiment):
             concat_result_ref
         )
 
-        # finally ensemble them all together TODO: change the RF to be dynamic, use the `ensemble`
+        # finally ensemble them all together TODO: change the RF to be dynamic, use the `ensembler`
         # argument to this function.
-        pipeline_description.add_primitive_step('d3m.primitives.regression.random_forest.SKlearn')
+        pipeline_description.add_primitive_step('d3m.primitives.classification.random_forest.SKlearn')
 
         # output them as predictions
         pipeline_description.add_predictions_constructor()
