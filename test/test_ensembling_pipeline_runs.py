@@ -50,10 +50,6 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
         except OSError:
             pass
 
-    def test_experimenter_run_works_from_pipeline(self):
-        problem_path = strings._38_SICK_PATH
-        self.run_experimenter_from_pipeline(problem_path)
-
     def test_experimenter_run_works_and_generates_random(self):
         generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=2,
                                                                    preprocessors=preprocessors,
