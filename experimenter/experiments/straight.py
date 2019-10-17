@@ -2,11 +2,12 @@ from typing import Dict, List
 
 from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 from d3m.primitive_interfaces.base import PrimitiveBase
-from d3m import index as d3m_index
 from d3m.metadata.base import Context, ArgumentType
 
 from experimenter.experiments.experiment import Experiment
 from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc
+from experimenter.constants import d3m_index
+
 
 class StraightArchitectureExperimenter(Experiment):
     """

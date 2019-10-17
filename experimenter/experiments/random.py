@@ -6,12 +6,11 @@ import itertools
 
 from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 from d3m.metadata.base import Context, ArgumentType
-from d3m import index as d3m_index
 
 from experimenter.experiments.experiment import Experiment
 from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc
 from experimenter.utils import multiply
-from experimenter.constants import primitives_needing_gt_one_column
+from experimenter.constants import primitives_needing_gt_one_column, d3m_index
 
 class RandomArchitectureExperimenter(Experiment):
     """
