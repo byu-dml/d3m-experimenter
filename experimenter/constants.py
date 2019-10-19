@@ -94,6 +94,12 @@ problem_directories = [
     # "training_datasets/LL1/",
 ]
 
+TEST_DATASET_PATHS = {
+    '38_sick' = '/datasets/seed_datasets_current/38_sick'
+    '1491_one_hundred_plant_margins' = '/datasets/seed_datasets_current/1491_one_hundred_plants_margin'
+}
+
+
 # This is the full list of families:
 # https://metadata.datadrivendiscovery.org/schemas/v0/definitions.json#/definitions/primitive_family
 PRIMITIVE_FAMILIES = {
