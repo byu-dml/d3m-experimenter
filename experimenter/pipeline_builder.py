@@ -518,30 +518,30 @@ class EZPipeline(Pipeline):
         simple_args: Dict[str,str],
         arg_type: ArgumentType
     ) -> Dict[str,Dict[str,str]]:
-    """
-    Builds a dictionary of arguments. Each argument can be passed
-    to the `.add_hyperparameter` or `.add_argument` method of a
-    d3m pipeline step. Builds it from the simpler arguments that
-    are passed to the `create_primitive_step` and `add_primitive_step`
-    methods of this class.
+        """
+        Builds a dictionary of arguments. Each argument can be passed
+        to the `.add_hyperparameter` or `.add_argument` method of a
+        d3m pipeline step. Builds it from the simpler arguments that
+        are passed to the `create_primitive_step` and `add_primitive_step`
+        methods of this class.
 
-    :param simple_args: A dictionary mapping argument names to their
-        values. E.g. { 'negate': True }
-    """
-    data_arg_name_by_type = {
-        ArgumentType.VALUE: "data",
-        ArgumentType.CONTAINER: "data_reference"
-    }
+        :param simple_args: A dictionary mapping argument names to their
+            values. E.g. { 'negate': True }
+        """
+        data_arg_name_by_type = {
+            ArgumentType.VALUE: "data",
+            ArgumentType.CONTAINER: "data_reference"
+        }
 
-    if arg_type not in data_arg_name_by_type:
-        raise ValueError(f'unsupported arg_type {arg_type}')
+        if arg_type not in data_arg_name_by_type:
+            raise ValueError(f'unsupported arg_type {arg_type}')
 
-    data_arg_name = data_arg_name_by_type[arg_type]
-    return {
-        arg_name: { 
-            "name": arg_name,
-            "argument_type": arg_type,
-            data_arg_name: data
-        } for arg_name, data in simple_args.items()
-    }
+        data_arg_name = data_arg_name_by_type[arg_type]
+        return {
+            arg_name: { 
+                "name": arg_name,
+                "argument_type": arg_type,
+                data_arg_name: data
+            } for arg_name, data in simple_args.items()
+        }
 
