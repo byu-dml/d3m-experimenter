@@ -196,17 +196,11 @@ class EZPipeline(Pipeline):
             # feature for some future primitive, so we need to change the
             # output's semantic type to attribute and encode it.
             self.add_primitive_step(
-                'd3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon'
-            )
-            self.current_step.add_hyperparameter(
-                name='from_semantic_types',
-                argument_type=ArgumentType.VALUE,
-                data=['https://metadata.datadrivendiscovery.org/types/PredictedTarget']
-            )
-            self.current_step.add_hyperparameter(
-                name='to_semantic_types',
-                argument_type=ArgumentType.VALUE,
-                data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+                'd3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon',
+                value_hyperparams={
+                    'from_semantic_types': ['https://metadata.datadrivendiscovery.org/types/PredictedTarget'],
+                    'to_semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute']
+                }
             )
 
             # Next the encoder step
@@ -351,11 +345,8 @@ class EZPipeline(Pipeline):
         # extract_columns_by_semantic_types(targets) step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
         )
-        self.current_step.add_hyperparameter(
-            name='semantic_types',
-            argument_type=ArgumentType.VALUE,
-            data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
         self.set_step_i_of('target')
 
         # column_parser step
@@ -367,11 +358,7 @@ class EZPipeline(Pipeline):
         # extract_columns_by_semantic_types(attributes) step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-        )
-        self.current_step.add_hyperparameter(
-            name='semantic_types',
-            argument_type=ArgumentType.VALUE,
-            data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute'] }
         )
 
         # imputer step
@@ -383,34 +370,26 @@ class EZPipeline(Pipeline):
         # extract_columns_by_semantic_types(categories) step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-        )
-        self.current_step.add_hyperparameter(
-            name='semantic_types',
-            argument_type=ArgumentType.VALUE,
-            data=[
-                'https://metadata.datadrivendiscovery.org/types/CategoricalData',
-                'https://metadata.datadrivendiscovery.org/types/OrdinalData'
-            ]
+            value_hyperparams={
+                'semantic_types': [
+                    'https://metadata.datadrivendiscovery.org/types/CategoricalData',
+                    'https://metadata.datadrivendiscovery.org/types/OrdinalData'
+                ]
+            }
         )
         self.set_step_i_of('categorical_attrs')
 
         # extract_columns_by_semantic_types(non-categorical) step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            self.data_ref_of('imputed')
-        )
-        self.current_step.add_hyperparameter(
-            name='semantic_types',
-            argument_type=ArgumentType.VALUE,
-            data=[
-                'https://metadata.datadrivendiscovery.org/types/CategoricalData',
-                'https://metadata.datadrivendiscovery.org/types/OrdinalData'
-            ]
-        )
-        self.current_step.add_hyperparameter(
-            name='negate',
-            argument_type=ArgumentType.VALUE,
-            data=True
+            self.data_ref_of('imputed'),
+            value_hyperparams={
+                'semantic_types': [
+                    'https://metadata.datadrivendiscovery.org/types/CategoricalData',
+                    'https://metadata.datadrivendiscovery.org/types/OrdinalData'
+                ],
+                'negate': True
+            }
         )
         self.set_step_i_of('non_categorical_attrs')
 

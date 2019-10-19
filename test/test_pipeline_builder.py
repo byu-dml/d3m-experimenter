@@ -190,20 +190,12 @@ class PipelineGenerationTestCase(unittest.TestCase):
     
     def _add_extract_attrs_step(self, pipeline: EZPipeline) -> None:
         pipeline.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'
-        )
-        pipeline.current_step.add_hyperparameter(
-            name='semantic_types',
-            argument_type=ArgumentType.VALUE,
-            data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            value_hyperparams: { 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute'] }
         )
     
     def _add_extract_target_step(self, pipeline: EZPipeline) -> None:
         pipeline.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'
-        )
-        pipeline.current_step.add_hyperparameter(
-            name='semantic_types',
-            argument_type=ArgumentType.VALUE,
-            data=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
         )
