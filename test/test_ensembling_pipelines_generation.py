@@ -91,25 +91,20 @@ class TestEnsemblingPipelinesGeneration(unittest.TestCase):
 
     def test_experimenter_can_generate_same_models(self):
         num_models = 5
+        model_python_path = 'd3m.primitives.classification.gaussian_naive_bayes.SKlearn'
         # generate the pipelines
         generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=num_models, n_preprocessors=1,
                                                                    preprocessors=preprocessors,
                                                                    models=models,
                                                                    n_generated_pipelines=1, same_model=True,
                                                                    same_preprocessor_order=True,
-                                                                   model="d3m.primitives.classification.random_forest.SKlearn",
+                                                                   model=model_python_path,
                                                                    problem_type="classification")
         self.assertEqual(1, len(generated_pipelines["classification"]))
 
         primitives = primitive_list_from_pipeline_json(generated_pipelines["classification"][0].to_json_structure())
-        primitives_used = set(primitives)
-        # extract by semantic types repeats 2 times, preprocessor repeats 5 times, model repeats 5 times,
-        # concat repeats 2 times, and construct predictions repeats 5 times
-        primitives_repeated = 17                     
-        self.assertEqual(len(primitives_used), len(primitives) - primitives_repeated,
-                         msg="The expected number of unique primitives was {} but we got {}".format(len(primitives) -
-                                                                                                    primitives_repeated,
-                                                                                                    primitives_used))
+        num_models_used = sum(1 for p in primitives if p == model_python_path)
+        self.assertEqual(num_models_used, num_models)
 
     def test_experimenter_has_correct_input(self):
         # Should fail
