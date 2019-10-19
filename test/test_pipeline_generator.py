@@ -41,12 +41,18 @@ class PipelineGenerationTestCase(unittest.TestCase):
             )
     
     def test_basic_pipeline_structure(self):
-        num_pipeline_steps = 8  # DatasetToDataFrame/
-                                # ExtractSemanticTypes(attributes)/
-                                # OneHotEncoder/
-                                # ColumnParser/SKImputer/
-                                # ExtractSemanticTypes(targets)/
-                                # SKGaussianNB/ConstructPredictions
+        # DatasetToDataFrame -> 
+        # ExtractSemanticTypes(targets) ->
+        # ColumnParser ->
+        # ExtractSemanticTypes(attributes) ->
+        # BYUImputer ->
+        # ExtractSemanticTypes(categories) ->
+        # ExtractSemanticTypes(non-categorical) ->
+        # OneHotEncoder ->
+        # HorizontalConcat(one-hot-encoded, non-categorical) ->
+        # SKGaussianNB ->
+        # ConstructPredictions
+        num_pipeline_steps = 11
         dataset_to_dataframe = 'd3m.primitives.data_transformation.dataset_to_dataframe.Common'
         construct_predictions = 'd3m.primitives.data_transformation.construct_predictions.DataFrameCommon'
 
@@ -59,8 +65,8 @@ class PipelineGenerationTestCase(unittest.TestCase):
                 len(self.experimenter_driver.generated_pipelines['classification'])
             )
         )
-        generated_pipelines = self.experimenter_driver.generated_pipelines['classification'][0].to_json_structure()
+        generated_pipeline = self.experimenter_driver.generated_pipelines['classification'][0].to_json_structure()
         # make sure there are the normal number of steps in the pipeline
-        self.assertEqual(len(generated_pipelines['steps']), num_pipeline_steps)
-        self.assertEqual(generated_pipelines['steps'][0]['primitive']['python_path'], dataset_to_dataframe)
-        self.assertEqual(generated_pipelines['steps'][-1]['primitive']['python_path'], construct_predictions)
+        self.assertEqual(len(generated_pipeline['steps']), num_pipeline_steps)
+        self.assertEqual(generated_pipeline['steps'][0]['primitive']['python_path'], dataset_to_dataframe)
+        self.assertEqual(generated_pipeline['steps'][-1]['primitive']['python_path'], construct_predictions)
