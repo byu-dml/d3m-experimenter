@@ -285,11 +285,6 @@ class EZPipeline(Pipeline):
         
         # Add common hyperparameters to the primitive.
         ##############################################
-        
-        if 'return_result' in step.primitive.metadata.get_hyperparams().configuration:
-            # This primitive has a `return_result` hyperparam, which we want to set.
-            # We always have the primitive return just its output, and not its outputs + its inputs.
-            step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="new")
 
         # handle any hyperparams that have been supplied in the global scope,
         # i.e. that should be used for every instance of certain primitives.
