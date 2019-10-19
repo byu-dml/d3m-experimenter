@@ -1,4 +1,4 @@
-from d3m.metadata.base import ArgumentType
+from d3m.metadata.base import ArgumentType, PrimitiveFamily
 
 # It is ok to use these temperamental preprocessors in production because
 # we're ok with some pipelines degenerating on some datasets.
@@ -94,23 +94,34 @@ problem_directories = [
     # "training_datasets/LL1/",
 ]
 
+# This is the full list of families:
+# https://metadata.datadrivendiscovery.org/schemas/v0/definitions.json#/definitions/primitive_family
+PRIMITIVE_FAMILIES = {
+    "classification": [
+        PrimitiveFamily.CLASSIFICATION,
+        PrimitiveFamily.SEMISUPERVISED_CLASSIFICATION,
+        PrimitiveFamily.TIME_SERIES_CLASSIFICATION,
+        PrimitiveFamily.VERTEX_CLASSIFICATION
+    ]
+}
+
 EXTRA_HYPEREPARAMETERS = {
     "d3m.primitives.feature_extraction.kernel_pca.SKlearn": [
         {
             "name": "kernel",
-            "type": ArgumentType.VALUE,
+            "argument_type": ArgumentType.VALUE,
             "data": "rbf"
         }
     ],
     "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": [
         {
             "name": "mode",
-            "type": ArgumentType.VALUE,
+            "argument_type": ArgumentType.VALUE,
             "data": "fpr"
         },
         {
             "name": "param",
-            "type": ArgumentType.VALUE,
+            "argument_type": ArgumentType.VALUE,
             "data": 0.05
         }
     ],
@@ -175,5 +186,4 @@ blacklist_non_tabular_data = [
     "LL0_189_kin8nm",
     "LL0_572_bank8fm",
     "LL0_308_puma32h"
-
 ]

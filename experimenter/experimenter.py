@@ -18,7 +18,6 @@ from .database_communication import PipelineDB
 from itertools import combinations
 from bson import json_util
 from d3m.metadata import base as metadata_base, problem as base_problem
-from experimenter.pipeline_builder import add_pipeline_step, create_pipeline_step
 from experimenter.experiments.metafeatures import MetafeatureExperimenter
 from experimenter.experiments.random import RandomArchitectureExperimenter
 from experimenter.experiments.straight import StraightArchitectureExperimenter
@@ -197,57 +196,50 @@ class Experimenter:
         pipeline_description.add_input(name='inputs')
 
         # dataset_to_dataframe step
-        add_pipeline_step(
-            pipeline_description,
+        pipeline_description.add_primitive_step(
             'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
             'inputs.0'
         )
         pipeline_description.set_step_i_of('raw_df')
 
         # column_parser step
-        add_pipeline_step(
-            pipeline_description,
+        pipeline_description.add_primitive_step(
             'd3m.primitives.data_transformation.column_parser.DataFrameCommon',
         )
 
         # extract_columns_by_semantic_types(attributes) step
-        extract_attributes_step = create_pipeline_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            pipeline_description.curr_step_data_ref
+        pipeline_description.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'
         )
-        extract_attributes_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
-                                  data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
-        pipeline_description.add_step(extract_attributes_step)
+        pipeline_description.current_step.add_hyperparameter(
+            name='semantic_types',
+            argument_type=ArgumentType.VALUE,
+            data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+        )
         pipeline_description.set_step_i_of('attrs')
 
         # extract_columns_by_semantic_types(targets) step
-        extract_targets_step = create_pipeline_step(
+        pipeline_description.add_primitive_step(
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
             pipeline_description.data_ref_of('raw_df')
         )
-        extract_targets_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
-                                  data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
-        pipeline_description.add_step(extract_targets_step)
+        pipeline_description.current_step.add_hyperparameter(
+            name='semantic_types',
+            argument_type=ArgumentType.VALUE,
+            data=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
+        )
         pipeline_description.set_step_i_of('target')
 
         # imputer step
-        add_pipeline_step(
-            pipeline_description,
+        pipeline_description.add_primitive_step(
             'd3m.primitives.data_cleaning.imputer.SKlearn',
             pipeline_description.data_ref_of('attrs')
         )
 
         # random_forest step
-        rf_step = create_pipeline_step(
-            'd3m.primitives.regression.random_forest.SKlearn',
-            pipeline_description.curr_step_data_ref
+        pipeline_description.add_primitive_step(
+            'd3m.primitives.regression.random_forest.SKlearn'
         )
-        rf_step.add_argument(
-            name='outputs',
-            argument_type=ArgumentType.CONTAINER,
-            data_reference=pipeline_description.data_ref_of('target')
-        )
-        pipeline_description.add_step(rf_step)
 
         # Final Output
         pipeline_description.add_output(name='output predictions', data_reference=pipeline_description.curr_step_data_ref)

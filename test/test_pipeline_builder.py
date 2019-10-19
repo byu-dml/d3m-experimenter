@@ -4,9 +4,7 @@ import unittest
 from d3m.metadata.base import Context, ArgumentType
 import d3m.utils as d3m_utils
 
-from experimenter.pipeline_builder import (
-    EZPipeline, PipelineArchDesc, create_pipeline_step, add_pipeline_step
-)
+from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc
 
 
 class PipelineGenerationTestCase(unittest.TestCase):
@@ -103,23 +101,22 @@ class PipelineGenerationTestCase(unittest.TestCase):
         return pipeline
 
     def _add_dataset_to_df_step(self, pipeline: EZPipeline) -> None:
-        add_pipeline_step(
-            pipeline,
+        pipeline.add_primitive_step(
             'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
             'inputs.0'
         )
 
     def _add_column_parser_step(self, pipeline: EZPipeline) -> None:
-        add_pipeline_step(
-            pipeline,
+        pipeline.add_primitive_step(
             'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
         )
     
     def _add_extract_attrs_step(self, pipeline: EZPipeline) -> None:
-        extract_attributes_step = create_pipeline_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            pipeline.curr_step_data_ref
+        pipeline.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'
         )
-        extract_attributes_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
-                                  data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
-        pipeline.add_step(extract_attributes_step)
+        pipeline.current_step.add_hyperparameter(
+            name='semantic_types',
+            argument_type=ArgumentType.VALUE,
+            data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+        )

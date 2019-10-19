@@ -1,12 +1,13 @@
-from typing import Tuple, List, Any, Dict
+from typing import Tuple, List, Any, Dict, Set, Optional
+import itertools
 
 from d3m import utils as d3m_utils, index as d3m_index
 from d3m.metadata.pipeline import Pipeline
-from d3m.metadata.pipeline import PrimitiveStep
+from d3m.metadata.pipeline import PrimitiveStep, StepBase
 from d3m.metadata.base import ArgumentType
 from d3m.primitive_interfaces.base import PrimitiveBase
 
-from experimenter.constants import EXTRA_HYPEREPARAMETERS
+from experimenter.constants import EXTRA_HYPEREPARAMETERS, PRIMITIVE_FAMILIES
 
 
 class PipelineArchDesc:
@@ -37,32 +38,53 @@ class PipelineArchDesc:
 
 class EZPipeline(Pipeline):
     """
-    A subclass of `d3m.metadata.pipeline.Pipeline` that is easier to work
-    with when building a pipeline, since it allows for certain steps to be
+    A subclass of `d3m.metadata.pipeline.Pipeline` that is arguably easier
+    to work with when building a pipeline.
+    
+    This pipeline class allows for certain steps to be
     tagged with a 'ref', (a.k.a. reference) so they can be easily referenced
     later on in the building of the pipeline. For example it can be used to
     track which steps contain the pipeline's raw dataframe, prepared
     attributes, prepared targets, etc., and to easily get access to those
     steps and their output when future steps need to use the output of those
     steps as input.
+
+    This class also has helper methods for adding primitives to the pipeline
+    in a way that's less verbose than the standard d3m way while still
+    supporting many (but perhaps not all) common pipeline building use cases.
+    It also provides ways to easily concatenate the output of different
+    pipeline steps, and keeps track of which concatenations have happened before
+    so it can reuse concatenations and optimize. 
     """
 
     # Constructor
 
-    def __init__(self, *args, arch_desc: PipelineArchDesc = None, **kwargs):
+    def __init__(self,
+        *args,
+        arch_desc: PipelineArchDesc = None,
+        add_preparation_steps: bool = False,
+        **kwargs
+    ):
         """
         :param *args: All positional args are forwarded to the superclass
             constructor.
         :param arch_desc: an optional description of the pipeline's
-        architecture.
+            architecture.
+        :param add_preparation_steps: Whether to add initial data preprocessing
+            steps to the pipeline.
         :param **kwargs: All other keyword args are forwarded to the
-        superclass constructor.
+            superclass constructor.
         """
         super().__init__(*args, **kwargs)
-        # The indices of the steps that each ref is associated with.
-        # All begin with `None`, just like the value of `self.curr_step_i`.
+
         self._step_i_of_refs: Dict[str, int] = {}
         self.arch_desc = arch_desc
+        # A mapping of data reference pairs to the data reference of their
+        # concatenation.
+        self.concat_cache: Dict[frozenset, str] = {}
+
+        if add_preparation_steps:
+            self.add_preparation_steps()
     
     # Public properties
 
@@ -74,6 +96,15 @@ class EZPipeline(Pipeline):
         """
         num_steps = len(self.steps)
         return None if num_steps == 0 else num_steps - 1
+    
+    @property
+    def current_step(self) -> StepBase:
+        """
+        Allows the most recently added pipeline step to be accessed and
+        modified at will e.g. `pipeline.current_step.add_hyperparameter(...)`
+        etc.
+        """
+        return self.steps[self.curr_step_i]
     
     @property
     def curr_step_data_ref(self) -> str:
@@ -121,7 +152,279 @@ class EZPipeline(Pipeline):
             pipeline_json['digest'] = d3m_utils.compute_digest(pipeline_json)
         
         return pipeline_json
+    
+    def add_primitive_step(
+        self,
+        python_path: str,
+        auto_data_ref: str = None,
+        *,
+        container_args: Dict[str,str] = None,
+        value_args: Dict[str,str] = None,
+        auto_fill_args: bool = True,
+        output_name: str = 'produce',
+        is_final_model: bool = True
+    ) -> None:
+        """
+        Adds the results of `self.create_primitive_step` to the pipeline.
+        All args passed on to `self.create_primitive_step` except these:
 
+        :param is_final_model: If set, label encoding and semantic type
+            changes will not automatically be applied to the output of
+            this primitive if its a classifier.
+        """
+        step = self.create_primitive_step(
+            python_path,
+            auto_data_ref,
+            container_args=container_args,
+            value_args=value_args,
+            auto_fill_args=auto_fill_args,
+            output_name=output_name
+        )
+        self.add_step(step)
+
+        if (
+            not is_final_model
+            and step.primitive.metadata.query()['primitive_family']
+            in PRIMITIVE_FAMILIES['classification']
+        ):
+            # Since this primitive is a classifier and its not the final
+            # model of the pipeline, its output will likely be used as a
+            # feature for some future primitive, so we need to change the
+            # output's semantic type to attribute and encode it.
+            self.add_primitive_step(
+                'd3m.primitives.data_transformation.replace_semantic_types.Common'
+            )
+            self.current_step.add_hyperparameter(
+                name='from_semantic_types',
+                argument_type=ArgumentType.VALUE,
+                data=['https://metadata.datadrivendiscovery.org/types/PredictedTarget']
+            )
+            self.current_step.add_hyperparameter(
+                name='to_semantic_types',
+                argument_type=ArgumentType.VALUE,
+                data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+            )
+
+            # Next the encoder step
+            self.add_primitive_step(
+                'd3m.primitives.data_transformation.one_hot_encoder.SKlearn'
+            )
+    
+    def create_primitive_step(
+        self,
+        python_path: str,
+        auto_data_ref: str = None,
+        *,
+        container_args: Dict[str,str] = None,
+        value_args: Dict[str,str] = None,
+        auto_fill_args: bool = True,
+        output_name: str = 'produce'
+    ) -> PrimitiveStep:
+        """
+        Helper for creating a basic `d3m.metadata.pipeline.PrimitiveStep`
+        in a less verbose manner. Can also do some additional things for you, like
+        automatically populate the primitive's required arguments.
+
+        :param python_path: the python path of the primitive to be added.
+        :param auto_data_ref: If `auto_fill_args` is set, this data ref will be
+            supplied to all unset required arguments that are not `outputs` (since `outputs`
+            is always the pipeline's target column(s)). If not supplied, the data reference
+            of the current step will be used instead.
+        :param container_args: A map of primitive argument names to the data references
+            to use for those arguments. Pass a primitive argument to `container_args` if the
+            argument is of type `d3m.metadata.base.ArgumentType.CONTAINER`.
+        :param value_args: A map of primitive argument names to the values to use for
+            those arguments. Pass a primitive argument to `value_args` if the
+            argument is of type `d3m.metadata.base.ArgumentType.VALUE`.
+        :param auto_fill_args: Attempt to automatically populate any required
+            args that haven't been explicity supplied by the user.
+        :param output_name: an optional method output name to use for the primitive.
+        """
+        primitive = d3m_index.get_primitive(python_path)
+        step = PrimitiveStep(primitive=primitive)
+
+        # Add the primitive's arguments.
+        ################################
+
+        primitive_args: Dict[str,Dict[str,Any]] = {}
+
+        if container_args:
+            for arg_name, data_ref in container_args.items():
+                primitive_args[arg_name] = {
+                    "name": arg_name,
+                    "argument_type": ArgumentType.CONTAINER,
+                    "data_reference": data_ref
+                }
+        
+        if value_args:
+            for arg_name, data in value_args.items():
+                primitive_args[arg_name] = {
+                    "name": arg_name,
+                    "argument_type": ArgumentType.VALUE,
+                    "data": data
+                }
+
+        if auto_fill_args:
+            for arg_name in self._get_required_args(primitive):
+                if arg_name not in primitive_args:
+                    # This arg hasn't been supplied yet.
+                    if arg_name == "outputs":
+                        data_ref = self.data_ref_of('target')
+                    else:
+                        data_ref = auto_data_ref if auto_data_ref else self.curr_step_data_ref
+
+                    primitive_args[arg_name] = {
+                        "name": arg_name,
+                        "argument_type": ArgumentType.CONTAINER,
+                        "data_reference": data_ref
+                    }
+
+        # Finally, add the arguments to the primitive
+        for arg_dict in primitive_args.values():
+            step.add_argument(**arg_dict)
+        
+        # Add common hyperparameters to the primitive.
+        ##############################################
+        
+        if 'return_result' in step.primitive.metadata.get_hyperparams().configuration:
+            # This primitive has a `return_result` hyperparam, which we want to set.
+            # We always have the primitive return just its output, and not its outputs + its inputs.
+            step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="new")
+
+        # handle any hyperparams that have been supplied in the global scope,
+        # i.e. that should be used for every instance of certain primitives.
+        if python_path in EXTRA_HYPEREPARAMETERS:
+            params = EXTRA_HYPEREPARAMETERS[python_path]
+            for param_args in params:
+                step.add_hyperparameter(**param_args)
+
+
+        step.add_output(output_name)
+        return step
+    
+    def replace_step_at_i(
+        self,
+        step_i: int,
+        new_step_python_path: str
+    ) -> None:
+        """
+        Replaces the step at `step_i` with a new step. The inputs from
+        the old step will be used as the inputs of the new step and all
+        other required arguments will be populated automatically.
+        """
+        old_step_inputs_data_ref = self.steps[step_i].arguments['inputs']['data']
+        new_step = self.create_primitive_step(
+            new_step_python_path,
+            old_step_inputs_data_ref
+        )
+        self.replace_step(step_i, new_step)
+    
+    def add_preparation_steps(self) -> None:
+        """
+        Adds a general data preparation pipeline preamble of primitives.
+        """
+        # Creating pipeline
+        self.add_input(name='inputs')
+
+        # dataset_to_dataframe step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
+            'inputs.0'
+        )
+        self.set_step_i_of('raw_df')
+
+        # column_parser step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
+        )
+
+        # imputer step
+        self.add_primitive_step(
+            'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
+        )
+
+        # extract_columns_by_semantic_types(attributes) step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+        )
+        self.current_step.add_hyperparameter(
+            name='semantic_types',
+            argument_type=ArgumentType.VALUE,
+            data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+        )
+        self.set_step_i_of('attrs')
+
+        # extract_columns_by_semantic_types(targets) step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            self.data_ref_of('raw_df')
+        )
+        self.current_step.add_hyperparameter(
+            name='semantic_types',
+            argument_type=ArgumentType.VALUE,
+            data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+        self.set_step_i_of('target')
+    
+    def add_predictions_constructor(self, input_data_ref: str = None) -> None:
+        """
+        Adds the predictions constructor to the pipeline
+        :param input_data_ref: the data reference to be used as the input to the predictions primitive.
+            If `None`, the output data reference to the most recently added step will be used. 
+        """
+
+        self.add_primitive_step(
+            "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
+            input_data_ref,
+            container_args={ "reference": self.data_ref_of('raw_df') }
+        )
+    
+    def concatenate_inputs(self, *data_refs_to_concat) -> str:
+        """
+        Adds concatenation steps to the pipeline that join the outputs of every data
+        reference found in `data_refs_to_concat` until they are all a single data frame.
+        If two steps in `data_refs_to_concat` have already been concatenated in another step on
+        the pipeline, then that concatenation step will be referenced during this
+        concatenation, instead of creating a new duplicate concatenation step. Reduces
+        the runtime and memory footprint of the pipeline.
+
+        :param data_refs_to_concat: The data references to the steps whose outputs are to be
+            concatentated together. Data references are strings like `steps.4.produce`.
+        """
+        if len(data_refs_to_concat) == 1:
+            # No concatenation necessary
+            output_data_ref, = data_refs_to_concat
+            return output_data_ref
+        
+        data_refs = set(data_refs_to_concat)
+
+        while len(data_refs) > 1:
+            # first look in the pipeline cache for an already existing
+            # concatenation we can use.
+            cache_match = self._find_match_in_cache(data_refs)
+            
+            if cache_match is None:
+                # Manually concatenate a pair of data refs, then add them to the cache.
+                data_ref_pair = sorted(data_refs)[:2]
+                self.add_primitive_step(
+                    'd3m.primitives.data_transformation.horizontal_concat.DataFrameConcat',
+                    container_args={ "left": data_ref_pair[0], "right": data_ref_pair[1] }
+                )
+                concat_data_ref = self.curr_step_data_ref
+
+                # Save the link between the data ref pair and their concatenation's
+                # output to the pipeline cache.
+                data_ref_pair = frozenset(data_ref_pair)
+                self.concat_cache[data_ref_pair] = concat_data_ref
+                # Now we have a match in the cache.
+                cache_match = data_ref_pair
+
+            # Now that we've concatenated `data_ref_pair`, we don't
+            # need it in `data_refs` anymore.
+            data_refs -= cache_match
+            data_refs.add(self.concat_cache[cache_match])
+        
+        output_data_ref, = data_refs
+        return output_data_ref
     
     # Private methods
     
@@ -136,188 +439,35 @@ class EZPipeline(Pipeline):
                 f'step {step_i} has more than one output; which output to use is ambiguous'
             )
         return f'steps.{step_i}.{step_output_names[0]}'
-
-
-def create_pipeline_step(
-    python_path: str,
-    input_data_reference: str,
-    *,
-    input_argument_type: ArgumentType = ArgumentType.CONTAINER,
-    output_name: str = 'produce'
-) -> PrimitiveStep:
-    """
-    Helper for creating a d3m.metadata.pipeline.PrimitiveStep in a less verbose manner.
-
-    :param python_path: the python path of the primitive to be added.
-    :param input_data_reference: a data reference string to use for the primitive's inputs.
-    :param input_argument_type: an optional input argument type to use for the primitive.
-    :param output_name: an optional method output name to use for the primitive.
     
-    :return step: the constructed primitive step.
-    """
+    def _get_required_args(self, p: PrimitiveBase) -> List[str]:
+        """
+        Gets the required arguments for a primitive
+        :param p: the primitive to get arguments for
+        :return a list of the required args
+        """
+        required_args = []
+        metadata_args = p.metadata.to_json_structure()['primitive_code']['arguments']
+        for arg, arg_info in metadata_args.items():
+            if 'default' not in arg_info and arg_info['kind'] == 'PIPELINE':  # If yes, it is a required argument
+                required_args.append(arg)
+        return required_args
     
-    step = PrimitiveStep(
-        primitive=d3m_index.get_primitive(python_path))
-    step.add_argument(
-        name='inputs',
-        argument_type=input_argument_type,
-        data_reference=input_data_reference
-    )
-    step.add_output(output_name)
+    def _find_match_in_cache(self, data_refs: Set[str]) -> Optional[frozenset]:
+        """
+        Uses all unordered combinations from `data_refs` (n choose k where k goes
+        from n to 2) to find a match in the pipeline cache, that is to say, a set
+        of data refs in `data_refs` who have already been concatenated.
 
-    return step
-
-
-def map_pipeline_step_arguments(
-    pl: EZPipeline,
-    step: PrimitiveStep,
-    required_args: list,
-    use_current_step_data_ref: bool = False,
-    custom_data_ref: str = None
-) -> None:
-    """
-    Helper used to add arguments to a PrimitiveStep.
-
-    :param pl: The pipeline to which step belongs.
-    :param step: The pipeline step to add arguments and hyperparameters to.
-        Either a preprocessor or a classifier.
-    :param required_args: The required arguments for step.
-    :param use_current_step_data_ref: For arguments other than 'outputs', this
-        boolean indicates whether to use the data reference of the current step
-        rather than 'attrs'.
-    :param custom_data_ref: If provided, this will be used as the data reference
-        for all arguments other than 'outputs'.
-
-    :rtype: None
-    """
-    for arg in required_args:
-        if arg == "outputs":
-            data_ref = pl.data_ref_of('target')
-        else:
-            if custom_data_ref:
-                data_ref = custom_data_ref
-            elif use_current_step_data_ref:
-                data_ref = pl.curr_step_data_ref
-            else:
-                data_ref = pl.data_ref_of('attrs')
-
-        step.add_argument(name=arg, argument_type=ArgumentType.CONTAINER,
-                            data_reference=data_ref)
-    step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="new")
-
-    # handle any extra hyperparams needed
-    step_python_path = step.primitive.metadata.query()["python_path"]
-    if step_python_path in EXTRA_HYPEREPARAMETERS:
-        params = EXTRA_HYPEREPARAMETERS[step_python_path]
-        for param in params:
-            step.add_hyperparameter(name=param["name"], argument_type=param["type"], data=param["data"])
-    step.add_output('produce')
-
-
-def add_pipeline_step(
-    pipeline_description: EZPipeline,
-    python_path: str,
-    input_data_reference: str = None,
-    **kwargs
-) -> int:
-    """
-    A helper method. Adds the results of `create_pipeline_step` to `pipeline_description`,
-    returning the updated step counter.
-
-    :param pipeline_description: The pipeline to add a step to.
-    :param python_path: the python path of the primitive to be added.
-    :param input_data_reference: an optional data reference string to use for the primitive's inputs.
-        If `None`, the output data reference to the pipeline's most recently added step will be used. 
-    :param **kwargs: any other keyword arguments to pass to `create_pipeline_step`
-
-    :return: The updated step counter
-    """
-    if input_data_reference is None:
-        input_data_reference = pipeline_description.curr_step_data_ref
-    step = create_pipeline_step(python_path, input_data_reference, **kwargs)
-    pipeline_description.add_step(step)
-    
-
-def add_initial_steps(pipeline_description: EZPipeline) -> None:
-    """
-    :param pipeline_description: an empty pipeline object that we can add
-        the initial data preparation steps to.
-    """
-    # Creating pipeline
-    pipeline_description.add_input(name='inputs')
-
-    # dataset_to_dataframe step
-    add_pipeline_step(
-        pipeline_description,
-        'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
-        'inputs.0'
-    )
-    pipeline_description.set_step_i_of('raw_df')
-
-    # column_parser step
-    add_pipeline_step(
-        pipeline_description,
-        'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
-    )
-
-    # imputer step
-    add_pipeline_step(
-        pipeline_description,
-        'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
-    )
-
-    # extract_columns_by_semantic_types(attributes) step
-    extract_attributes_step = create_pipeline_step(
-        'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-        pipeline_description.curr_step_data_ref
-    )
-    extract_attributes_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
-                                data=['https://metadata.datadrivendiscovery.org/types/Attribute'])
-    pipeline_description.add_step(extract_attributes_step)
-    pipeline_description.set_step_i_of('attrs')
-
-    # extract_columns_by_semantic_types(targets) step
-    extract_targets_step = create_pipeline_step(
-        'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-        pipeline_description.data_ref_of('raw_df')
-    )
-    extract_targets_step.add_hyperparameter(name='semantic_types', argument_type=ArgumentType.VALUE,
-                                data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
-    pipeline_description.add_step(extract_targets_step)
-    pipeline_description.set_step_i_of('target')
-
-
-def add_predictions_constructor(pipeline_description: EZPipeline, input_data_ref: str = None) -> None:
-    """
-    Adds the predictions constructor to a pipeline description
-    :param pipeline_description: the pipeline-to-be
-    :param input_data_ref: the data reference to be used as the input to the predictions primitive.
-        If `None`, the output data reference to the pipeline's most recently added step will be used. 
-    """
-    if input_data_ref is None:
-        input_data_ref = pipeline_description.curr_step_data_ref
-    # PredictionsConstructor step
-    step = create_pipeline_step(
-        "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
-        input_data_ref
-    )
-    step.add_argument(
-        name='reference',
-        argument_type=ArgumentType.CONTAINER,
-        data_reference=pipeline_description.data_ref_of('raw_df')
-    )
-    pipeline_description.add_step(step)
-
-
-def get_required_args(p: PrimitiveBase) -> list:
-    """
-    Gets the required arguments for a primitive
-    :param p: the primitive to get arguments for
-    :return a list of the required args
-    """
-    required_args = []
-    metadata_args = p.metadata.to_json_structure()['primitive_code']['arguments']
-    for arg, arg_info in metadata_args.items():
-        if 'default' not in arg_info and arg_info['kind'] == 'PIPELINE':  # If yes, it is a required argument
-            required_args.append(arg)
-    return required_args
+        :param data_refs: The set of data_refs to search in the cache for.
+        :return: If a match is found, the matching data ref pair is returned, else
+            None is returned. 
+        """
+        for k in range(len(self.concat_cache), 1, -1):
+            # Use all unordered combinations from `data_refs`
+            # (n choose k where k goes from n to 2)
+            for subset in itertools.combinations(data_refs, k):
+                subset = frozenset(subset)
+                if subset in self.concat_cache:
+                    return subset
+        return None

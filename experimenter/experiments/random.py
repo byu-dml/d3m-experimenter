@@ -9,9 +9,7 @@ from d3m.metadata.base import Context, ArgumentType
 from d3m import index as d3m_index
 
 from experimenter.experiments.experiment import Experiment
-from experimenter.pipeline_builder import (
-    EZPipeline, PipelineArchDesc, add_initial_steps, get_required_args, add_pipeline_step, add_predictions_constructor, map_pipeline_step_arguments
-)
+from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc
 from experimenter.utils import multiply
 from experimenter.constants import primitives_needing_gt_one_column
 
@@ -117,16 +115,16 @@ class RandomArchitectureExperimenter(Experiment):
         :param max_num_inputs: The maximum number of inputs each primitive in the
             structure will have.
         """
-        # A mapping of data reference pairs to the data reference of their
-        # concatenation.
-        concat_cache: Dict[frozenset, str] = {}
 
         architecture = PipelineArchDesc(
             "random",
             { "depth": depth, "max_width": max_width, "max_num_inputs": max_num_inputs }
         )
-        structure = EZPipeline(arch_desc=architecture, context=Context.TESTING)
-        add_initial_steps(structure)
+        structure = EZPipeline(
+            arch_desc=architecture,
+            add_preparation_steps=True,
+            context=Context.TESTING
+        )
         # The running collection of all step data references that can
         # be used as inputs for subsequent primitives in the pipeline. 
         output_collection: Set[str] = { structure.data_ref_of('attrs') }
@@ -150,11 +148,10 @@ class RandomArchitectureExperimenter(Experiment):
                 # as inputs, we know they're not terminal nodes anymore.
                 terminal_node_data_refs -= input_refs
 
-                concat_result_ref = self._concatenate_inputs(structure, input_refs, concat_cache)
+                concat_result_ref = structure.concatenate_inputs(*input_refs)
                 # Add the do nothing primitive as a placeholder. `self._sample_pipeline` will fill
                 # in the primitives later.
-                add_pipeline_step(
-                    structure,
+                structure.add_primitive_step(
                     'd3m.primitives.data_preprocessing.do_nothing.DSBOX',
                     concat_result_ref
                 )
@@ -168,15 +165,14 @@ class RandomArchitectureExperimenter(Experiment):
         # Cleanup Phase
 
         # Route the output of all terminal nodes to a final primitive
-        final_concat_ref = self._concatenate_inputs(structure, terminal_node_data_refs, concat_cache)
-        add_pipeline_step(
-            structure,
+        final_concat_ref = structure.concatenate_inputs(*terminal_node_data_refs)
+        structure.add_primitive_step(
             'd3m.primitives.data_preprocessing.do_nothing.DSBOX',
             final_concat_ref
         )
         structure.set_step_i_of('final_model')
 
-        add_predictions_constructor(structure)
+        structure.add_predictions_constructor()
         # Adding output step to the pipeline
         structure.add_output(name='Output', data_reference=structure.curr_step_data_ref)
         return structure, num_inputs_by_step
@@ -213,38 +209,15 @@ class RandomArchitectureExperimenter(Experiment):
                 else:
                     new_primitive_python_path, = random.sample(all_primitives, 1)
 
-                self._replace_step_at_i(structure, step_i, new_primitive_python_path)
+                structure.replace_step_at_i(step_i, new_primitive_python_path)
         
         # Finally, make sure the last primitive before the construct predictions step
         # is a model.
         final_placeholder_step_i = structure.step_i_of('final_model')
         new_model_python_path, = random.sample(model_list, 1)
-        self._replace_step_at_i(structure, final_placeholder_step_i, new_model_python_path)
-        structure.steps[final_placeholder_step_i].hyperparams['return_result'] = {
-            'type': ArgumentType.VALUE,
-            'data': 'new',
-        }
+        structure.replace_step_at_i(final_placeholder_step_i, new_model_python_path)
 
         return structure
-    
-    def _replace_step_at_i(
-        self,
-        pipeline: EZPipeline,
-        step_i: int,
-        new_step_python_path: str
-    ) -> None:
-        new_primitive = d3m_index.get_primitive(new_step_python_path)
-        new_step = PrimitiveStep(primitive=new_primitive)
-        old_step_inputs_data_ref = pipeline.steps[step_i].arguments['inputs']['data']
-        # Fill in the new step's arguments
-        map_pipeline_step_arguments(
-            pipeline,
-            new_step,
-            get_required_args(new_primitive),
-            # Preserve the inputs the old step was using.
-            custom_data_ref=old_step_inputs_data_ref
-        )
-        pipeline.replace_step(step_i, new_step)
 
     def _sample_parameters(self, ranges: List[Tuple[int, int]], max_sample_prod: int) -> Tuple[int, ...]:
         """
@@ -258,89 +231,3 @@ class RandomArchitectureExperimenter(Experiment):
         while multiply(samples) > max_sample_prod:
             samples = tuple(random.randint(*rng) for rng in ranges)
         return samples
-    
-    def _find_match_in_cache(
-        self, data_refs: Set[str],
-        concat_cache: Dict[frozenset, str]
-    ) -> Optional[frozenset]:
-        """
-        Uses all unordered combinations from `data_refs` (n choose k where k goes
-        from n to 2) to find a match in `cache`, that is to say, a set of data refs in
-        `data_refs` who have already been concatenated.
-
-        :param data_refs: The set of data_refs to search in the cache for.
-        :param concat_cache: The cache that maps data ref pairs to the data ref of
-            their concatenated output.
-        :return: If a match is found, the matching data ref pair is returned, else
-            None is returned. 
-        """
-        for k in range(len(concat_cache), 1, -1):
-            # Use all unordered combinations from `data_refs`
-            # (n choose k where k goes from n to 2)
-            for subset in itertools.combinations(data_refs, k):
-                subset = frozenset(subset)
-                if subset in concat_cache:
-                    return subset
-        return None
-    
-    def _concatenate_inputs(
-        self,
-        pipeline: EZPipeline,
-        data_refs_to_concat: Set[str],
-        concat_cache: Dict[frozenset, str]
-    ) -> str:
-        """
-        Adds concatenation steps to `pipeline` that join the outputs of every data
-        reference found in `data_refs_to_concat` until they are all a single data frame.
-
-        :param pipeline: The pipeline the concatenation steps will be added to.
-        :param data_refs_to_concat: The data references to the steps whose outputs are to be
-            concatentated together.
-        :param concat_cache: A cache holding data about previously concatenated outputs.
-            If two steps in `data_refs_to_concat` have already been concatenated in another step on
-            `pipeline`, then that concatenation step will be referenced during this
-            concatenation, instead of creating a new duplicate concatenation step. Reduces
-            the runtime and memory footprint of the pipeline.
-        """
-        if len(data_refs_to_concat) == 1:
-            # No concatenation necessary
-            output_data_ref, = data_refs_to_concat
-            return output_data_ref
-        
-        data_refs = copy(data_refs_to_concat)
-
-        while len(data_refs) > 1:
-            # first look in `concat_cache` for an already existing
-            # concatenation we can use.
-            cache_match = self._find_match_in_cache(data_refs, concat_cache)
-            
-            if cache_match is None:
-                # Manually concatenate a pair of data refs, then add them to the cache.
-                data_ref_pair = sorted(data_refs)[:2]
-                concat_step = self._build_concatenate_step(*data_ref_pair)
-                pipeline.add_step(concat_step)
-                concat_data_ref = pipeline.curr_step_data_ref
-
-                # Save the link between the data ref pair and their concatenation's
-                # output to the `concat_cache`.
-                data_ref_pair = frozenset(data_ref_pair)
-                concat_cache[data_ref_pair] = concat_data_ref
-                # Now we have a match in the cache.
-                cache_match = data_ref_pair
-
-            # Now that we've concatenated `data_ref_pair`, we don't
-            # need it in `data_refs` anymore.
-            data_refs -= cache_match
-            data_refs.add(concat_cache[cache_match])
-        
-        output_data_ref, = data_refs
-        return output_data_ref
-    
-    def _build_concatenate_step(self, left_data_ref: str, right_data_ref: str) -> PrimitiveStep:
-        concat_step = PrimitiveStep(
-            primitive=d3m_index.get_primitive('d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat')
-        )
-        concat_step.add_argument(name='left', argument_type=ArgumentType.CONTAINER, data_reference=left_data_ref)
-        concat_step.add_argument(name='right', argument_type=ArgumentType.CONTAINER, data_reference=right_data_ref)
-        concat_step.add_output('produce')
-        return concat_step

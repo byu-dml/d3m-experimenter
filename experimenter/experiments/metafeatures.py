@@ -6,7 +6,7 @@ from d3m.metadata.base import Context
 from bson import json_util
 
 from experimenter.experiments.experiment import Experiment
-from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc, add_pipeline_step
+from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc
 
 class MetafeatureExperimenter(Experiment):
     """
@@ -28,21 +28,18 @@ class MetafeatureExperimenter(Experiment):
         pipeline_description.add_input(name='inputs')
 
         # dataset_to_dataframe step
-        add_pipeline_step(
-            pipeline_description,
+        pipeline_description.add_primitive_step(
             'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
             'inputs.0'
         )
 
         # column_parser step
-        add_pipeline_step(
-            pipeline_description,
+        pipeline_description.add_primitive_step(
             'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
         )
 
         # metafeature_extractor step
-        add_pipeline_step(
-            pipeline_description,
+        pipeline_description.add_primitive_step(
             'd3m.primitives.metalearning.metafeature_extractor.BYU'
         )
 
