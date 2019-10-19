@@ -9,7 +9,7 @@ class TestCLI(unittest.TestCase):
         """
         Tests correct parsing of arguments specific to the ensemble experimenter. 
         """
-        ensemble_args = ['-p', 'ensemble', '-nc', '3', '-np', '1']
+        ensemble_args = ['-p', 'ensemble', '-nc', '3', '-npre', '1']
         args = get_cli_args(ensemble_args)
 
         self.assertEqual(args.pipeline_gen_type, "ensemble")
@@ -20,11 +20,10 @@ class TestCLI(unittest.TestCase):
         """
         Tests correct parsing of arguments specific to the random experimenter. 
         """
-        random_args = ['-ns', '100', '-nps', '32', '-dsr', '1', '10', '-mwsr', '1', '5', '-misr', '1', '4', '-mcf', '24']
+        random_args = ['-npipes', '100', '-dsr', '1', '10', '-mwsr', '1', '5', '-misr', '1', '4', '-mcf', '24']
         args = get_cli_args(random_args)
 
-        self.assertEqual(args.n_structures, 100)
-        self.assertEqual(args.n_pipelines_per_structure, 32)
+        self.assertEqual(args.n_pipelines, 100)
         self.assertEqual(args.depth_sample_range, [1, 10])
         self.assertEqual(args.max_width_sample_range, [1, 5])
         self.assertEqual(args.max_inputs_sample_range, [1, 4])

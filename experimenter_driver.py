@@ -283,7 +283,7 @@ def get_cli_args(raw_args: List[str] = None):
     )
     parser.add_argument(
         "--n-preprocessors",
-        "-np",
+        "-npre",
         type=int,
         help="how many preprocessors to use for the ensemble experiment",
         default=3
@@ -302,17 +302,13 @@ def get_cli_args(raw_args: List[str] = None):
         default=0
     )
     parser.add_argument(
-        "--n-structures",
-        "-ns",
+        "--n-pipelines",
+        "-npipes",
         type=int,
-        help="how many pipeline structures to sample for the random experiment"
-    )
-    parser.add_argument(
-        "--n-pipelines-per-structure",
-        "-nps",
-        type=int,
-        help="how many pipelines to sample from each structure for the random experiment",
-        default=8
+        help=(
+            "how many pipelines to sample for the random experiment for each "
+            "problem type."
+        )
     )
     parser.add_argument(
         "--depth-sample-range",
