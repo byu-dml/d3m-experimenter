@@ -328,14 +328,20 @@ class EZPipeline(Pipeline):
         )
         self.set_step_i_of('raw_df')
 
+        # extract_columns_by_semantic_types(targets) step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+        )
+        self.current_step.add_hyperparameter(
+            name='semantic_types',
+            argument_type=ArgumentType.VALUE,
+            data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+        self.set_step_i_of('target')
+
         # column_parser step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
-        )
-
-        # imputer step
-        self.add_primitive_step(
-            'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
+            'd3m.primitives.data_transformation.column_parser.DataFrameCommon',
+            self.data_ref_of('raw_df')
         )
 
         # extract_columns_by_semantic_types(attributes) step
@@ -347,18 +353,59 @@ class EZPipeline(Pipeline):
             argument_type=ArgumentType.VALUE,
             data=['https://metadata.datadrivendiscovery.org/types/Attribute']
         )
-        self.set_step_i_of('attrs')
 
-        # extract_columns_by_semantic_types(targets) step
+        # imputer step
+        self.add_primitive_step(
+            'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
+        )
+        self.set_step_i_of('imputed')
+
+        # extract_columns_by_semantic_types(categories) step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            self.data_ref_of('raw_df')
         )
         self.current_step.add_hyperparameter(
             name='semantic_types',
             argument_type=ArgumentType.VALUE,
-            data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
-        self.set_step_i_of('target')
+            data=[
+                'https://metadata.datadrivendiscovery.org/types/CategoricalData',
+                'https://metadata.datadrivendiscovery.org/types/OrdinalData'
+            ]
+        )
+        self.set_step_i_of('categorical_attrs')
+
+        # extract_columns_by_semantic_types(non-categorical) step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            self.data_ref_of('imputed')
+        )
+        self.current_step.add_hyperparameter(
+            name='semantic_types',
+            argument_type=ArgumentType.VALUE,
+            data=[
+                'https://metadata.datadrivendiscovery.org/types/CategoricalData',
+                'https://metadata.datadrivendiscovery.org/types/OrdinalData'
+            ]
+        )
+        self.current_step.add_hyperparameter(
+            name='negate',
+            argument_type=ArgumentType.VALUE,
+            data=True
+        )
+        self.set_step_i_of('non_categorical_attrs')
+
+        # encoder step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.one_hot_encoder.SKlearn',
+            self.data_ref_of('categorical_attrs')
+        )
+        self.set_step_i_of('one_hot_categorical_attrs')
+
+        self.concatenate_inputs(
+            self.data_ref_of('one_hot_categorical_attrs'),
+            self.data_ref_of('non_categorical_attrs')
+        )
+        self.set_step_i_of('attrs')
     
     def add_predictions_constructor(self, input_data_ref: str = None) -> None:
         """
