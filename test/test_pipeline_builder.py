@@ -92,6 +92,83 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
         # The pipeline's digest should be correct
         self.assertEqual(pipeline_json['digest'], d3m_utils.compute_digest(pipeline_json))
+    
+    def test_concat_cache(self) -> None:
+        # concatenations that have occurred before should
+        # not occur again.
+        pipeline = self._make_no_steps_pipeline()
+        self._add_dataset_to_df_step(pipeline)
+        self._add_column_parser_step(pipeline)
+        self._add_extract_attrs_step(pipeline)
+
+        pipeline.add_primitive_step(
+            "d3m.primitives.data_preprocessing.standard_scaler.SKlearn"
+        )
+        pipeline.set_step_i_of('scaler')
+
+        pipeline.add_primitive_step(
+            "d3m.primitives.feature_extraction.pca.SKlearn"
+        )
+        pipeline.set_step_i_of('pca')
+
+        first_concat_ref = pipeline.concatenate_inputs(
+            pipeline.data_ref_of('scaler'),
+            pipeline.data_ref_of('pca')
+        )
+        len_after_first_concat = len(pipeline.steps)
+
+        # Try a second concatenation
+        second_concat_ref = pipeline.concatenate_inputs(
+            pipeline.data_ref_of('scaler'),
+            pipeline.data_ref_of('pca')
+        )
+        len_after_second_concat = len(pipeline.steps)
+        # No additional concatenations should have occured.
+        self.assertEqual(len_after_first_concat, len_after_second_concat)
+        self.assertEqual(first_concat_ref, second_concat_ref)
+
+        pipeline.add_primitive_step(
+            "d3m.primitives.data_preprocessing.nystroem.SKlearn"
+        )
+        pipeline.set_step_i_of('nystroem')
+        len_before_third_concat = len(pipeline.steps)
+
+        # This concatenation should only add one new concatenation,
+        # Since the scaler+pca one has already happened in the
+        # pipeline graph.
+        pipeline.concatenate_inputs(
+            pipeline.data_ref_of('scaler'),
+            pipeline.data_ref_of('pca'),
+            pipeline.data_ref_of('nystroem')
+        )
+        len_after_third_concat = len(pipeline.steps)
+        self.assertEqual(len_before_third_concat+1, len_after_third_concat)
+    
+    def test_classifier_post_processing(self) -> None:
+        pipeline = self._make_no_steps_pipeline()
+        self._add_dataset_to_df_step(pipeline)
+        self._add_column_parser_step(pipeline)
+        self._add_extract_attrs_step(pipeline)
+        pipeline.set_step_i_of('attrs')
+        self._add_extract_target_step(pipeline)
+        pipeline.set_step_i_of('target')
+
+        pipeline.add_primitive_step(
+            "d3m.primitives.classification.ada_boost.SKlearn",
+            pipeline.data_ref_of('attrs'),
+            is_final_model=False
+        )
+        step_paths = [step.primitive.metadata.query()['python_path'] for step in pipeline.steps]
+        # When not the final model, a classifier's output should have its
+        # semantic type changed and its output encoded.
+        self.assertIn(
+            'd3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon',
+            step_paths
+        )
+        self.assertIn(
+            'd3m.primitives.data_transformation.one_hot_encoder.SKlearn',
+            step_paths
+        )
         
     # Private methods
 
@@ -119,4 +196,14 @@ class PipelineGenerationTestCase(unittest.TestCase):
             name='semantic_types',
             argument_type=ArgumentType.VALUE,
             data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+        )
+    
+    def _add_extract_target_step(self, pipeline: EZPipeline) -> None:
+        pipeline.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon'
+        )
+        pipeline.current_step.add_hyperparameter(
+            name='semantic_types',
+            argument_type=ArgumentType.VALUE,
+            data=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
         )

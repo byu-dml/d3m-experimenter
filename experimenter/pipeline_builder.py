@@ -192,7 +192,7 @@ class EZPipeline(Pipeline):
             # feature for some future primitive, so we need to change the
             # output's semantic type to attribute and encode it.
             self.add_primitive_step(
-                'd3m.primitives.data_transformation.replace_semantic_types.Common'
+                'd3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon'
             )
             self.current_step.add_hyperparameter(
                 name='from_semantic_types',
@@ -463,7 +463,7 @@ class EZPipeline(Pipeline):
         :return: If a match is found, the matching data ref pair is returned, else
             None is returned. 
         """
-        for k in range(len(self.concat_cache), 1, -1):
+        for k in range(len(data_refs), 1, -1):
             # Use all unordered combinations from `data_refs`
             # (n choose k where k goes from n to 2)
             for subset in itertools.combinations(data_refs, k):
