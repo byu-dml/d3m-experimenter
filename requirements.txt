@@ -3,9 +3,3 @@ numpy==1.15.4
 scikit-learn[alldeps]==0.20.3
 rq==0.13.0
 rq-dashboard
-# TODO: Once the `fix-imputer` branch of our d3m-primitives repo
-# has been merged and the package re-released to pypi, we can
-# change this to reflect the pypi version. Once the new pypi
-# version is on the d3m docker image, we can remove this line
-# completely.
--e git+https://github.com/byu-dml/d3m-primitives.git@fix-imputer#egg=byudml
