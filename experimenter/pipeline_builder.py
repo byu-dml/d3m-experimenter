@@ -1,13 +1,13 @@
 from typing import Tuple, List, Any, Dict, Set, Optional
 import itertools
 
-from d3m import utils as d3m_utils, index as d3m_index
+from d3m import utils as d3m_utils
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.pipeline import PrimitiveStep, StepBase
 from d3m.metadata.base import ArgumentType
 from d3m.primitive_interfaces.base import PrimitiveBase
 
-from experimenter.constants import EXTRA_HYPEREPARAMETERS, PRIMITIVE_FAMILIES
+from experimenter.constants import EXTRA_HYPEREPARAMETERS, PRIMITIVE_FAMILIES, d3m_index
 
 
 class PipelineArchDesc:
@@ -160,6 +160,8 @@ class EZPipeline(Pipeline):
         *,
         container_args: Dict[str,str] = None,
         value_args: Dict[str,str] = None,
+        container_hyperparams: Dict[str,str] = None,
+        value_hyperparams: Dict[str,str] = None,
         auto_fill_args: bool = True,
         output_name: str = 'produce',
         is_final_model: bool = True
@@ -177,6 +179,8 @@ class EZPipeline(Pipeline):
             auto_data_ref,
             container_args=container_args,
             value_args=value_args,
+            container_hyperparams=container_hyperparams,
+            value_hyperparams=value_hyperparams,
             auto_fill_args=auto_fill_args,
             output_name=output_name
         )
@@ -192,17 +196,11 @@ class EZPipeline(Pipeline):
             # feature for some future primitive, so we need to change the
             # output's semantic type to attribute and encode it.
             self.add_primitive_step(
-                'd3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon'
-            )
-            self.current_step.add_hyperparameter(
-                name='from_semantic_types',
-                argument_type=ArgumentType.VALUE,
-                data=['https://metadata.datadrivendiscovery.org/types/PredictedTarget']
-            )
-            self.current_step.add_hyperparameter(
-                name='to_semantic_types',
-                argument_type=ArgumentType.VALUE,
-                data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+                'd3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon',
+                value_hyperparams={
+                    'from_semantic_types': ['https://metadata.datadrivendiscovery.org/types/PredictedTarget'],
+                    'to_semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute']
+                }
             )
 
             # Next the encoder step
@@ -217,6 +215,8 @@ class EZPipeline(Pipeline):
         *,
         container_args: Dict[str,str] = None,
         value_args: Dict[str,str] = None,
+        container_hyperparams: Dict[str,str] = None,
+        value_hyperparams: Dict[str,str] = None,
         auto_fill_args: bool = True,
         output_name: str = 'produce'
     ) -> PrimitiveStep:
@@ -236,6 +236,12 @@ class EZPipeline(Pipeline):
         :param value_args: A map of primitive argument names to the values to use for
             those arguments. Pass a primitive argument to `value_args` if the
             argument is of type `d3m.metadata.base.ArgumentType.VALUE`.
+        :param container_hyperparams: A map of primitive hyperparameter names to the data references
+            to use for those hyperparams. Pass a primitive hyperparam to `container_hyperparams` if the
+            hyperparam is of type `d3m.metadata.base.ArgumentType.CONTAINER`.
+        :param value_hyperparams: A map of primitive hyperparameter names to the values to use for
+            those hyperparams. Pass a primitive hyperparam to `value_hyperparams` if the
+            hyperparam is of type `d3m.metadata.base.ArgumentType.VALUE`.
         :param auto_fill_args: Attempt to automatically populate any required
             args that haven't been explicity supplied by the user.
         :param output_name: an optional method output name to use for the primitive.
@@ -249,20 +255,14 @@ class EZPipeline(Pipeline):
         primitive_args: Dict[str,Dict[str,Any]] = {}
 
         if container_args:
-            for arg_name, data_ref in container_args.items():
-                primitive_args[arg_name] = {
-                    "name": arg_name,
-                    "argument_type": ArgumentType.CONTAINER,
-                    "data_reference": data_ref
-                }
+            primitive_args.update(
+                self._build_d3m_arg_dict(container_args, ArgumentType.CONTAINER)
+            )
         
         if value_args:
-            for arg_name, data in value_args.items():
-                primitive_args[arg_name] = {
-                    "name": arg_name,
-                    "argument_type": ArgumentType.VALUE,
-                    "data": data
-                }
+            primitive_args.update(
+                self._build_d3m_arg_dict(value_args, ArgumentType.VALUE)
+            )
 
         if auto_fill_args:
             for arg_name in self._get_required_args(primitive):
@@ -283,21 +283,30 @@ class EZPipeline(Pipeline):
         for arg_dict in primitive_args.values():
             step.add_argument(**arg_dict)
         
-        # Add common hyperparameters to the primitive.
-        ##############################################
-        
-        if 'return_result' in step.primitive.metadata.get_hyperparams().configuration:
-            # This primitive has a `return_result` hyperparam, which we want to set.
-            # We always have the primitive return just its output, and not its outputs + its inputs.
-            step.add_hyperparameter(name='return_result', argument_type=ArgumentType.VALUE, data="new")
+        # Add hyperparameters to the primitive.
+        #######################################
 
+        primitive_hyperparams: Dict[str,Dict[str,Any]] = {}
         # handle any hyperparams that have been supplied in the global scope,
         # i.e. that should be used for every instance of certain primitives.
         if python_path in EXTRA_HYPEREPARAMETERS:
             params = EXTRA_HYPEREPARAMETERS[python_path]
-            for param_args in params:
-                step.add_hyperparameter(**param_args)
-
+            for hyperparam_dict in params:
+                primitive_hyperparams["name"] = hyperparam_dict
+        
+        if container_hyperparams:
+            primitive_hyperparams.update(
+                self._build_d3m_arg_dict(container_hyperparams, ArgumentType.CONTAINER)
+            )
+        
+        if value_hyperparams:
+            primitive_hyperparams.update(
+                self._build_d3m_arg_dict(value_hyperparams, ArgumentType.VALUE)
+            )
+            
+        # Finally, add the hyperparameters to the primitive
+        for hyperparam_dict in primitive_hyperparams.values():
+            step.add_hyperparameter(**hyperparam_dict)
 
         step.add_output(output_name)
         return step
@@ -333,37 +342,69 @@ class EZPipeline(Pipeline):
         )
         self.set_step_i_of('raw_df')
 
+        # extract_columns_by_semantic_types(targets) step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
+        )
+        self.set_step_i_of('target')
+
         # column_parser step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
+            'd3m.primitives.data_transformation.column_parser.DataFrameCommon',
+            self.data_ref_of('raw_df')
+        )
+
+        # extract_columns_by_semantic_types(attributes) step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute'] }
         )
 
         # imputer step
         self.add_primitive_step(
             'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
         )
+        self.set_step_i_of('imputed')
 
-        # extract_columns_by_semantic_types(attributes) step
+        # extract_columns_by_semantic_types(categories) step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            value_hyperparams={
+                'semantic_types': [
+                    'https://metadata.datadrivendiscovery.org/types/CategoricalData',
+                    'https://metadata.datadrivendiscovery.org/types/OrdinalData'
+                ]
+            }
         )
-        self.current_step.add_hyperparameter(
-            name='semantic_types',
-            argument_type=ArgumentType.VALUE,
-            data=['https://metadata.datadrivendiscovery.org/types/Attribute']
+        self.set_step_i_of('categorical_attrs')
+
+        # extract_columns_by_semantic_types(non-categorical) step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            self.data_ref_of('imputed'),
+            value_hyperparams={
+                'semantic_types': [
+                    'https://metadata.datadrivendiscovery.org/types/CategoricalData',
+                    'https://metadata.datadrivendiscovery.org/types/OrdinalData'
+                ],
+                'negate': True
+            }
+        )
+        self.set_step_i_of('non_categorical_attrs')
+
+        # encoder step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.one_hot_encoder.SKlearn',
+            self.data_ref_of('categorical_attrs')
+        )
+        self.set_step_i_of('one_hot_categorical_attrs')
+
+        self.concatenate_inputs(
+            self.data_ref_of('one_hot_categorical_attrs'),
+            self.data_ref_of('non_categorical_attrs')
         )
         self.set_step_i_of('attrs')
-
-        # extract_columns_by_semantic_types(targets) step
-        self.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            self.data_ref_of('raw_df')
-        )
-        self.current_step.add_hyperparameter(
-            name='semantic_types',
-            argument_type=ArgumentType.VALUE,
-            data=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
-        self.set_step_i_of('target')
     
     def add_predictions_constructor(self, input_data_ref: str = None) -> None:
         """
@@ -471,3 +512,36 @@ class EZPipeline(Pipeline):
                 if subset in self.concat_cache:
                     return subset
         return None
+    
+    def _build_d3m_arg_dict(
+        self,
+        simple_args: Dict[str,str],
+        arg_type: ArgumentType
+    ) -> Dict[str,Dict[str,str]]:
+        """
+        Builds a dictionary of arguments. Each argument can be passed
+        to the `.add_hyperparameter` or `.add_argument` method of a
+        d3m pipeline step. Builds it from the simpler arguments that
+        are passed to the `create_primitive_step` and `add_primitive_step`
+        methods of this class.
+
+        :param simple_args: A dictionary mapping argument names to their
+            values. E.g. { 'negate': True }
+        """
+        data_arg_name_by_type = {
+            ArgumentType.VALUE: "data",
+            ArgumentType.CONTAINER: "data_reference"
+        }
+
+        if arg_type not in data_arg_name_by_type:
+            raise ValueError(f'unsupported arg_type {arg_type}')
+
+        data_arg_name = data_arg_name_by_type[arg_type]
+        return {
+            arg_name: { 
+                "name": arg_name,
+                "argument_type": arg_type,
+                data_arg_name: data
+            } for arg_name, data in simple_args.items()
+        }
+

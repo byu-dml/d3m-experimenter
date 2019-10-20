@@ -1,4 +1,15 @@
 from d3m.metadata.base import ArgumentType, PrimitiveFamily
+from d3m import index as d3m_index
+from byudml.imputer.random_sampling_imputer import RandomSamplingImputer
+
+# TODO: Once the `fix-imputer` branch of our d3m-primitives repo
+# has been merged and the package re-released to pypi and the new
+# pypi version is on the d3m docker image, we can just import
+# d3m.index directly and not need to use this modified one.
+d3m_index.register_primitive(
+    RandomSamplingImputer.metadata.query()['python_path'],
+    RandomSamplingImputer
+)
 
 # It is ok to use these temperamental preprocessors in production because
 # we're ok with some pipelines degenerating on some datasets.
@@ -93,6 +104,11 @@ problem_directories = [
     "training_datasets/LL0/",
     # "training_datasets/LL1/",
 ]
+
+TEST_DATASET_PATHS = {
+    '38_sick': '/datasets/seed_datasets_current/38_sick',
+    '1491_one_hundred_plant_margins': '/datasets/seed_datasets_current/1491_one_hundred_plants_margin'
+}
 
 # This is the full list of families:
 # https://metadata.datadrivendiscovery.org/schemas/v0/definitions.json#/definitions/primitive_family

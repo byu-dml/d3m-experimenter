@@ -2,6 +2,7 @@ import sys
 import unittest
 
 from experimenter.experimenter import Experimenter
+from experimenter.constants import TEST_DATASET_PATHS
 
 
 class PipelineGenerationTestCase(unittest.TestCase):
@@ -27,10 +28,10 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     def test_get_classification_problems(self):
         # 196_auto_mpg is regression
-        known_seed_classification_problems_test = set([
-            '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
-            '/datasets/seed_datasets_current/185_baseball'
-        ])
+        known_seed_classification_problems_test = set({
+            TEST_DATASET_PATHS['38_sick'],
+            TEST_DATASET_PATHS['1491_one_hundred_plant_margins']
+        })
 
         found_problems = set(self.experimenter_driver.problems['classification'])
         for known_problem in known_seed_classification_problems_test:
@@ -40,11 +41,18 @@ class PipelineGenerationTestCase(unittest.TestCase):
             )
     
     def test_basic_pipeline_structure(self):
-
-        num_pipeline_steps = 7  # DatasetToDataFrame/ColumnParser/SKImputer/
-                                # ExtractSemanticTypes(attributes)/
-                                # ExtractSemanticTypes(targets)/
-                                # SKGaussianNB/ConstructPredictions
+        # DatasetToDataFrame -> 
+        # ExtractSemanticTypes(targets) ->
+        # ColumnParser ->
+        # ExtractSemanticTypes(attributes) ->
+        # BYUImputer ->
+        # ExtractSemanticTypes(categories) ->
+        # ExtractSemanticTypes(non-categorical) ->
+        # OneHotEncoder ->
+        # HorizontalConcat(one-hot-encoded, non-categorical) ->
+        # SKGaussianNB ->
+        # ConstructPredictions
+        num_pipeline_steps = 11
         dataset_to_dataframe = 'd3m.primitives.data_transformation.dataset_to_dataframe.Common'
         construct_predictions = 'd3m.primitives.data_transformation.construct_predictions.DataFrameCommon'
 
@@ -57,8 +65,8 @@ class PipelineGenerationTestCase(unittest.TestCase):
                 len(self.experimenter_driver.generated_pipelines['classification'])
             )
         )
-        generated_pipelines = self.experimenter_driver.generated_pipelines['classification'][0].to_json_structure()
+        generated_pipeline = self.experimenter_driver.generated_pipelines['classification'][0].to_json_structure()
         # make sure there are the normal number of steps in the pipeline
-        self.assertEqual(len(generated_pipelines['steps']), num_pipeline_steps)
-        self.assertEqual(generated_pipelines['steps'][0]['primitive']['python_path'], dataset_to_dataframe)
-        self.assertEqual(generated_pipelines['steps'][6]['primitive']['python_path'], construct_predictions)
+        self.assertEqual(len(generated_pipeline['steps']), num_pipeline_steps)
+        self.assertEqual(generated_pipeline['steps'][0]['primitive']['python_path'], dataset_to_dataframe)
+        self.assertEqual(generated_pipeline['steps'][-1]['primitive']['python_path'], construct_predictions)

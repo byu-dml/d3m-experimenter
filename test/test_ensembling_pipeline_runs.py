@@ -1,7 +1,7 @@
 import typing
 import unittest
 from experimenter.experimenter import *
-from experimenter.constants import models, preprocessors
+from experimenter.constants import models, preprocessors, TEST_DATASET_PATHS
 from d3m import runtime as runtime_module
 from d3m.metadata import pipeline as pipeline_module
 from experimenter.run_pipeline import RunPipeline
@@ -49,10 +49,6 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
         except OSError:
             pass
 
-    def test_experimenter_run_works_from_pipeline(self):
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
-        self.run_experimenter_from_pipeline(problem_path)
-
     def test_experimenter_run_works_and_generates_random(self):
         generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=2,
                                                                    preprocessors=preprocessors,
@@ -61,7 +57,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification")
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = TEST_DATASET_PATHS['38_sick']
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_fixed(self):
@@ -74,7 +70,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    problem_type="classification",
                                                                    model=model)
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = TEST_DATASET_PATHS['38_sick']
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_LARGE(self):
@@ -85,7 +81,7 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification")
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = "/datasets/seed_datasets_current/185_baseball"
+        problem_path = TEST_DATASET_PATHS['38_sick']
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def run_experimenter_from_pipeline(self, problem_path, pipeline_to_run=None):

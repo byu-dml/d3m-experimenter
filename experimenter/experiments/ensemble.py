@@ -7,10 +7,10 @@ from random import sample
 from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 from d3m.primitive_interfaces.base import PrimitiveBase
 from d3m.metadata.base import Context, ArgumentType
-from d3m import index as d3m_index
 
 from experimenter.experiments.experiment import Experiment
 from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc
+from experimenter.constants import d3m_index
 
 
 class EnsembleArchitectureExperimenter(Experiment):
@@ -119,28 +119,18 @@ class EnsembleArchitectureExperimenter(Experiment):
             else:
                 model_args_data_ref = pipeline_description.data_ref_of('attrs')
 
-            pipeline_description.add_primitive_step(model, model_args_data_ref)
-            pipeline_description.current_step.add_hyperparameter(
-                name='add_index_columns',
-                argument_type=ArgumentType.VALUE,
-                data=True
-            )
-
-            pipeline_description.add_predictions_constructor()
+            pipeline_description.add_primitive_step(model, model_args_data_ref, is_final_model=False)
             list_of_outputs.append(pipeline_description.curr_step_data_ref)
 
         # concatenate the outputs of the k pipelines together
         concat_result_ref = pipeline_description.concatenate_inputs(*list_of_outputs)
 
-        # First rename the duplicate column names.
+        # finally ensemble them all together TODO: change the RF to be dynamic, use the `ensembler`
+        # argument to this function.
         pipeline_description.add_primitive_step(
-            'd3m.primitives.data_transformation.rename_duplicate_name.DataFrameCommon',
+            'd3m.primitives.classification.random_forest.SKlearn',
             concat_result_ref
         )
-
-        # finally ensemble them all together TODO: change the RF to be dynamic, use the `ensemble`
-        # argument to this function.
-        pipeline_description.add_primitive_step('d3m.primitives.regression.random_forest.SKlearn')
 
         # output them as predictions
         pipeline_description.add_predictions_constructor()

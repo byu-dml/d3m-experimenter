@@ -1,7 +1,7 @@
 import unittest
 
 from experimenter.experiments.random import RandomArchitectureExperimenter
-from experimenter.constants import models, bulletproof_preprocessors
+from experimenter.constants import models, bulletproof_preprocessors, TEST_DATASET_PATHS
 from experimenter.pipeline_builder import EZPipeline
 from experimenter.run_pipeline import RunPipeline
 
@@ -13,7 +13,7 @@ class TestRandomPipelines(unittest.TestCase):
     def setUp(self):
         self.datasets_dir = "/datasets"
         self.volumes_dir = "/volumes"
-        self.problem_path = "/datasets/seed_datasets_current/185_baseball"
+        self.problem_path = TEST_DATASET_PATHS['38_sick']
         self.experiment = RandomArchitectureExperimenter()
         self.preprocessors = bulletproof_preprocessors
         self.models = models
