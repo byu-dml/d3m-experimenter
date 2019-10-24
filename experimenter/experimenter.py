@@ -1,8 +1,7 @@
 
 import logging
 logger = logging.getLogger(__name__)
-from random import sample
-from .constants import models, d3m_index, preprocessors, problem_directories, blacklist_non_tabular_data
+from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data
 from d3m import utils as d3m_utils
 from d3m.primitive_interfaces.base import PrimitiveBase
 from d3m.metadata.pipeline import PrimitiveStep
@@ -22,7 +21,7 @@ from experimenter.experiments.random import RandomArchitectureExperimenter
 from experimenter.experiments.straight import StraightArchitectureExperimenter
 from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
 from experimenter.experiments.stacked import StackedArchitectureExperimenter
-
+from experimenter.config import d3m_index
 from experimenter import utils
 
 

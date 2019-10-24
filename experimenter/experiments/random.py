@@ -1,7 +1,6 @@
 from typing import Dict, List, Tuple, Set, Optional
 from collections import defaultdict
 from copy import copy
-import random
 import itertools
 
 from d3m.metadata.pipeline import Pipeline, PrimitiveStep
@@ -10,7 +9,8 @@ from d3m.metadata.base import Context, ArgumentType
 from experimenter.experiments.experiment import Experiment
 from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc
 from experimenter.utils import multiply
-from experimenter.constants import primitives_needing_gt_one_column, d3m_index
+from experimenter.constants import primitives_needing_gt_one_column
+from experimenter.config import d3m_index, random
 
 class RandomArchitectureExperimenter(Experiment):
     """

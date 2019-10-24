@@ -7,8 +7,8 @@ from d3m.metadata.pipeline import PrimitiveStep, StepBase
 from d3m.metadata.base import ArgumentType
 from d3m.primitive_interfaces.base import PrimitiveBase
 
-from experimenter.constants import EXTRA_HYPEREPARAMETERS, PRIMITIVE_FAMILIES, d3m_index
-
+from experimenter.constants import EXTRA_HYPEREPARAMETERS, PRIMITIVE_FAMILIES
+from experimenter.config import d3m_index
 
 class PipelineArchDesc:
     """

@@ -44,14 +44,13 @@ class RunPipeline:
                          }
 
     
-    def run(self, pipeline: Pipeline, random_seed: int=0) -> list:
+    def run(self, pipeline: Pipeline) -> list:
         """
         This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
         Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
         function does not allow for returning the data, so it did not fit in the workflow.
         
         :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
-        :param random_seed: the random seed that the runtime will use to evalutate the pipeline
         :returns results_list: a list containing, in order, the scores from the pipeline predictions, the fit pipeline_run 
             and the produce pipeline_run.
         """
@@ -119,9 +118,7 @@ class RunPipeline:
 
         all_scores, all_results = evaluate(
             pipeline, data_pipeline, scoring_pipeline, problem_description, inputs, data_params, metrics,
-            context=context, random_seed=random_seed,
-            data_random_seed=random_seed,
-            scoring_random_seed=random_seed,
+            context=context,
             volumes_dir=self.volumes_dir,
             runtime_environment=runtime_environment,
         )

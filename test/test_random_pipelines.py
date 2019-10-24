@@ -1,9 +1,10 @@
 import unittest
 
 from experimenter.experiments.random import RandomArchitectureExperimenter
-from experimenter.constants import models, bulletproof_preprocessors, TEST_DATASET_PATHS
+from experimenter.constants import models, bulletproof_preprocessors
 from experimenter.pipeline_builder import EZPipeline
 from experimenter.run_pipeline import RunPipeline
+from test.config import problem_path
 
 
 class TestRandomPipelines(unittest.TestCase):
@@ -13,7 +14,6 @@ class TestRandomPipelines(unittest.TestCase):
     def setUp(self):
         self.datasets_dir = "/datasets"
         self.volumes_dir = "/volumes"
-        self.problem_path = TEST_DATASET_PATHS['38_sick']
         self.experiment = RandomArchitectureExperimenter()
         self.preprocessors = bulletproof_preprocessors
         self.models = models
@@ -82,7 +82,7 @@ class TestRandomPipelines(unittest.TestCase):
         run_pipeline = RunPipeline(
             datasets_dir=self.datasets_dir,
             volumes_dir=self.volumes_dir,
-            problem_path=self.problem_path
+            problem_path=problem_path
         )
         scores_test, _ = run_pipeline.run(pipeline=pipeline_to_run)
         # the value of score is in the first document in the first index
