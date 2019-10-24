@@ -205,7 +205,7 @@ class EZPipeline(Pipeline):
 
             # Next the encoder step
             self.add_primitive_step(
-                'd3m.primitives.data_transformation.one_hot_encoder.SKlearn'
+                "d3m.primitives.data_cleaning.label_encoder.DSBOX"
             )
     
     def create_primitive_step(
@@ -365,44 +365,10 @@ class EZPipeline(Pipeline):
         self.add_primitive_step(
             'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
         )
-        self.set_step_i_of('imputed')
-
-        # extract_columns_by_semantic_types(categories) step
-        self.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            value_hyperparams={
-                'semantic_types': [
-                    'https://metadata.datadrivendiscovery.org/types/CategoricalData',
-                    'https://metadata.datadrivendiscovery.org/types/OrdinalData'
-                ]
-            }
-        )
-        self.set_step_i_of('categorical_attrs')
-
-        # extract_columns_by_semantic_types(non-categorical) step
-        self.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            self.data_ref_of('imputed'),
-            value_hyperparams={
-                'semantic_types': [
-                    'https://metadata.datadrivendiscovery.org/types/CategoricalData',
-                    'https://metadata.datadrivendiscovery.org/types/OrdinalData'
-                ],
-                'negate': True
-            }
-        )
-        self.set_step_i_of('non_categorical_attrs')
 
         # encoder step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.one_hot_encoder.SKlearn',
-            self.data_ref_of('categorical_attrs')
-        )
-        self.set_step_i_of('one_hot_categorical_attrs')
-
-        self.concatenate_inputs(
-            self.data_ref_of('one_hot_categorical_attrs'),
-            self.data_ref_of('non_categorical_attrs')
+            'd3m.primitives.data_preprocessing.dsbox_encoder.BYU'
         )
         self.set_step_i_of('attrs')
     

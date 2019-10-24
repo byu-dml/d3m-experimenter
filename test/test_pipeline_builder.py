@@ -166,7 +166,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
             step_paths
         )
         self.assertIn(
-            'd3m.primitives.data_transformation.one_hot_encoder.SKlearn',
+            "d3m.primitives.data_cleaning.label_encoder.DSBOX",
             step_paths
         )
         
