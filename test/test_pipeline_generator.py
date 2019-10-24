@@ -43,13 +43,10 @@ class PipelineGenerationTestCase(unittest.TestCase):
         # ColumnParser ->
         # ExtractSemanticTypes(attributes) ->
         # BYUImputer ->
-        # ExtractSemanticTypes(categories) ->
-        # ExtractSemanticTypes(non-categorical) ->
         # OneHotEncoder ->
-        # HorizontalConcat(one-hot-encoded, non-categorical) ->
         # SKGaussianNB ->
         # ConstructPredictions
-        num_pipeline_steps = 11
+        num_pipeline_steps = 8
         dataset_to_dataframe = 'd3m.primitives.data_transformation.dataset_to_dataframe.Common'
         construct_predictions = 'd3m.primitives.data_transformation.construct_predictions.DataFrameCommon'
 

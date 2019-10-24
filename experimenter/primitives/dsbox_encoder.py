@@ -14,7 +14,7 @@ from d3m.metadata.hyperparams import UniformInt
 from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
-import experimenter.constants
+from experimenter import constants
 
 _logger = logging.getLogger(__name__)
 
@@ -68,7 +68,9 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
     This is a BYU fork of ISI's d3m.primitives.data_preprocessing.encoder.DSBOX primitive.
     It is the exact same as version 1.5.3 of that primitive except the logic for handling
     NaN's has a bug that prevents it from encoding integer columns properly, (see
-    https://github.com/usc-isi-i2/dsbox-primitives/issues/9).
+    https://github.com/usc-isi-i2/dsbox-primitives/issues/9). TODO: This primitive's
+    '{col_name}_other_` column is not showing up. The 'Other' values are being populated,
+    but the column is not being created in the encoding. 
 
     ISI's docstring:
     ****************

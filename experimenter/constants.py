@@ -1,10 +1,12 @@
+import os
+
 from d3m.metadata.base import ArgumentType, PrimitiveFamily
 from d3m import utils as d3m_utils
 
 
 PACKAGE_NAME = "d3m-experimenter"
 REPOSITORY = "https://github.com/byu-dml/d3m-experimenter"
-TAG_NAME = utils.current_git_commit(os.path.dirname(__file__))
+TAG_NAME = d3m_utils.current_git_commit(os.path.dirname(__file__))
 D3M_PERFORMER_TEAM = "byu-dml"
 
 # It is ok to use these temperamental preprocessors in production because
