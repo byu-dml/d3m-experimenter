@@ -81,4 +81,10 @@ or specific db commands see `get_documents.py`.
 
 # Contributing
 
+#### Development Mode
+
 When developing, always have the `MODE` environment variable set to `development` to interact with the development mongodb instance instead of the production one. The easiest thing to do is change the value for `MODE` inside your `.env` file.
+
+#### Random Numbers
+
+For reproducibility, when using random numbers in the repo, use the `random_seed` variable importable from `experimenter.config` to seed your random number generator. If you are using the native `random` python package, you can import `random` from `experimenter.config`. It is a version of the `random` package that's already been seeded with the repo's shared seed. If you want the tests to run deterministically, supply an environment variable called `SEED` with the same value each time. The repo will then use that value as it's common random seed.

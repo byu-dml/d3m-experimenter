@@ -1,11 +1,12 @@
 import typing
 import unittest
 from experimenter.experimenter import *
-from experimenter.constants import models, preprocessors, TEST_DATASET_PATHS
+from experimenter.constants import models, preprocessors
 from d3m import runtime as runtime_module
 from d3m.metadata import pipeline as pipeline_module
 from experimenter.run_pipeline import RunPipeline
 from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
+from test.config import problem_path
 
 
 def get_pipeline(
@@ -57,7 +58,6 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification")
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = TEST_DATASET_PATHS['38_sick']
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_fixed(self):
@@ -70,7 +70,6 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    problem_type="classification",
                                                                    model=model)
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = TEST_DATASET_PATHS['38_sick']
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_LARGE(self):
@@ -81,7 +80,6 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
                                                                    same_preprocessor_order=False,
                                                                    problem_type="classification")
         pipeline_to_run = generated_pipelines["classification"][0]
-        problem_path = TEST_DATASET_PATHS['38_sick']
         self.run_experimenter_from_pipeline(problem_path, pipeline_to_run)
 
     def run_experimenter_from_pipeline(self, problem_path, pipeline_to_run=None):

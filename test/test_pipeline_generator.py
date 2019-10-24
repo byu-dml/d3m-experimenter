@@ -2,7 +2,7 @@ import sys
 import unittest
 
 from experimenter.experimenter import Experimenter
-from experimenter.constants import TEST_DATASET_PATHS
+from test.config import TEST_DATASET_PATHS
 
 
 class PipelineGenerationTestCase(unittest.TestCase):
@@ -28,10 +28,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     def test_get_classification_problems(self):
         # 196_auto_mpg is regression
-        known_seed_classification_problems_test = set({
-            TEST_DATASET_PATHS['38_sick'],
-            TEST_DATASET_PATHS['1491_one_hundred_plant_margins']
-        })
+        known_seed_classification_problems_test = set(TEST_DATASET_PATHS.values())
 
         found_problems = set(self.experimenter_driver.problems['classification'])
         for known_problem in known_seed_classification_problems_test:

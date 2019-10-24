@@ -10,6 +10,7 @@ from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import get_metrics_from_problem_description, evaluate, get_pipeline, get_dataset
+from experimenter.config import random_seed
 
 class RunPipeline:
 
@@ -44,14 +45,13 @@ class RunPipeline:
                          }
 
     
-    def run(self, pipeline: Pipeline, random_seed: int=0) -> list:
+    def run(self, pipeline: Pipeline) -> list:
         """
         This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
         Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
         function does not allow for returning the data, so it did not fit in the workflow.
         
         :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
-        :param random_seed: the random seed that the runtime will use to evalutate the pipeline
         :returns results_list: a list containing, in order, the scores from the pipeline predictions, the fit pipeline_run 
             and the produce pipeline_run.
         """

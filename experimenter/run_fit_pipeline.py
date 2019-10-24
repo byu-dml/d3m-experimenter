@@ -10,7 +10,7 @@ from d3m.metadata import (base as metadata_base, problem as base_problem, pipeli
 from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import fit, get_dataset, Runtime
-
+from experimenter.config import random_seed
 
 class RunFitPipeline:
     """
@@ -46,14 +46,13 @@ class RunFitPipeline:
                          }
 
 
-    def run(self, pipeline: pipeline_module.Pipeline, random_seed: int = 0) -> list:
+    def run(self, pipeline: pipeline_module.Pipeline) -> list:
         """
         This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
         Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
         function does not allow for returning the data, so it did not fit in the workflow.
 
         :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
-        :param random_seed: the random seed that the runtime will use to evalutate the pipeline
         :returns results_list: a list containing, in order, scores from the pipeline predictions, the fit pipeline_run 
             and the produce pipeline_run.
         """
@@ -93,7 +92,7 @@ class RunFitPipeline:
 
 
     def our_fit(self, pipeline: pipeline_module.Pipeline, problem_description: typing.Dict, inputs: typing.Sequence[container.Dataset], *,
-    context: metadata_base.Context, hyperparams: typing.Sequence = None, random_seed: int = 0, volumes_dir: str = None,
+    context: metadata_base.Context, hyperparams: typing.Sequence = None, volumes_dir: str = None,
     runtime_environment: pipeline_run_module.RuntimeEnvironment = None,
     ) -> typing.Tuple[Runtime, container.DataFrame, pipeline_run_module.PipelineRun]:
         """

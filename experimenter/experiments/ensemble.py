@@ -2,7 +2,6 @@ import logging
 logger = logging.getLogger(__name__)
 from typing import Dict, List
 from itertools import combinations
-from random import sample
 
 from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 from d3m.primitive_interfaces.base import PrimitiveBase
@@ -10,7 +9,7 @@ from d3m.metadata.base import Context, ArgumentType
 
 from experimenter.experiments.experiment import Experiment
 from experimenter.pipeline_builder import EZPipeline, PipelineArchDesc
-from experimenter.constants import d3m_index
+from experimenter.config import d3m_index, random
 
 
 class EnsembleArchitectureExperimenter(Experiment):
@@ -211,7 +210,7 @@ class EnsembleArchitectureExperimenter(Experiment):
                     logger.info("Randomly sampling models")
                     # Generate k pipelines with randomly sampled models
                     for index in range(len(models_to_use)):
-                        algorithm = sample(models_to_use, 1)[0]
+                        algorithm = random.sample(models_to_use, 1)[0]
                         if index == k_ensembles:
                             break
                         model_list.append(algorithm)
@@ -241,7 +240,7 @@ class EnsembleArchitectureExperimenter(Experiment):
                     # randomly sample preprocessors
                     for index in range(k_ensembles):
                         # get p preprocessor for each model
-                        pre = sample(preprocessors, n_preprocessors)
+                        pre = random.sample(preprocessors, n_preprocessors)
                         for p in pre:
                             preprocessor_list.append([p])
                 logger.info(model_list)
