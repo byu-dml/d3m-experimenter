@@ -10,7 +10,6 @@ from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import get_metrics_from_problem_description, evaluate, get_pipeline, get_dataset
-from experimenter.config import random_seed
 
 class RunPipeline:
 
@@ -119,9 +118,7 @@ class RunPipeline:
 
         all_scores, all_results = evaluate(
             pipeline, data_pipeline, scoring_pipeline, problem_description, inputs, data_params, metrics,
-            context=context, random_seed=random_seed,
-            data_random_seed=random_seed,
-            scoring_random_seed=random_seed,
+            context=context,
             volumes_dir=self.volumes_dir,
             runtime_environment=runtime_environment,
         )

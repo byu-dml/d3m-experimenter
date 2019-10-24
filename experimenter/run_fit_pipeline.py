@@ -10,7 +10,6 @@ from d3m.metadata import (base as metadata_base, problem as base_problem, pipeli
 from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import fit, get_dataset, Runtime
-from experimenter.config import random_seed
 
 class RunFitPipeline:
     """
@@ -80,7 +79,7 @@ class RunFitPipeline:
         try:
             runtime, outputs, results_list = self.our_fit(
                 pipeline, problem_description, inputs,
-                context=context, random_seed=random_seed,
+                context=context,
                 volumes_dir=self.volumes_dir,
                 runtime_environment=runtime_environment,
             )
@@ -113,7 +112,7 @@ class RunFitPipeline:
         runtime = Runtime(
             pipeline, hyperparams,
             problem_description=problem_description, context=context,
-            random_seed=random_seed, volumes_dir=volumes_dir,
+            volumes_dir=volumes_dir,
             is_standard_pipeline=False, environment=runtime_environment,
         )
 
