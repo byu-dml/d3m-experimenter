@@ -92,6 +92,7 @@ primitives_needing_gt_one_column = {
 problem_directories = [
     "seed_datasets_current/",
     "training_datasets/LL0/",
+    # Contains mostly non-tabular or huge tabular datasets
     # "training_datasets/LL1/",
 ]
 
@@ -129,12 +130,28 @@ EXTRA_HYPEREPARAMETERS = {
 }
 
 blacklist_non_tabular_data = [
-    "57_hypothyroid"
+    "LL1_ArrowHead", # time series data
+    "LL1_TXT_CLS_3746_newsgroup", # requires reading a text file from csv
+    "uu_101_object_categories", # requires reading an image file from csv
+    "57_hypothyroid",
+    "uu10_posts_3", # missing DataSplits file
+    "LL1_OSULeaf", # requires reading a text file from csv
+    "LL1_FaceFour", # requires reading a text file from csv
     "31_urbansound",
+    "LL1_multilearn_emotions" # weird indexes
+    "124_174_cifar10", # images
+    "124_214_coil20", # images
+    "LL1_Haptics", # multiple files
+    "LL1_VID_UCF11", # music files
+    "LL1_Cricket_Y", # multi file 
+    "LL1_ElectricDevices",  # multi file
     "LL1_3476_HMDB_actio_recognition",
+    "124_188_usps", # image data
     "uu1_datasmash",
+    "LL1_50words", # multi-file
     "30_personae",
     "LL1_crime_chicago",
+    "LL1_HandOutlines", # multi file
     "LL0_186_braziltourism",
     "22_handgeometry",
     "uu2_gp_hyperparameter_estimation"
