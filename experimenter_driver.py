@@ -35,14 +35,12 @@ class ExperimenterDriver:
         *,
         run_type: str ="all",
         pipeline_folder=None,
-        distribute=False,
         run_custom_fit=False,
         **unused_args
     ):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.run_type = run_type
-        self.distribute = distribute
         self.fit_only = run_custom_fit
 
         if run_type == "pipeline_path":
@@ -56,7 +54,7 @@ class ExperimenterDriver:
         # connect to database
         self.mongo_db = PipelineDB()
 
-        if distribute:
+        if run_type == "distribute":
             logger.info("Connecting to Redis")
             try:
                 conn = redis.StrictRedis(
@@ -167,7 +165,7 @@ class ExperimenterDriver:
 
                         try:
                             # if we are trying to distribute, add to the RQ
-                            if self.distribute:
+                            if self.run_type == "distribute":
                                 if not self.fit_only:
                                     async_results = self.queue.enqueue(execute_pipeline_on_problem, pipe, problem,
                                                                        self.datasets_dir, self.volumes_dir, timeout=60*12)
@@ -243,7 +241,7 @@ def get_cli_args(raw_args: List[str] = None):
     If `raw_args` is `None`, `sys.argv` will be used. `raw_args`
     can be supplied when testing.
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--run-type",
         '-r',
