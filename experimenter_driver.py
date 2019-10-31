@@ -243,7 +243,7 @@ def get_cli_args(raw_args: List[str] = None):
     If `raw_args` is `None`, `sys.argv` will be used. `raw_args`
     can be supplied when testing.
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--run-type",
         '-r',
