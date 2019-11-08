@@ -210,7 +210,9 @@ class EnsembleArchitectureExperimenter(Experiment):
                     logger.info("Randomly sampling models")
                     # Generate k pipelines with randomly sampled models
                     for index in range(len(models_to_use)):
-                        algorithm = random.sample(models_to_use, 1)[0]
+                        # We consider the do_nothing primitive because we want to be able to analyze how a primitive's
+                        # performance compares with doing nothing (i.e. does the primitive add any value?)
+                        algorithm, = random.sample(models_to_use + ["d3m.primitives.data_preprocessing.do_nothing.DSBOX"], 1)
                         if index == k_ensembles:
                             break
                         model_list.append(algorithm)
@@ -240,7 +242,12 @@ class EnsembleArchitectureExperimenter(Experiment):
                     # randomly sample preprocessors
                     for index in range(k_ensembles):
                         # get p preprocessor for each model
-                        pre = random.sample(preprocessors, n_preprocessors)
+                        # We consider the do_nothing primitive because we want to be able to analyze how a primitive's
+                        # performance compares with doing nothing (i.e. does the primitive add any value?)
+                        pre = random.sample(
+                            preprocessors + ["d3m.primitives.data_preprocessing.do_nothing.DSBOX"],
+                            n_preprocessors
+                        )
                         for p in pre:
                             preprocessor_list.append([p])
                 logger.info(model_list)

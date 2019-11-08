@@ -82,7 +82,9 @@ class RandomArchitectureExperimenter(Experiment):
         :param max_num_inputs: The maximum number of inputs each primitive in the
             structure will have.
         """
-        all_primitives = set(preprocessors + model_list)
+        # We consider the do_nothing primitive because we want to be able to analyze how a primitive's
+        # performance compares with doing nothing (i.e. does the primitive add any value?)
+        all_primitives = set(preprocessors + model_list + ["d3m.primitives.data_preprocessing.do_nothing.DSBOX"])
         primitives_that_can_handle_one_input_column = all_primitives - primitives_needing_gt_one_column
 
         architecture = PipelineArchDesc(
