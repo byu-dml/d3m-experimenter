@@ -107,7 +107,7 @@ class PipelineDB:
                     # give permission to open the files
                     subprocess.call(['chmod', '0777', file_path])
 
-            logger.info("There were {} files were exported from {}.".format(pipeline_runs_cursor.count(), collection_name))
+            logger.info("There were {} files were exported from {}.".format(collection.count_documents({}), collection_name))
 
     def get_database_stats(self):
         """
@@ -120,7 +120,7 @@ class PipelineDB:
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
             collection = db[collection_name]
-            sum_docs = collection.count()
+            sum_docs = collection.count_documents({})
             logger.info("There are {} in {}".format(sum_docs, collection_name))
 
 
@@ -162,9 +162,9 @@ class PipelineDB:
         pipeline_collection = db.pipelines
         dataset_collection = db.datasets
         problem_collection = db.problems
-        dataset_exists = dataset_collection.find({"about.datasetID": dataset_id}).count()
-        pipeline_exists = True if skip_pipeline else pipeline_collection.find({'id': pipeline_id}).count()
-        problem_exists = problem_collection.find({"about.problemID": problem_id}).count()
+        dataset_exists = dataset_collection.count_documents({"about.datasetID": dataset_id})
+        pipeline_exists = True if skip_pipeline else pipeline_collection.count_documents({'id': pipeline_id})
+        problem_exists = problem_collection.count_documents({"about.problemID": problem_id})
 
         # check for existence
         if not dataset_exists or not problem_exists or not pipeline_exists:
@@ -174,7 +174,7 @@ class PipelineDB:
                                                                                                  not dataset_exists))
             return True
         # check for duplicates
-        if collection.find({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}).count():
+        if collection.count_documents({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}):
             return True
         else:
             return False
@@ -191,7 +191,7 @@ class PipelineDB:
 
         db = self.mongo_client.metalearning
         collection = db[collection_name]
-        if not collection.find({"id": pipeline_run['id']}).count():
+        if not collection.count_documents({"id": pipeline_run['id']}):
             pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
             logger.info("Wrote pipeline run to the database with inserted_id: {}".format(pipeline_run_id))
         else:
@@ -213,10 +213,10 @@ class PipelineDB:
         new_pipeline.check()
 
         # simple checks to validate pipelines and potentially save time
-        if collection.find({"digest": digest}).count():
+        if collection.count_documents({"digest": digest}):
             return False
 
-        if collection.find({"id": id}).count():
+        if collection.count_documents({"id": id}):
             return False
         #
         # # deep comparison of equality
@@ -249,7 +249,7 @@ class PipelineDB:
         """
         db = self.mongo_client.metalearning
         collection = db.pipeline_runs
-        return collection.find({"id": pipeline_run_id}).count()
+        return collection.count_documents({"id": pipeline_run_id})
 
     def find_mongo_pipeline_by_primitive_ids(self, problem: str, primitives_string: str) -> int:
         """
@@ -265,7 +265,7 @@ class PipelineDB:
 
         db = self.mongo_client.metalearning
         collection = db.pipeline_runs
-        return collection.find({"primitives_used": primitives_id_string}).count()
+        return collection.count_documents({"primitives_used": primitives_id_string})
 
     def _get_location_of_dataset(self, doc: dict) -> tuple((str, str)):
         """
@@ -348,7 +348,7 @@ class PipelineDB:
         collection = db.problems
         id = problem_doc["about"]["problemID"]
 
-        if collection.find({"about.problemID": id}).count():
+        if collection.count_documents({"about.problemID": id}):
             return False
 
         pipeline_id = collection.insert_one(problem_doc).inserted_id
@@ -366,10 +366,10 @@ class PipelineDB:
         id = dataset_doc["about"]["datasetID"]
         digest = dataset_doc["about"]["digest"]
 
-        if collection.find({"about.digest": digest}).count():
+        if collection.count_documents({"about.digest": digest}):
             return False
 
-        if collection.find({"about.datasetID": id}).count():
+        if collection.count_documents({"about.datasetID": id}):
             return False
 
         pipeline_id = collection.insert_one(dataset_doc).inserted_id
@@ -415,8 +415,8 @@ class PipelineDB:
             pipeline_id = pipeline_run["pipeline"]["id"]
             dataset_digest = pipeline_run["datasets"][0]["digest"]
             # There is no pipeline matching that info or no dataset matching that info == bad data!
-            no_dataset = not db.datasets.find({"about.digest": dataset_digest}).count()
-            no_pipeline = not db.pipelines.find({"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]}).count()
+            no_dataset = not db.datasets.count_documents({"about.digest": dataset_digest})
+            no_pipeline = not db.pipelines.count_documents({"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]})
             if no_dataset and no_pipeline:
                 logger.info("The pipeline run did not have a referenced pipeline or dataset")
                 delete_these_documents.append(pipeline_run["_id"])
@@ -471,7 +471,7 @@ class PipelineDB:
         pipeline_id = pipeline_run["pipeline"]["id"]
         dataset_id = pipeline_run["datasets"][0]["id"]
 
-        if not collection.find({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}).count():
+        if not collection.count_documents({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}):
             pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
             logger.info("Wrote metafeature pipeline run to the database with inserted_id: {}".format(pipeline_run_id))
         else:
@@ -514,7 +514,7 @@ class PipelineDB:
         dataset_id = problem
         logger.info(problem)
         exit(0)
-        check = collection.find({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}).count()
+        check = collection.count_documents({"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]})
         return check
 
 

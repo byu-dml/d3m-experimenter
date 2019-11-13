@@ -3,8 +3,7 @@ import os
 
 from d3m import index as d3m_index
 from byudml.imputer.random_sampling_imputer import RandomSamplingImputer
-
-from experimenter.primitives.dsbox_encoder import Encoder
+from dsbox.datapreprocessing.cleaner.encoder import Encoder
 
 # If SEED is provided as an environment variable, use that as
 # the random seed. Otherwise, use a random one.
@@ -22,6 +21,8 @@ d3m_index.register_primitive(
     RandomSamplingImputer.metadata.query()['python_path'],
     RandomSamplingImputer
 )
+# TODO: Once the newest dsbox gets added to the new docker container and we
+# update docker containers, we can remove this install.
 d3m_index.register_primitive(
     Encoder.metadata.query()['python_path'],
     Encoder
