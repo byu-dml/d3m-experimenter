@@ -1,11 +1,22 @@
+from typing import NamedTuple
+
 from experimenter.config import random
 
-TEST_DATASET_PATHS = {
-    'sick': '/datasets/seed_datasets_current/38_sick',
-    'one_hundred_plants_margin': '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
-    'baseball': '/datasets/seed_datasets_current/185_baseball'
-}
+class ProblemReference(NamedTuple):
+    name: str
+    path: str
+    problem_type: str
 
-problem_name, = random.sample(TEST_DATASET_PATHS.keys(), 1)
-print(f'Using "{problem_name}" problem for tests')
-problem_path: str = TEST_DATASET_PATHS[problem_name]
+TEST_PROBLEM_REFERENCES = [
+    ProblemReference('sick', '/datasets/seed_datasets_current/38_sick', 'classification'),
+    ProblemReference(
+        'one_hundred_plants_margin',
+        '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
+        'classification'
+    ),
+    ProblemReference('baseball', '/datasets/seed_datasets_current/185_baseball', 'classification'),
+    ProblemReference('autoMpg', '/datasets/seed_datasets_current/196_autoMpg', 'regression')
+]
+
+test_problem_reference = random.choice(TEST_PROBLEM_REFERENCES)
+print(f'Using "{test_problem_reference.name}" problem for tests')

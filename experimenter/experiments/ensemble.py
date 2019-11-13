@@ -68,7 +68,7 @@ class EnsembleArchitectureExperimenter(Experiment):
         return all_ensembles
 
     def generate_pipeline(self, k: int, p: int, preprocessor_list: List[str], model_list: List[str], concatenator: str, 
-                                 ensembler: str) -> Pipeline:
+                                 problem_type: str) -> Pipeline:
         """
         This function does the nitty gritty work of preparing the pipeline and returning it
         :param k: the number of pipelines that will be ensembled
@@ -76,7 +76,7 @@ class EnsembleArchitectureExperimenter(Experiment):
         :param preprocessor_list: a list of preprocessors to use
         :param model_list:  the list of models to use
         :param concatenator: the primitive that will concantentate the pipelines
-        :param ensembler: the ensembler that will ensemble all those pipelines together
+        :param problem_type: the problem type to generate a pipeline for e.e. 'classification'.
         :return: the ensembled pipeline
         """
 
@@ -124,12 +124,8 @@ class EnsembleArchitectureExperimenter(Experiment):
         # concatenate the outputs of the k pipelines together
         concat_result_ref = pipeline_description.concatenate_inputs(*list_of_outputs)
 
-        # finally ensemble them all together TODO: change the RF to be dynamic, use the `ensembler`
-        # argument to this function.
-        pipeline_description.add_primitive_step(
-            'd3m.primitives.classification.random_forest.SKlearn',
-            concat_result_ref
-        )
+        ensembler = self._get_ensembler(problem_type)
+        pipeline_description.add_primitive_step(ensembler, concat_result_ref)
 
         # output them as predictions
         pipeline_description.add_predictions_constructor()
@@ -180,7 +176,6 @@ class EnsembleArchitectureExperimenter(Experiment):
         model_list = []
         preprocessor_list = []
         horizontal_concat = "d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat"
-        ensembler = "d3m.primitives.classification.ensemble_voting.DSBOX"
 
         for algorithm_type in problem_types:
             # use the model given, or use random ones from all options
@@ -245,8 +240,18 @@ class EnsembleArchitectureExperimenter(Experiment):
                             preprocessor_list.append([p])
                 logger.info(model_list)
                 logger.info(preprocessor_list)
-                final_pipeline = self.generate_pipeline(k_ensembles, n_preprocessors, preprocessor_list,
-                                                               model_list, horizontal_concat, ensembler)
+                final_pipeline = self.generate_pipeline(
+                    k_ensembles, n_preprocessors, preprocessor_list,
+                    model_list, horizontal_concat, algorithm_type
+                )
                 generated_pipes[algorithm_type].append(final_pipeline)
 
         return generated_pipes
+    
+    def _get_ensembler(self, problem_type: str) -> str:
+        problem_model_map = {
+            "classification": 'd3m.primitives.classification.random_forest.SKlearn',
+            "regression": "d3m.primitives.regression.random_forest.SKlearn"
+        }
+        return problem_model_map[problem_type]
+

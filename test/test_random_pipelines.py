@@ -4,7 +4,7 @@ from experimenter.experiments.random import RandomArchitectureExperimenter
 from experimenter.constants import models, bulletproof_preprocessors
 from experimenter.pipeline_builder import EZPipeline
 from experimenter.run_pipeline import RunPipeline
-from test.config import problem_path
+from test.config import test_problem_reference
 
 
 class TestRandomPipelines(unittest.TestCase):
@@ -82,7 +82,7 @@ class TestRandomPipelines(unittest.TestCase):
         run_pipeline = RunPipeline(
             datasets_dir=self.datasets_dir,
             volumes_dir=self.volumes_dir,
-            problem_path=problem_path
+            problem_path=test_problem_reference.path
         )
         scores_test, _ = run_pipeline.run(pipeline=pipeline_to_run)
         # the value of score is in the first document in the first index
