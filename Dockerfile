@@ -5,6 +5,9 @@ FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-pyt
 # version is on the d3m docker image, we can remove this line
 # completely.
 RUN pip3 install -e git+https://github.com/byu-dml/d3m-primitives.git@fix-imputer#egg=byudml
+# TODO: Once the newest dsbox gets added to the new docker container and we
+# update docker containers, we can remove this install.
+RUN pip3 install -e git+https://github.com/usc-isi-i2/dsbox-primitives.git@master#egg=dsbox
 ADD . /d3m-experimenter
 WORKDIR /d3m-experimenter
 RUN pip3 install -r requirements.txt

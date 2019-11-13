@@ -368,7 +368,7 @@ class EZPipeline(Pipeline):
 
         # encoder step
         self.add_primitive_step(
-            'd3m.primitives.data_preprocessing.dsbox_encoder.BYU'
+            'd3m.primitives.data_preprocessing.encoder.DSBOX'
         )
         self.set_step_i_of('attrs')
     
