@@ -352,7 +352,16 @@ class EZPipeline(Pipeline):
         # column_parser step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.column_parser.DataFrameCommon',
-            self.data_ref_of('raw_df')
+            self.data_ref_of('raw_df'),
+            value_hyperparams={
+                # We don't parse categorical data, since we want it to stay as a string
+                # and not be hashed as a long integer. That makes the one hot encoded
+                # names more interpretable.
+                "parse_semantic_types": (
+                    'http://schema.org/Boolean', 'http://schema.org/Integer', 'http://schema.org/Float',
+                    'https://metadata.datadrivendiscovery.org/types/FloatVector', 'http://schema.org/DateTime',
+                )
+            }
         )
 
         # extract_columns_by_semantic_types(attributes) step
