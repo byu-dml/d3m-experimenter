@@ -154,3 +154,22 @@ When developing, always have the `MODE` environment variable set to `development
 ## Random Numbers
 
 For reproducibility, when using random numbers in the repo, use the `random_seed` variable importable from `experimenter.config` to seed your random number generator. If you are using the native `random` python package, you can import `random` from `experimenter.config`. It is a version of the `random` package that's already been seeded with the repo's shared seed. If you want the tests to run deterministically, supply an environment variable called `SEED` with the same value each time. The repo will then use that value as it's common random seed.
+
+## Managing The Database & Redis Queue
+
+To start the database (only applies to the BYU DML lab):
+
+```shell
+ssh 2potato
+cd /path/to/database_docker_compose_file/
+sudo docker-compose up -d
+```
+
+To start up the Redis queue (also only applies to the BYU DML lab):
+
+```shell
+ssh 1potato
+bash environment_scripts/redis_rq/start_redis_rq.sh
+```
+
+Note: you may need to source the `REDIS_PORT`, `REDIS_DATA`, and `REDIS_HOST` environment variables from your `.env` file to get the `start_redis_rq.sh` script to run.
