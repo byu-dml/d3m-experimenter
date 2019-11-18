@@ -63,14 +63,17 @@ class TestEnsemblingPipelineRuns(unittest.TestCase):
         self.run_experimenter_from_pipeline(self.problem_path, pipeline_to_run)
 
     def test_experimenter_run_works_and_generates_fixed(self):
-        model = "d3m.primitives.classification.random_forest.SKlearn"
+        model_map = {
+            "classification": "d3m.primitives.classification.random_forest.SKlearn",
+            "regression": "d3m.primitives.regression.random_forest.SKlearn"
+        }
         generated_pipelines = self.experiment._generate_k_ensembles(k_ensembles=3, n_preprocessors=2,
                                                                    preprocessors=preprocessors,
                                                                    models=models,
                                                                    n_generated_pipelines=1, same_model=True,
                                                                    same_preprocessor_order=False,
                                                                    problem_type=self.problem_type,
-                                                                   model=model)
+                                                                   model=model_map[self.problem_type])
         pipeline_to_run = generated_pipelines[self.problem_type][0]
         self.run_experimenter_from_pipeline(self.problem_path, pipeline_to_run)
 

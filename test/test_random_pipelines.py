@@ -17,6 +17,7 @@ class TestRandomPipelines(unittest.TestCase):
         self.experiment = RandomArchitectureExperimenter()
         self.preprocessors = bulletproof_preprocessors
         self.models = models
+        self.problem_type = test_problem_reference.problem_type
     
     def test_can_generate_pipeline(self) -> None:
         pipeline = self._generate_random_pipeline()
@@ -50,7 +51,7 @@ class TestRandomPipelines(unittest.TestCase):
     def _generate_random_pipeline(self) -> EZPipeline:
         pipeline = self.experiment.generate_pipeline(
             self.preprocessors,
-            self.models['classification'],
+            self.models[self.problem_type],
             depth=4,
             max_width=3,
             max_num_inputs=2
@@ -60,7 +61,7 @@ class TestRandomPipelines(unittest.TestCase):
     def _generate_straight_pipeline(self) -> EZPipeline:
         pipeline = self.experiment.generate_pipeline(
             self.preprocessors,
-            self.models['classification'],
+            self.models[self.problem_type],
             depth=6,
             max_width=1,
             max_num_inputs=2
@@ -70,7 +71,7 @@ class TestRandomPipelines(unittest.TestCase):
     def _generate_wide_pipeline(self) -> EZPipeline:
         pipeline = self.experiment.generate_pipeline(
             self.preprocessors,
-            self.models['classification'],
+            self.models[self.problem_type],
             depth=1,
             max_width=12,
             max_num_inputs=3
