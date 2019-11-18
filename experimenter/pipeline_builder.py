@@ -342,13 +342,6 @@ class EZPipeline(Pipeline):
         )
         self.set_step_i_of('raw_df')
 
-        # extract_columns_by_semantic_types(targets) step
-        self.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
-            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
-        )
-        self.set_step_i_of('target')
-
         # column_parser step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.column_parser.DataFrameCommon',
@@ -363,22 +356,27 @@ class EZPipeline(Pipeline):
                 )
             }
         )
+        self.set_step_i_of('parsed')
+
+        # extract_columns_by_semantic_types(targets) step
+        self.add_primitive_step(
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
+        )
+        self.set_step_i_of('target')
 
         # extract_columns_by_semantic_types(attributes) step
         self.add_primitive_step(
             'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            self.data_ref_of('parsed'),
             value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute'] }
         )
 
         # imputer step
-        self.add_primitive_step(
-            'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU'
-        )
+        self.add_primitive_step('d3m.primitives.data_preprocessing.random_sampling_imputer.BYU')
 
         # encoder step
-        self.add_primitive_step(
-            'd3m.primitives.data_preprocessing.encoder.DSBOX'
-        )
+        self.add_primitive_step('d3m.primitives.data_preprocessing.encoder.DSBOX')
         self.set_step_i_of('attrs')
     
     def add_predictions_constructor(self, input_data_ref: str = None) -> None:
