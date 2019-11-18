@@ -2,7 +2,7 @@ import sys
 import unittest
 
 from experimenter.experimenter import Experimenter
-from test.config import TEST_DATASET_PATHS
+from test.config import TEST_PROBLEM_REFERENCES
 
 
 class PipelineGenerationTestCase(unittest.TestCase):
@@ -15,7 +15,6 @@ class PipelineGenerationTestCase(unittest.TestCase):
     # @classmethod
     def setUp(self):
         volumes_dir = '/volumes'
-        meta_file_path = './.meta'
         models = {'classification': ['d3m.primitives.classification.gaussian_naive_bayes.SKlearn']}
         preprocessors = []  # give no preprocessors
         self.experimenter_driver = Experimenter(
@@ -27,14 +26,27 @@ class PipelineGenerationTestCase(unittest.TestCase):
         )
 
     def test_get_classification_problems(self):
-        # 196_auto_mpg is regression
-        known_seed_classification_problems_test = set(TEST_DATASET_PATHS.values())
+        known_seed_classification_problems_test = set(
+            [ref for ref in TEST_PROBLEM_REFERENCES if ref.problem_type == "classification"
+        ])
 
-        found_problems = set(self.experimenter_driver.problems['classification'])
+        found_problem_paths = set(self.experimenter_driver.problems['classification'])
         for known_problem in known_seed_classification_problems_test:
             self.assertTrue(
-                known_problem in found_problems,
-                'known problem {} not found'.format(known_problem)
+                known_problem.path in found_problem_paths,
+                'known problem {} not found'.format(known_problem.name)
+            )
+    
+    def test_get_regression_problems(self):
+        known_seed_regression_problems_test = set(
+            [ref for ref in TEST_PROBLEM_REFERENCES if ref.problem_type == "regression"
+        ])
+
+        found_problem_paths = set(self.experimenter_driver.problems['regression'])
+        for known_problem in known_seed_regression_problems_test:
+            self.assertTrue(
+                known_problem.path in found_problem_paths,
+                'known problem {} not found'.format(known_problem.name)
             )
     
     def test_basic_pipeline_structure(self):
