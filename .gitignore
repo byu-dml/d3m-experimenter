@@ -6,4 +6,4 @@ env/*
 .idea/*
 tests/.cache/
 .vscode/*
-
+*.egg-info
