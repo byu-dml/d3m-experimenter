@@ -175,7 +175,7 @@ class EnsembleArchitectureExperimenter(Experiment):
         generated_pipes = {'classification': [], 'regression': []}
         model_list = []
         preprocessor_list = []
-        horizontal_concat = "d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat"
+        horizontal_concat = "d3m.primitives.data_transformation.horizontal_concat.DataFrameCommon"
 
         for algorithm_type in problem_types:
             # use the model given, or use random ones from all options

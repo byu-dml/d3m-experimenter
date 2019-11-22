@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2019.6.7
+FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2019.11.10
 # TODO: Once the `fix-imputer` branch of our d3m-primitives repo
 # has been merged and the package re-released to pypi, we can
 # change this to reflect the pypi version. Once the new pypi

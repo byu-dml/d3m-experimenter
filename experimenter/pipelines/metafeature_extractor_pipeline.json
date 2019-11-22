@@ -41,7 +41,7 @@
       "primitive": {
         "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
         "version": "0.5.0",
-        "python_path": "d3m.primitives.data_transformation.column_parser.DataFrameCommon",
+        "python_path": "d3m.primitives.data_transformation.column_parser.Common",
         "name": "Parses strings into their types",
         "digest": "44390ad614ffd62169cdf7958ddaf291e49c92cc7a967ae965f1c1b628063784"
       },

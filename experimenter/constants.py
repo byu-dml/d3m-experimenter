@@ -58,7 +58,6 @@ models = {
         "d3m.primitives.classification.decision_tree.SKlearn",
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn",
         "d3m.primitives.classification.k_neighbors.SKlearn",
-        "d3m.primitives.classification.logistic_regression.SKlearn",
         "d3m.primitives.classification.linear_svc.SKlearn",
         "d3m.primitives.classification.sgd.SKlearn",
         "d3m.primitives.classification.svc.SKlearn",
@@ -70,6 +69,9 @@ models = {
         # "d3m.primitives.classification.multinomial_naive_bayes.SKlearn", # Can't handle negative data
         # "d3m.primitives.classification.linear_discriminant_analysis.SKlearn", # Fails when the values of X are all the same.
         # "d3m.primitives.classification.bagging.SKlearn", # only uses decision trees, which is redudant
+        # The version of this primitive corresponding to d3m v2019.11.10 has a bug:
+        # https://gitlab.com/datadrivendiscovery/sklearn-wrap/issues/230 
+        # "d3m.primitives.classification.logistic_regression.SKlearn",
     ],
     'regression': [
         "d3m.primitives.regression.random_forest.SKlearn",
@@ -116,13 +118,6 @@ PRIMITIVE_FAMILIES = {
 }
 
 EXTRA_HYPEREPARAMETERS = {
-    "d3m.primitives.feature_extraction.kernel_pca.SKlearn": [
-        {
-            "name": "kernel",
-            "argument_type": ArgumentType.VALUE,
-            "data": "rbf"
-        }
-    ],
     "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": [
         {
             "name": "mode",

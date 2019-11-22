@@ -196,7 +196,7 @@ class EZPipeline(Pipeline):
             # feature for some future primitive, so we need to change the
             # output's semantic type to attribute and encode it.
             self.add_primitive_step(
-                'd3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon',
+                'd3m.primitives.data_transformation.replace_semantic_types.Common',
                 value_hyperparams={
                     'from_semantic_types': ['https://metadata.datadrivendiscovery.org/types/PredictedTarget'],
                     'to_semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute']
@@ -344,7 +344,7 @@ class EZPipeline(Pipeline):
 
         # column_parser step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.column_parser.DataFrameCommon',
+            'd3m.primitives.data_transformation.column_parser.Common',
             self.data_ref_of('raw_df'),
             value_hyperparams={
                 # We don't parse categorical data, since we want it to stay as a string
@@ -360,14 +360,14 @@ class EZPipeline(Pipeline):
 
         # extract_columns_by_semantic_types(targets) step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
             value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
         )
         self.set_step_i_of('target')
 
         # extract_columns_by_semantic_types(attributes) step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
             self.data_ref_of('parsed'),
             value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute'] }
         )
@@ -387,7 +387,7 @@ class EZPipeline(Pipeline):
         """
 
         self.add_primitive_step(
-            "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
+            "d3m.primitives.data_transformation.construct_predictions.Common",
             input_data_ref,
             container_args={ "reference": self.data_ref_of('raw_df') }
         )
@@ -420,7 +420,7 @@ class EZPipeline(Pipeline):
                 # Manually concatenate a pair of data refs, then add them to the cache.
                 data_ref_pair = sorted(data_refs)[:2]
                 self.add_primitive_step(
-                    'd3m.primitives.data_transformation.horizontal_concat.DataFrameConcat',
+                    'd3m.primitives.data_transformation.horizontal_concat.DataFrameCommon',
                     container_args={ "left": data_ref_pair[0], "right": data_ref_pair[1] }
                 )
                 concat_data_ref = self.curr_step_data_ref

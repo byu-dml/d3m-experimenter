@@ -117,7 +117,13 @@ class RunPipeline:
         metrics = get_metrics_from_problem_description(problem_description)
 
         all_scores, all_results = evaluate(
-            pipeline, data_pipeline, scoring_pipeline, problem_description, inputs, data_params, metrics,
+            pipeline,
+            inputs,
+            data_pipeline=data_pipeline,
+            scoring_pipeline=scoring_pipeline,
+            problem_description=problem_description,
+            data_params=data_params,
+            metrics=metrics,
             context=context,
             volumes_dir=self.volumes_dir,
             runtime_environment=runtime_environment,
