@@ -120,7 +120,7 @@ class PipelineDB:
         for collection_name in collection_names:
             db = self.mongo_client.metalearning
             collection = db[collection_name]
-            sum_docs = collection.count_documents({})
+            sum_docs = collection.estimated_document_count()
             logger.info("There are {} in {}".format(sum_docs, collection_name))
 
 
