@@ -169,7 +169,9 @@ To start up the Redis queue (also only applies to the BYU DML lab):
 
 ```shell
 ssh 1potato
-bash environment_scripts/redis_rq/start_redis_rq.sh
+bash start_redis_rq.sh
 ```
+
+To view the Redis queue dashboard, navigate your browser to `localhost:9181`.
 
 Note: you may need to source the `REDIS_PORT`, `REDIS_DATA`, and `REDIS_HOST` environment variables from your `.env` file to get the `start_redis_rq.sh` script to run.
