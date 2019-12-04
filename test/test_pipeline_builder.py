@@ -162,7 +162,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
         # When not the final model, a classifier's output should have its
         # semantic type changed and its output encoded.
         self.assertIn(
-            'd3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon',
+            'd3m.primitives.data_transformation.replace_semantic_types.Common',
             step_paths
         )
         self.assertIn(
@@ -185,17 +185,17 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     def _add_column_parser_step(self, pipeline: EZPipeline) -> None:
         pipeline.add_primitive_step(
-            'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
+            'd3m.primitives.data_transformation.column_parser.Common'
         )
     
     def _add_extract_attrs_step(self, pipeline: EZPipeline) -> None:
         pipeline.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
             value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute'] }
         )
     
     def _add_extract_target_step(self, pipeline: EZPipeline) -> None:
         pipeline.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
             value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
         )

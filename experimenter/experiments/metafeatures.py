@@ -35,7 +35,7 @@ class MetafeatureExperimenter(Experiment):
 
         # column_parser step
         pipeline_description.add_primitive_step(
-            'd3m.primitives.data_transformation.column_parser.DataFrameCommon'
+            'd3m.primitives.data_transformation.column_parser.Common'
         )
 
         # metafeature_extractor step

@@ -202,19 +202,19 @@ class Experimenter:
 
         # column_parser step
         pipeline_description.add_primitive_step(
-            'd3m.primitives.data_transformation.column_parser.DataFrameCommon',
+            'd3m.primitives.data_transformation.column_parser.Common',
         )
 
         # extract_columns_by_semantic_types(attributes) step
         pipeline_description.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
             value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute'] }
         )
         pipeline_description.set_step_i_of('attrs')
 
         # extract_columns_by_semantic_types(targets) step
         pipeline_description.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon',
+            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
             pipeline_description.data_ref_of('raw_df'),
             value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
         )

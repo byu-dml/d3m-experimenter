@@ -60,7 +60,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
         # ConstructPredictions
         num_pipeline_steps = 8
         dataset_to_dataframe = 'd3m.primitives.data_transformation.dataset_to_dataframe.Common'
-        construct_predictions = 'd3m.primitives.data_transformation.construct_predictions.DataFrameCommon'
+        construct_predictions = 'd3m.primitives.data_transformation.construct_predictions.Common'
 
         print("Testing that the pipelines are what they should be...")
         # should only make one pipeline with no preprocessor
