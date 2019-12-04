@@ -1,13 +1,7 @@
 import os
 
 from d3m.metadata.base import ArgumentType, PrimitiveFamily
-from d3m import utils as d3m_utils
 
-
-PACKAGE_NAME = "d3m-experimenter"
-REPOSITORY = "https://github.com/byu-dml/d3m-experimenter"
-TAG_NAME = d3m_utils.current_git_commit(os.path.dirname(__file__))
-D3M_PERFORMER_TEAM = "byu-dml"
 
 # It is ok to use these temperamental preprocessors in production because
 # we're ok with some pipelines degenerating on some datasets.
@@ -116,13 +110,6 @@ PRIMITIVE_FAMILIES = {
 }
 
 EXTRA_HYPEREPARAMETERS = {
-    "d3m.primitives.feature_extraction.kernel_pca.SKlearn": [
-        {
-            "name": "kernel",
-            "argument_type": ArgumentType.VALUE,
-            "data": "rbf"
-        }
-    ],
     "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": [
         {
             "name": "mode",

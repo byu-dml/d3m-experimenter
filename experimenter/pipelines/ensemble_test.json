@@ -55,7 +55,7 @@
 			"id": "produce"
 		}],
 		"primitive": {
-			"python_path": "d3m.primitives.data_transformation.column_parser.DataFrameCommon",
+			"python_path": "d3m.primitives.data_transformation.column_parser.Common",
 			"name": "Parses strings into their types",
 			"digest": "312cacc014497dd674e34765f6eb54430e594c591e760da0383c87844753d2ce",
 			"id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
@@ -79,11 +79,11 @@
 			"id": "produce"
 		}],
 		"primitive": {
-			"python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon",
+			"python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
 			"name": "Extracts columns by semantic type",
 			"digest": "297a4943484bcd532650d5727e23b3d11ca702688d7b64dfb5df8bf1282eaa47",
 			"id": "4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
-			"version": "0.2.0"
+			"version": "0.3.0"
 		},
 		"hyperparams": {
 			"semantic_types": {
@@ -103,7 +103,7 @@
 			"id": "produce"
 		}],
 		"primitive": {
-			"python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon",
+			"python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
 			"name": "Extracts columns by semantic type",
 			"digest": "297a4943484bcd532650d5727e23b3d11ca702688d7b64dfb5df8bf1282eaa47",
 			"id": "4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
@@ -300,7 +300,7 @@
 			"id": "produce"
 		}],
 		"primitive": {
-			"python_path": "d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat",
+			"python_path": "d3m.primitives.data_transformation.horizontal_concat.DataFrameCommon",
 			"name": "Concatenate two dataframes",
 			"digest": "f14eb9c3a06ae28b52692161da83c055d97fa9ced1367f2639a045b22fa0f528",
 			"id": "aff6a77a-faa0-41c5-9595-de2e7f7c4760",
@@ -323,7 +323,7 @@
 			"id": "produce"
 		}],
 		"primitive": {
-			"python_path": "d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat",
+			"python_path": "d3m.primitives.data_transformation.horizontal_concat.DataFrameCommon",
 			"name": "Concatenate two dataframes",
 			"digest": "f14eb9c3a06ae28b52692161da83c055d97fa9ced1367f2639a045b22fa0f528",
 			"id": "aff6a77a-faa0-41c5-9595-de2e7f7c4760",
@@ -373,7 +373,7 @@
 			"id": "produce"
 		}],
 		"primitive": {
-			"python_path": "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
+			"python_path": "d3m.primitives.data_transformation.construct_predictions.Common",
 			"name": "Construct pipeline predictions output",
 			"digest": "cfb2d595652c4ae0d24e67d4cb8e4916c9f3c2753eaccc2935263d054b3682fa",
 			"id": "8d38b340-f83f-4877-baaa-162f8e551736",
