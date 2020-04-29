@@ -1,6 +1,7 @@
 
 import logging
 logger = logging.getLogger(__name__)
+from collections import defaultdict
 from .constants import models, preprocessors, problem_directories, blacklist_non_tabular_data
 from d3m import utils as d3m_utils
 from d3m.primitive_interfaces.base import PrimitiveBase
@@ -37,7 +38,7 @@ class Experimenter:
         datasets_dir: str,
         volumes_dir: str,
         *,
-        input_problem_directory=None,
+        input_problem_directories: list = None,
         input_models=None,
         input_preprocessors=None,
         generate_pipelines=True,
@@ -53,11 +54,11 @@ class Experimenter:
         # set up the primitives according to parameters
         self.preprocessors = preprocessors if input_preprocessors is None else input_preprocessors
         self.models = models if input_models is None else input_models
-        self.problem_directories = problem_directories if input_problem_directory is None else input_problem_directory
+        self.problem_directories = problem_directories if input_problem_directories is None else input_problem_directories
 
         self.generated_pipelines = {}
         self.problems = {}
-        self.incorrect_problem_types = {}
+        self.incorrect_problem_types = defaultdict(set)
 
         self.experiments = {
             "metafeatures": MetafeatureExperimenter(),
@@ -115,11 +116,12 @@ class Experimenter:
                     dataset_doc = utils.get_dataset_doc(dataset_name, datasets_dir)
                     self.mongo_database.add_to_datasets(dataset_doc)
                 except Exception as e:
-                    logger.info("ERROR: failed to get dataset document: {}".format(e))
+                    logger.error(f"failed to get dataset document: {e}")
 
                 problem_type = self.get_problem_type(dataset_name, [problem_description_path])
                 if problem_type in problems_list:
-                    problems_list[problem_type].append(os.path.join(datasets_dir, dataset_name))
+                    problem_path = os.path.join(datasets_dir, dataset_name)
+                    problems_list[problem_type].append(problem_path)
         return problems_list
 
     def get_problem_type(self, problem_name: str, absolute_paths: List[str]):
@@ -134,25 +136,21 @@ class Experimenter:
         # problem is tabular, continue
         try:
             for path in absolute_paths:
-                with open(path, 'r') as file:
-                    problem_doc = json.load(file)
-                    if problem_doc['about']['taskType'] == 'classification':
+                with open(path, 'r') as f:
+                    problem_doc = json.load(f)
+                    task_keywords = problem_doc["about"]["taskKeywords"]
+                    if "classification" in task_keywords:
                         # add the problem doc to the database if it hasn't already
                         self.mongo_database.add_to_problems(problem_doc)
                         return "classification"
-                    elif problem_doc['about']['taskType'] == 'regression':
+                    elif 'regression' in task_keywords:
                         self.mongo_database.add_to_problems(problem_doc)
                         return "regression"
                     else:
-                        try:
-                            self.incorrect_problem_types[problem_name] = [problem_doc['about']['taskType'],
-                                                                          problem_doc['about']['taskSubType']]
-                        except KeyError as e:
-                            # some problems don't have a taskSubType, try again
-                            self.incorrect_problem_types[problem_name] = [problem_doc['about']['taskType']]
+                        self.incorrect_problem_types[problem_name].update(task_keywords)
                         return False
         except Exception as e:
-            logger.info(e)
+            logger.error(e)
             return False
 
     def output_values_to_folder(self, location: str = "default"):

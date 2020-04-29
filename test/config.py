@@ -7,16 +7,18 @@ class ProblemReference(NamedTuple):
     path: str
     problem_type: str
 
-TEST_PROBLEM_REFERENCES = [
-    ProblemReference('sick', '/datasets/seed_datasets_current/38_sick', 'classification'),
-    ProblemReference(
-        'one_hundred_plants_margin',
-        '/datasets/seed_datasets_current/1491_one_hundred_plants_margin',
+TEST_DATASETS_DIR = '/datasets/training_datasets/seed_datasets_archive'
+
+TEST_PROBLEM_REFERENCES = {
+    '38_sick': ProblemReference('38_sick', TEST_DATASETS_DIR + '/38_sick', 'classification'),
+    '1491_one_hundred_plants_margin': ProblemReference(
+        '1491_one_hundred_plants_margin',
+        TEST_DATASETS_DIR + '/1491_one_hundred_plants_margin',
         'classification'
     ),
-    ProblemReference('baseball', '/datasets/seed_datasets_current/185_baseball', 'classification'),
-    ProblemReference('autoMpg', '/datasets/seed_datasets_current/196_autoMpg', 'regression')
-]
+    '185_baseball': ProblemReference('185_baseball', TEST_DATASETS_DIR + '/185_baseball', 'classification'),
+    '196_autoMpg': ProblemReference('196_autoMpg', TEST_DATASETS_DIR + '/196_autoMpg', 'regression')
+}
 
-test_problem_reference = random.choice(TEST_PROBLEM_REFERENCES)
+test_problem_reference = random.choice(list(TEST_PROBLEM_REFERENCES.values()))
 print(f'Using "{test_problem_reference.name}" problem for tests')

@@ -37,5 +37,5 @@ This will download and checkout all files smaller than 100 KB.
 Now to download all files of one dataset, run inside cloned repository:
 
 ```
-$ git lfs pull -I seed_datasets_current/185_baseball/
+$ git lfs pull -I training_datasets/seed_datasets_archive/185_baseball/
 ```

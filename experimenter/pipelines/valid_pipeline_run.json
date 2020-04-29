@@ -1214,7 +1214,7 @@
                       "version": "2.0",
                       "name": "baseball",
                       "location_uris": [
-                        "file:///datasets/seed_datasets_current/185_baseball/185_baseball_dataset/datasetDoc.json"
+                        "file:///datasets/training_datasets/seed_datasets_archive/185_baseball/185_baseball_dataset/datasetDoc.json"
                       ],
                       "dimension": {
                         "name": "resources",
@@ -1600,7 +1600,7 @@
                       "version": "2.0",
                       "name": "baseball",
                       "location_uris": [
-                        "file:///datasets/seed_datasets_current/185_baseball/185_baseball_dataset/datasetDoc.json"
+                        "file:///datasets/training_datasets/seed_datasets_archive/185_baseball/185_baseball_dataset/datasetDoc.json"
                       ],
                       "dimension": {
                         "name": "resources",
@@ -2031,7 +2031,7 @@
                       "version": "2.0",
                       "name": "baseball",
                       "location_uris": [
-                        "file:///datasets/seed_datasets_current/185_baseball/185_baseball_dataset/datasetDoc.json"
+                        "file:///datasets/training_datasets/seed_datasets_archive/185_baseball/185_baseball_dataset/datasetDoc.json"
                       ],
                       "dimension": {
                         "name": "resources",
@@ -2450,7 +2450,7 @@
                       "version": "2.0",
                       "name": "baseball",
                       "location_uris": [
-                        "file:///datasets/seed_datasets_current/185_baseball/185_baseball_dataset/datasetDoc.json"
+                        "file:///datasets/training_datasets/seed_datasets_archive/185_baseball/185_baseball_dataset/datasetDoc.json"
                       ],
                       "dimension": {
                         "name": "resources",

@@ -1,5 +1,4 @@
 [![Build Status](https://api.travis-ci.org/byu-dml/d3m-experimenter.png)](https://travis-ci.org/byu-dml/d3m-experimenter)
-[![codecov](https://codecov.io/gh/byu-dml/d3m-experimenter/branch/develop/graph/badge.svg)](https://codecov.io/gh/byu-dml/d3m-experimenter)
 
 # Overview
 
@@ -24,7 +23,6 @@ Next copy the file `.env.example` and name the copy `.env` then make these modif
 1. Modify the value after `VOLUMES=` to whatever you want your container's docker volumes to be (the default is your home directory). The volumes inside of the docker container can be accessed at the path `/volumes`. Note: If you are planning on running the d3m runtime locally, make sure that you will have access to your cloned d3m repository.
 1. Make sure `DATASETS=` is pointing to the datasets you want the container to have access to. The datasets can be accessed from inside the container at `/datasets`.
 1. Fill in the values for connections to databases and host computers
-1. If you are planning on developing/contributing to this repo, make sure `MODE=` is properly set (see [Contributing](#contributing) section below).
 
 # Usage
 
@@ -147,10 +145,6 @@ For specific DB commands see `get_documents.py`. The outputs from the above step
 
 # Contributing
 
-## Development Mode
-
-When developing, always have the `MODE` environment variable set to `development` to interact with the development mongodb instance instead of the production one. The easiest thing to do is change the value for `MODE` inside your `.env` file.
-
 ## Random Numbers
 
 For reproducibility, when using random numbers in the repo, use the `random_seed` variable importable from `experimenter.config` to seed your random number generator. If you are using the native `random` python package, you can import `random` from `experimenter.config`. It is a version of the `random` package that's already been seeded with the repo's shared seed. If you want the tests to run deterministically, supply an environment variable called `SEED` with the same value each time. The repo will then use that value as it's common random seed.
@@ -160,7 +154,7 @@ For reproducibility, when using random numbers in the repo, use the `random_seed
 To start the database (only applies to the BYU DML lab):
 
 ```shell
-ssh 2potato
+ssh 1potato
 cd /path/to/database_docker_compose_file/
 sudo docker-compose up -d
 ```
@@ -174,4 +168,4 @@ bash start_redis_rq.sh
 
 To view the Redis queue dashboard, navigate your browser to `localhost:9181`.
 
-Note: you may need to source the `REDIS_PORT`, `REDIS_DATA`, and `REDIS_HOST` environment variables from your `.env` file to get the `start_redis_rq.sh` script to run.
+**Note**: you may need to source the `REDIS_PORT`, `REDIS_DATA`, and `REDIS_HOST` environment variables from your `.env` file to get the `start_redis_rq.sh` script to run.

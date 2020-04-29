@@ -10,6 +10,7 @@ from d3m.runtime import get_pipeline
 from d3m.metadata import pipeline as pipeline_module
 
 from experimenter.run_pipeline import RunPipeline
+from test.config import TEST_PROBLEM_REFERENCES, TEST_DATASETS_DIR
 
 
 def get_pipeline(
@@ -42,8 +43,7 @@ class TestExecutingPipelines(unittest.TestCase):
         self.pipeline_path = './experimenter/pipelines/bagging_classification.json'
         self.data_pipeline_path = './experimenter/pipelines/fixed-split-tabular-split.yml'
         self.scoring_pipeline_path = './experimenter/pipelines/scoring.yml'
-        self.problem_path = "/datasets/seed_datasets_current/1491_one_hundred_plants_margin"
-        self.problem_name = self.problem_path.split("/")[-1]
+        self.problem_ref = TEST_PROBLEM_REFERENCES['1491_one_hundred_plants_margin']
 
     @classmethod
     def tearDownClass(cls):
@@ -53,15 +53,15 @@ class TestExecutingPipelines(unittest.TestCase):
             pass
 
     def test_d3m_runtime_works(self):
-        self.run_d3m(self.problem_name)
+        self.run_d3m(self.problem_ref.name)
 
     def test_experimenter_run_works_from_pipeline(self):
-        self.run_experimenter_from_pipeline(self.problem_path)
+        self.run_experimenter_from_pipeline(self.problem_ref.path)
 
     def test_systems_output_equal(self):
         # run both systems
-        experimenter_score = self.run_experimenter_from_pipeline(self.problem_path)
-        self.run_d3m(self.problem_name)
+        experimenter_score = self.run_experimenter_from_pipeline(self.problem_ref.path)
+        self.run_d3m(self.problem_ref.name)
 
         # get results from d3m output file
         with open(self.TEST_RESULTS_PATH, 'r') as file:
@@ -84,12 +84,9 @@ class TestExecutingPipelines(unittest.TestCase):
                      '-n', self.scoring_pipeline_path,
                      '-d', self.data_pipeline_path,
                      '--data-split-file',
-                     '/datasets/seed_datasets_current/{}/{}_problem/dataSplits.csv'.
-                         format(problem_name, problem_name),
-                     '-r', '/datasets/seed_datasets_current/{}/{}_problem/problemDoc.json'.
-                         format(problem_name, problem_name),
-                     '-i', '/datasets/seed_datasets_current/{}/{}_dataset/datasetDoc.json'.
-                         format(problem_name, problem_name),
+                     TEST_DATASETS_DIR + '/{}/{}_problem/dataSplits.csv'.format(problem_name, problem_name),
+                     '-r', TEST_DATASETS_DIR + '/{}/{}_problem/problemDoc.json'.format(problem_name, problem_name),
+                     '-i', TEST_DATASETS_DIR + '/{}/{}_dataset/datasetDoc.json'.format(problem_name, problem_name),
                      '-O', self.TEST_RESULTS_PATH]
 
         arguments = parser.parse_args(args=test_args)

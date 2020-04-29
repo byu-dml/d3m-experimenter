@@ -8,12 +8,9 @@ from experimenter.database_communication import PipelineDB
 logger = logging.getLogger(__name__)
 
 try:
-    real_mongo_port = int(os.environ['REAL_MONGO_PORT'])
-    real_mongo_port_dev = int(os.environ['REAL_MONGO_PORT_DEV'])
-    default_mongo_port = int(os.environ['DEFAULT_MONGO_PORT'])
-    lab_hostname = os.environ['LAB_HOSTNAME']
+    mongo_host = os.environ['MONGO_HOST']
+    mongo_port = int(os.environ['MONGO_PORT'])
     docker_hostname = os.environ['DOCKER_HOSTNAME']
-    env_mode = os.environ['MODE']
     redis_host = os.environ['REDIS_HOST']
     redis_port = int(os.environ['REDIS_PORT'])
 except Exception as E:
@@ -24,7 +21,7 @@ except Exception as E:
 class TestEnviroment(unittest.TestCase):
 
     def test_database(self):
-        db = PipelineDB(lab_hostname, real_mongo_port)
+        db = PipelineDB(mongo_host, mongo_port)
         db.get_database_stats()
 
     def test_redis(self):

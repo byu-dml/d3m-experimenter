@@ -10,7 +10,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.datasets_dir = '/datasets'
-        cls.seed_problem_directory = ['seed_datasets_current']
+        cls.seed_problem_directory = ['training_datasets/seed_datasets_archive']
 
     # @classmethod
     def setUp(self):
@@ -19,7 +19,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
         preprocessors = []  # give no preprocessors
         self.experimenter_driver = Experimenter(
             self.datasets_dir, volumes_dir,
-            input_problem_directory=self.seed_problem_directory,
+            input_problem_directory=[self.seed_problem_directory],
             input_models=models,
             input_preprocessors=preprocessors,
             generate_problems=True,
@@ -27,26 +27,26 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     def test_get_classification_problems(self):
         known_seed_classification_problems_test = set(
-            [ref for ref in TEST_PROBLEM_REFERENCES if ref.problem_type == "classification"
+            [ref for ref in TEST_PROBLEM_REFERENCES.values() if ref.problem_type == "classification"
         ])
 
         found_problem_paths = set(self.experimenter_driver.problems['classification'])
         for known_problem in known_seed_classification_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
-                'known problem {} not found'.format(known_problem.name)
+                f'known problem {known_problem.name} not found at path {known_problem.path}\nknown paths:\n{found_problem_paths}'
             )
     
     def test_get_regression_problems(self):
         known_seed_regression_problems_test = set(
-            [ref for ref in TEST_PROBLEM_REFERENCES if ref.problem_type == "regression"
+            [ref for ref in TEST_PROBLEM_REFERENCES.values() if ref.problem_type == "regression"
         ])
 
         found_problem_paths = set(self.experimenter_driver.problems['regression'])
         for known_problem in known_seed_regression_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
-                'known problem {} not found'.format(known_problem.name)
+                f'known problem {known_problem.name} not found at path {known_problem.path}'
             )
     
     def test_basic_pipeline_structure(self):

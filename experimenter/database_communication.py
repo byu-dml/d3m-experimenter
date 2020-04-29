@@ -16,27 +16,13 @@ from experimenter.validation import validate_pipeline_run
 from experimenter.pipeline_builder import EZPipeline
 
 try:
-    real_mongo_port = int(os.environ['REAL_MONGO_PORT'])
-    real_mongo_port_dev = int(os.environ['REAL_MONGO_PORT_DEV'])
-    default_mongo_port = int(os.environ['DEFAULT_MONGO_PORT'])
-    lab_hostname = os.environ['LAB_HOSTNAME']
+    mongo_host = os.environ['MONGO_HOST']
+    mongo_port = int(os.environ['MONGO_PORT'])
     docker_hostname = os.environ['DOCKER_HOSTNAME']
-    env_mode = os.environ['MODE']
 except Exception as E:
     logger.info("ERROR: environment variables not set")
     raise E
 
-def get_mongo_port(env_mode: str):
-    """
-    A simple helper function for deciding which port to use
-    :param env_mode: the mode of enviroment to use ("production" or "development")
-    """
-    if env_mode == 'production':
-        return real_mongo_port
-    elif env_mode == 'development':
-        return real_mongo_port_dev
-    else:
-        raise ValueError(f'invalid value for env_mode "{env_mode}"')
 
 class PipelineDB:
     """
@@ -46,12 +32,12 @@ class PipelineDB:
     as defined below.
     """
 
-    def __init__(self, host_name: str = lab_hostname, mongo_port: int = get_mongo_port(env_mode)):
-        self.host_name = host_name
+    def __init__(self, mongo_host: str = mongo_host, mongo_port: int = mongo_port):
+        self.mongo_host = mongo_host
         self.mongo_port = mongo_port
 
         try:
-            self.mongo_client = pymongo.MongoClient(self.host_name, self.mongo_port)
+            self.mongo_client = pymongo.MongoClient(self.mongo_host, self.mongo_port)
         except Exception as e:
             logger.info("Cannot connect to the Mongo Client at port {}. Error is {}".format(self.mongo_port, e))
 

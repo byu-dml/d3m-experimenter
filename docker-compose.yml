@@ -9,7 +9,6 @@ services:
     - .env
     entrypoint: /bin/bash
     volumes:
-      - ${VOLUMES}:/volumes
       - ${DATASETS}:/datasets
       - ${EXPERIMENTER}:/d3m-experimenter
 
