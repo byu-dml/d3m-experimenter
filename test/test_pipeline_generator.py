@@ -9,7 +9,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.datasets_dir = "/datasets"
-        cls.seed_problem_directory = ["training_datasets/seed_datasets_archive"]
+        cls.seed_problem_directory = "training_datasets/seed_datasets_archive"
 
     # @classmethod
     def setUp(self):
@@ -23,7 +23,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
         self.experimenter_driver = Experimenter(
             self.datasets_dir,
             volumes_dir,
-            input_problem_directory=[self.seed_problem_directory],
+            input_problem_directories=[self.seed_problem_directory],
             input_models=models,
             input_preprocessors=preprocessors,
             generate_problems=True,
