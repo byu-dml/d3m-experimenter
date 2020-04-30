@@ -8,19 +8,21 @@
     "source": "OpenML",
     "sourceURI": "http://www.openml.org/d/38",
     "approximateSize": "",
-    "datasetSchemaVersion": "3.2.0",
+    "datasetSchemaVersion": "4.0.0",
     "redacted": false,
-    "datasetVersion": "2.0",
-    "digest": "66b703e8cc1f55081d58b002a4cdb8e7ed841c984602a76492272b62a947109c"
+    "datasetVersion": "4.0.0",
+    "digest": "adf06f17a56a34b6a04f1396606ac3443c3ed90f7b27ac6f149789af77dadda9"
   },
   "dataResources": [
     {
       "resID": "learningData",
       "resPath": "tables/learningData.csv",
       "resType": "table",
-      "resFormat": [
-        "text/csv"
-      ],
+      "resFormat": {
+        "text/csv": [
+          "csv"
+        ]
+      },
       "isCollection": false,
       "columns": [
         {

@@ -1,0 +1,33 @@
+-----------------NOTICE------------------
+This dataset was collected for use within the DARPA Data Driven Discovery of Models (D3M) program.
+
+ID: 1491_one_hundred_plants_margin
+Name: 1491_one_hundred_plants_margin_dataset
+Description: Plant Leaf Classification Using Probabilistic Integration of Shape, Texture and Margin Features. Signal Processing, Pattern Recognition and Applications, in press. 2013.     
+
+### Description
+
+One-hundred plant species leaves dataset (Class = Margin).The original data directory contains the binary images (masks) of the leaf samples (colour images not included).
+There are three features for each image: Shape, Margin and Texture.
+For each feature, a 64 element vector is given per leaf sample.
+These vectors are taken as a contiguous descriptor (for shape) or histograms (for texture and margin).
+So, there are three different files, one for each feature problem:  
+ * 'data_Sha_64.txt' -> prediction based on shape
+ * 'data_Tex_64.txt' -> prediction based on texture
+ * 'data_Mar_64.txt' -> prediction based on margin [**dataset provided here**] 
+
+Each row has a 64-element feature vector followed by the Class label.
+There is a total of 1600 samples with 16 samples per leaf class (100 classes), and no missing values.
+
+### Attributes Information
+
+Three 64 element feature vectors per sample.
+
+
+License: CC Public Domain Mark 1.0
+License Link: https://creativecommons.org/publicdomain/mark/1.0/
+
+Source: OpenML
+Source Link: https://www.openml.org/d/1491
+Citation: @article{article,author = {Mallah, Charles and Cope, James and Orwell, James},year = {2013},month = {02},pages = {},title = {Plant Leaf Classification using Probabilistic Integration of Shape, Texture and Margin Features},volume = {3842},journal = {Pattern Recognit. Appl.},doi = {10.2316/P.2013.798-098}}
+-----------------END------------------

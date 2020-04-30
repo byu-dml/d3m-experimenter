@@ -4,19 +4,21 @@
     "datasetName": "NULL",
     "license": "CC-BY license",
     "approximateSize": "",
-    "datasetVersion": "2.0",
-    "datasetSchemaVersion": "3.2.0",
+    "datasetVersion": "4.0.0",
+    "datasetSchemaVersion": "4.0.0",
     "redacted": true,
-    "digest": "b8cfa050188ff8ec11685bcbf6681ee8cd12b2a427de235bfda099f093aae4c5"
+    "digest": "f09aa791b78acdcfdc8d6acd7bb5214a3c4e37515c9b363bbb83687b7d8d8eef"
   },
   "dataResources": [
     {
       "resID": "learningData",
       "resPath": "tables/learningData.csv",
       "resType": "table",
-      "resFormat": [
-        "text/csv"
-      ],
+      "resFormat": {
+        "text/csv": [
+          "csv"
+        ]
+      },
       "isCollection": false,
       "columns": [
         {

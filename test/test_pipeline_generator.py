@@ -42,7 +42,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
         for known_problem in known_seed_classification_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
-                f"known problem {known_problem.name} not found at path {known_problem.path}\nknown paths:\n{found_problem_paths}",
+                f"known problem {known_problem.name} not found at path {known_problem.path}\nknown paths: {found_problem_paths}",
             )
 
     def test_get_regression_problems(self):
@@ -58,7 +58,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
         for known_problem in known_seed_regression_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
-                f"known problem {known_problem.name} not found at path {known_problem.path}",
+                f"known problem {known_problem.name} not found at path {known_problem.path}\nknown paths: {found_problem_paths}",
             )
 
     def test_basic_pipeline_structure(self):
