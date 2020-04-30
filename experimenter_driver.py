@@ -2,11 +2,11 @@ from typing import List
 import warnings, argparse, logging
 import logging.config as log_config
 from d3m.metadata.pipeline import Pipeline
+
 # disable d3m's deluge of warnings
-log_config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': True,
-})
+log_config.dictConfig(
+    {"version": 1, "disable_existing_loggers": True,}
+)
 logger = logging.getLogger(__name__)
 from experimenter.experimenter import Experimenter
 import os, json, pdb, traceback, sys
@@ -15,13 +15,21 @@ from experimenter.experimenter import pretty_print_json
 import warnings, argparse
 import redis
 from rq import Queue
-from experimenter.execute_pipeline import execute_pipeline_on_problem, execute_fit_pipeline_on_problem, primitive_list_from_pipeline_object, get_list_vertically, print_pipeline_and_problem
+from experimenter.execute_pipeline import (
+    execute_pipeline_on_problem,
+    execute_fit_pipeline_on_problem,
+    primitive_list_from_pipeline_object,
+    get_list_vertically,
+    print_pipeline_and_problem,
+)
+
 try:
-    redis_host = os.environ['REDIS_HOST']
-    redis_port = int(os.environ['REDIS_PORT'])
+    redis_host = os.environ["REDIS_HOST"]
+    redis_port = int(os.environ["REDIS_PORT"])
 except Exception as E:
     logger.info("Exception: environment variables not set")
     raise E
+
 
 class ExperimenterDriver:
     """
@@ -33,7 +41,7 @@ class ExperimenterDriver:
         datasets_dir: str,
         volumes_dir: str,
         *,
-        run_type: str ="all",
+        run_type: str = "all",
         pipeline_folder=None,
         run_custom_fit=False,
         **unused_args
@@ -57,9 +65,7 @@ class ExperimenterDriver:
         if run_type == "distribute":
             logger.info("Connecting to Redis")
             try:
-                conn = redis.StrictRedis(
-                    host=redis_host,
-                    port=redis_port)
+                conn = redis.StrictRedis(host=redis_host, port=redis_port)
                 if self.fit_only:
                     self.queue = Queue("metafeatures", connection=conn)
                 else:
@@ -71,7 +77,7 @@ class ExperimenterDriver:
         """
         Used for getting a stack trace before exiting on a keyboard interrupt
         """
-        logger.info('Interrupted')
+        logger.info("Interrupted")
         traceback.print_exc()
         try:
             sys.exit(0)
@@ -85,8 +91,11 @@ class ExperimenterDriver:
         :param problem: the problem that the pipeline failed on
         :param error: the reason for failure
         """
-        logger.info("\nFailed to run pipeline:\n" + get_list_vertically(
-            primitive_list_from_pipeline_object(pipeline)) + "\n")
+        logger.info(
+            "\nFailed to run pipeline:\n"
+            + get_list_vertically(primitive_list_from_pipeline_object(pipeline))
+            + "\n"
+        )
         logger.info("On the problem:\n{}\n".format(problem))
         logger.info("ERROR: " + str(error))
         traceback.print_exc()
@@ -106,14 +115,15 @@ class ExperimenterDriver:
                 type = "classification"
             # Loading pipeline description file.
             file_path = pipeline_location + pipeline_name
-            with open(file_path, 'r') as file:
+            with open(file_path, "r") as file:
                 pipeline_list[type].append(Pipeline.from_yaml(string_or_file=file))
         return pipeline_list
 
-
     def run(self, **cli_args):
         if self.run_type == "pipeline_path":
-            logger.info("Executing pipelines found in {}".format(self.pipeline_location))
+            logger.info(
+                "Executing pipelines found in {}".format(self.pipeline_location)
+            )
             if self.pipeline_location is None:
                 raise NotADirectoryError
             else:
@@ -134,7 +144,8 @@ class ExperimenterDriver:
                 self.volumes_dir,
                 generate_problems=True,
                 generate_pipelines=False,
-                **cli_args)
+                **cli_args
+            )
             problems: dict = experimenter.problems
             if self.fit_only:
                 logger.info("Using only the fit pipeline")
@@ -149,16 +160,21 @@ class ExperimenterDriver:
         # Run classification and regression
         for type_name, pipeline_list in pipes.items():
             if type_name in ["classification", "regression"]:
-                logger.info("\n Starting to execute ####{}#### problems".format(type_name))
+                logger.info(
+                    "\n Starting to execute ####{}#### problems".format(type_name)
+                )
                 for index, problem in enumerate(problems[type_name]):
-                    sys.stdout.write('\r')
+                    sys.stdout.write("\r")
                     percent = 100 / len(problems[type_name])
-                    sys.stdout.write("[%-20s] %d%%" % ('=' * index, percent * index))
+                    sys.stdout.write("[%-20s] %d%%" % ("=" * index, percent * index))
                     sys.stdout.flush()
                     for pipe in pipeline_list:
-                        if self.mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(),
-                                                                 collection_name="pipeline_runs",
-                                                                 skip_pipeline=self.fit_only):
+                        if self.mongo_db.should_not_run_pipeline(
+                            problem,
+                            pipe.to_json_structure(),
+                            collection_name="pipeline_runs",
+                            skip_pipeline=self.fit_only,
+                        ):
                             logger.info("\n SKIPPING. Pipeline already run.")
                             print_pipeline_and_problem(pipe, problem)
                             continue
@@ -167,22 +183,36 @@ class ExperimenterDriver:
                             # if we are trying to distribute, add to the RQ
                             if self.run_type == "distribute":
                                 if not self.fit_only:
-                                    async_results = self.queue.enqueue(execute_pipeline_on_problem, pipe, problem,
-                                                                       self.datasets_dir, self.volumes_dir, timeout=60*12)
+                                    async_results = self.queue.enqueue(
+                                        execute_pipeline_on_problem,
+                                        pipe,
+                                        problem,
+                                        self.datasets_dir,
+                                        self.volumes_dir,
+                                        timeout=60 * 12,
+                                    )
                                 else:
-                                    async_results = self.queue.enqueue(execute_fit_pipeline_on_problem, pipe, problem,
-                                                                       self.datasets_dir, self.volumes_dir,
-                                                                       timeout=60 * 60)
+                                    async_results = self.queue.enqueue(
+                                        execute_fit_pipeline_on_problem,
+                                        pipe,
+                                        problem,
+                                        self.datasets_dir,
+                                        self.volumes_dir,
+                                        timeout=60 * 60,
+                                    )
                             else:
-                                execute_pipeline_on_problem(pipe, problem, self.datasets_dir, self.volumes_dir)
+                                execute_pipeline_on_problem(
+                                    pipe, problem, self.datasets_dir, self.volumes_dir
+                                )
 
                         except Exception as e:
                             logger.info("Pipeline execution failed. See {}".format(e))
                             # pipeline didn't work.  Try the next one
                             raise e
 
-        pretty_print_json(experimenter.incorrect_problem_types)  # For debugging purposes
-
+        pretty_print_json(
+            experimenter.incorrect_problem_types
+        )  # For debugging purposes
 
 
 """
@@ -210,17 +240,25 @@ python3 experimenter_driver.py -r generate -f default (creates pipelines in defa
 python3 experimenter_driver.py -r generate -f other_folder/ (creates pipelines and stores them in "other_folder/")
 
 """
+
+
 def main(**cli_args):
 
-    datasets_dir = '/datasets'
-    volumes_dir = '/volumes'
+    datasets_dir = "/datasets"
+    volumes_dir = "/volumes"
     run_type = cli_args["run_type"]
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         if run_type == "all":
             # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
-            Experimenter(datasets_dir, volumes_dir, generate_pipelines=True, generate_problems=True, **cli_args)
+            Experimenter(
+                datasets_dir,
+                volumes_dir,
+                generate_pipelines=True,
+                generate_problems=True,
+                **cli_args
+            )
 
         elif run_type == "generate":
             logger.info("Only generating pipelines...")
@@ -228,7 +266,9 @@ def main(**cli_args):
             return
 
         elif run_type == "distribute":
-            experimenter_driver = ExperimenterDriver(datasets_dir, volumes_dir, **cli_args)
+            experimenter_driver = ExperimenterDriver(
+                datasets_dir, volumes_dir, **cli_args
+            )
             experimenter_driver.run(**cli_args)
             return
 
@@ -241,10 +281,12 @@ def get_cli_args(raw_args: List[str] = None):
     If `raw_args` is `None`, `sys.argv` will be used. `raw_args`
     can be supplied when testing.
     """
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         "--run-type",
-        '-r',
+        "-r",
         help=(
             "How to run the driver. 'all' generates and executes, 'execute' "
             "only executes pipelines from the database, 'pipeline_path' "
@@ -252,52 +294,49 @@ def get_cli_args(raw_args: List[str] = None):
             "creates pipelines and stores them in the database"
         ),
         choices=["all", "execute", "generate", "pipeline_path", "distribute"],
-        default="all"
+        default="all",
     )
     parser.add_argument(
         "--pipeline-folder",
-        '-f',
-        help="The path of the folder containing/to receive the pipelines"
+        "-f",
+        help="The path of the folder containing/to receive the pipelines",
     )
     parser.add_argument(
         "--run-custom-fit",
-        '-c',
+        "-c",
         help="Whether or not to run only fit and use given pipelines",
-        action='store_true'
+        action="store_true",
     )
     parser.add_argument(
         "--pipeline-gen-type",
-        '-p',
+        "-p",
         help="what type of pipelines to generate: ensembles, straight, metafeature, or random",
         choices=["ensemble", "straight", "metafeatures", "random", "stacked"],
-        default="straight"
+        default="straight",
     )
     parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
         help="Whether to print for debugging or not",
-        default=False
+        default=False,
     )
     parser.add_argument(
         "--n-preprocessors",
         "-npre",
         type=int,
         help="how many preprocessors to use for the ensemble experiment",
-        default=3
+        default=3,
     )
     parser.add_argument(
         "--n-classifiers",
         "-nc",
         type=int,
         help="how many classifiers to use for the ensemble experiment",
-        default=3
+        default=3,
     )
     parser.add_argument(
-        "--seed",
-        type=int,
-        help="seed to use for random generation",
-        default=0
+        "--seed", type=int, help="seed to use for random generation", default=0
     )
     parser.add_argument(
         "--n-pipelines",
@@ -306,7 +345,7 @@ def get_cli_args(raw_args: List[str] = None):
         help=(
             "how many pipelines to sample for the random experiment for each "
             "problem type."
-        )
+        ),
     )
     parser.add_argument(
         "--depth-sample-range",
@@ -317,8 +356,8 @@ def get_cli_args(raw_args: List[str] = None):
             "the range to sample pipeline depths from for the random experiment e.g. "
             "`-dps 2 10` will sample in the integer range [2,10]"
         ),
-        default=[1,8],
-        metavar=('lower', 'upper')
+        default=[1, 8],
+        metavar=("lower", "upper"),
     )
     parser.add_argument(
         "--max-width-sample-range",
@@ -329,8 +368,8 @@ def get_cli_args(raw_args: List[str] = None):
             "the range to sample pipeline max widths from for the random experiment e.g. "
             "`-mwsr 2 10` will sample in the integer range [2,10]"
         ),
-        default=[1,8],
-        metavar=('lower', 'upper')
+        default=[1, 8],
+        metavar=("lower", "upper"),
     )
     parser.add_argument(
         "--max-inputs-sample-range",
@@ -341,8 +380,8 @@ def get_cli_args(raw_args: List[str] = None):
             "the range to sample the number of inputs for each primitive in a pipeline from "
             "for the random experiment e.g. `-misr 2 10` will sample in the integer range [2,10]"
         ),
-        default=[1,4],
-        metavar=('lower', 'upper')
+        default=[1, 4],
+        metavar=("lower", "upper"),
     )
     parser.add_argument(
         "--max-complexity-factor",
@@ -352,7 +391,7 @@ def get_cli_args(raw_args: List[str] = None):
             "pipeline structures produced by the random experiment will each honor this constraint: "
             "`depth * max_width * max_inputs < max_complexity_factor`"
         ),
-        default=24
+        default=24,
     )
     args = parser.parse_args(raw_args)
     return args

@@ -10,6 +10,7 @@ from d3m.primitive_interfaces.base import PrimitiveBase
 from experimenter.constants import EXTRA_HYPEREPARAMETERS, PRIMITIVE_FAMILIES
 from experimenter.config import d3m_index
 
+
 class PipelineArchDesc:
     """
     Holds data that describes a pipeline's architecture. e.g.
@@ -17,7 +18,9 @@ class PipelineArchDesc:
     describe an ensemble pipeline that ensembles three classifiers.
     """
 
-    def __init__(self, generation_method: str, generation_parameters: Dict[str, Any] = None):
+    def __init__(
+        self, generation_method: str, generation_parameters: Dict[str, Any] = None
+    ):
         """
         :param generation_method: The pipeline's high level structural type e.g.
             "ensemble", "straight", "random", etc.
@@ -27,12 +30,14 @@ class PipelineArchDesc:
             will likely vary depending on the pipeline's type.
         """
         self.generation_method = generation_method
-        self.generation_parameters = dict() if generation_parameters is None else generation_parameters
-    
+        self.generation_parameters = (
+            dict() if generation_parameters is None else generation_parameters
+        )
+
     def to_json_structure(self):
         return {
             "generation_method": self.generation_method,
-            "generation_parameters": self.generation_parameters
+            "generation_parameters": self.generation_parameters,
         }
 
 
@@ -59,11 +64,12 @@ class EZPipeline(Pipeline):
 
     # Constructor
 
-    def __init__(self,
+    def __init__(
+        self,
         *args,
         arch_desc: PipelineArchDesc = None,
         add_preparation_steps: bool = False,
-        **kwargs
+        **kwargs,
     ):
         """
         :param *args: All positional args are forwarded to the superclass
@@ -85,7 +91,7 @@ class EZPipeline(Pipeline):
 
         if add_preparation_steps:
             self.add_preparation_steps()
-    
+
     # Public properties
 
     @property
@@ -96,7 +102,7 @@ class EZPipeline(Pipeline):
         """
         num_steps = len(self.steps)
         return None if num_steps == 0 else num_steps - 1
-    
+
     @property
     def current_step(self) -> StepBase:
         """
@@ -105,11 +111,11 @@ class EZPipeline(Pipeline):
         etc.
         """
         return self.steps[self.curr_step_i]
-    
+
     @property
     def curr_step_data_ref(self) -> str:
         return self._data_ref_by_step_i(self.curr_step_i)
-    
+
     # Public methods
 
     def set_step_i_of(self, ref_name: str, step_i: int = None) -> None:
@@ -122,14 +128,13 @@ class EZPipeline(Pipeline):
             self._step_i_of_refs[ref_name] = self.curr_step_i
         else:
             self._step_i_of_refs[ref_name] = step_i
-            
+
     def step_i_of(self, ref_name: str) -> int:
         """
         Returns the index of the step associated with `ref_name`.
         """
         self._check_ref_is_set(ref_name)
         return self._step_i_of_refs[ref_name]
-    
 
     def data_ref_of(self, ref_name: str) -> str:
         """
@@ -139,7 +144,7 @@ class EZPipeline(Pipeline):
         then `data_ref_of('raw_attrs')` == 'step.2.produce'`.
         """
         return self._data_ref_by_step_i(self.step_i_of(ref_name))
-    
+
     def to_json_structure(self, *args, **kwargs) -> Dict:
         """
         An overriden version of the parent class `Pipeline`'s method.
@@ -147,24 +152,26 @@ class EZPipeline(Pipeline):
         """
         pipeline_json = super().to_json_structure(*args, **kwargs)
         if self.arch_desc is not None:
-            pipeline_json['pipeline_generation_description'] = self.arch_desc.to_json_structure()
+            pipeline_json[
+                "pipeline_generation_description"
+            ] = self.arch_desc.to_json_structure()
             # Update the digest since new information has been added to the description
-            pipeline_json['digest'] = d3m_utils.compute_digest(pipeline_json)
-        
+            pipeline_json["digest"] = d3m_utils.compute_digest(pipeline_json)
+
         return pipeline_json
-    
+
     def add_primitive_step(
         self,
         python_path: str,
         auto_data_ref: str = None,
         *,
-        container_args: Dict[str,str] = None,
-        value_args: Dict[str,str] = None,
-        container_hyperparams: Dict[str,str] = None,
-        value_hyperparams: Dict[str,str] = None,
+        container_args: Dict[str, str] = None,
+        value_args: Dict[str, str] = None,
+        container_hyperparams: Dict[str, str] = None,
+        value_hyperparams: Dict[str, str] = None,
         auto_fill_args: bool = True,
-        output_name: str = 'produce',
-        is_final_model: bool = True
+        output_name: str = "produce",
+        is_final_model: bool = True,
     ) -> None:
         """
         Adds the results of `self.create_primitive_step` to the pipeline.
@@ -182,43 +189,45 @@ class EZPipeline(Pipeline):
             container_hyperparams=container_hyperparams,
             value_hyperparams=value_hyperparams,
             auto_fill_args=auto_fill_args,
-            output_name=output_name
+            output_name=output_name,
         )
         self.add_step(step)
 
         if (
             not is_final_model
-            and step.primitive.metadata.query()['primitive_family']
-            in PRIMITIVE_FAMILIES['classification']
+            and step.primitive.metadata.query()["primitive_family"]
+            in PRIMITIVE_FAMILIES["classification"]
         ):
             # Since this primitive is a classifier and its not the final
             # model of the pipeline, its output will likely be used as a
             # feature for some future primitive, so we need to change the
             # output's semantic type to attribute and encode it.
             self.add_primitive_step(
-                'd3m.primitives.data_transformation.replace_semantic_types.Common',
+                "d3m.primitives.data_transformation.replace_semantic_types.Common",
                 value_hyperparams={
-                    'from_semantic_types': ['https://metadata.datadrivendiscovery.org/types/PredictedTarget'],
-                    'to_semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute']
-                }
+                    "from_semantic_types": [
+                        "https://metadata.datadrivendiscovery.org/types/PredictedTarget"
+                    ],
+                    "to_semantic_types": [
+                        "https://metadata.datadrivendiscovery.org/types/Attribute"
+                    ],
+                },
             )
 
             # Next the encoder step
-            self.add_primitive_step(
-                "d3m.primitives.data_cleaning.label_encoder.DSBOX"
-            )
-    
+            self.add_primitive_step("d3m.primitives.data_cleaning.label_encoder.DSBOX")
+
     def create_primitive_step(
         self,
         python_path: str,
         auto_data_ref: str = None,
         *,
-        container_args: Dict[str,str] = None,
-        value_args: Dict[str,str] = None,
-        container_hyperparams: Dict[str,str] = None,
-        value_hyperparams: Dict[str,str] = None,
+        container_args: Dict[str, str] = None,
+        value_args: Dict[str, str] = None,
+        container_hyperparams: Dict[str, str] = None,
+        value_hyperparams: Dict[str, str] = None,
         auto_fill_args: bool = True,
-        output_name: str = 'produce'
+        output_name: str = "produce",
     ) -> PrimitiveStep:
         """
         Helper for creating a basic `d3m.metadata.pipeline.PrimitiveStep`
@@ -252,13 +261,13 @@ class EZPipeline(Pipeline):
         # Add the primitive's arguments.
         ################################
 
-        primitive_args: Dict[str,Dict[str,Any]] = {}
+        primitive_args: Dict[str, Dict[str, Any]] = {}
 
         if container_args:
             primitive_args.update(
                 self._build_d3m_arg_dict(container_args, ArgumentType.CONTAINER)
             )
-        
+
         if value_args:
             primitive_args.update(
                 self._build_d3m_arg_dict(value_args, ArgumentType.VALUE)
@@ -269,116 +278,125 @@ class EZPipeline(Pipeline):
                 if arg_name not in primitive_args:
                     # This arg hasn't been supplied yet.
                     if arg_name == "outputs":
-                        data_ref = self.data_ref_of('target')
+                        data_ref = self.data_ref_of("target")
                     else:
-                        data_ref = auto_data_ref if auto_data_ref else self.curr_step_data_ref
+                        data_ref = (
+                            auto_data_ref if auto_data_ref else self.curr_step_data_ref
+                        )
 
                     primitive_args[arg_name] = {
                         "name": arg_name,
                         "argument_type": ArgumentType.CONTAINER,
-                        "data_reference": data_ref
+                        "data_reference": data_ref,
                     }
 
         # Finally, add the arguments to the primitive
         for arg_dict in primitive_args.values():
             step.add_argument(**arg_dict)
-        
+
         # Add hyperparameters to the primitive.
         #######################################
 
-        primitive_hyperparams: Dict[str,Dict[str,Any]] = {}
+        primitive_hyperparams: Dict[str, Dict[str, Any]] = {}
         # handle any hyperparams that have been supplied in the global scope,
         # i.e. that should be used for every instance of certain primitives.
         if python_path in EXTRA_HYPEREPARAMETERS:
             params = EXTRA_HYPEREPARAMETERS[python_path]
             for hyperparam_dict in params:
                 primitive_hyperparams["name"] = hyperparam_dict
-        
+
         if container_hyperparams:
             primitive_hyperparams.update(
                 self._build_d3m_arg_dict(container_hyperparams, ArgumentType.CONTAINER)
             )
-        
+
         if value_hyperparams:
             primitive_hyperparams.update(
                 self._build_d3m_arg_dict(value_hyperparams, ArgumentType.VALUE)
             )
-            
+
         # Finally, add the hyperparameters to the primitive
         for hyperparam_dict in primitive_hyperparams.values():
             step.add_hyperparameter(**hyperparam_dict)
 
         step.add_output(output_name)
         return step
-    
-    def replace_step_at_i(
-        self,
-        step_i: int,
-        new_step_python_path: str
-    ) -> None:
+
+    def replace_step_at_i(self, step_i: int, new_step_python_path: str) -> None:
         """
         Replaces the step at `step_i` with a new step. The inputs from
         the old step will be used as the inputs of the new step and all
         other required arguments will be populated automatically.
         """
-        old_step_inputs_data_ref = self.steps[step_i].arguments['inputs']['data']
+        old_step_inputs_data_ref = self.steps[step_i].arguments["inputs"]["data"]
         new_step = self.create_primitive_step(
-            new_step_python_path,
-            old_step_inputs_data_ref
+            new_step_python_path, old_step_inputs_data_ref
         )
         self.replace_step(step_i, new_step)
-    
+
     def add_preparation_steps(self) -> None:
         """
         Adds a general data preparation pipeline preamble of primitives.
         """
         # Creating pipeline
-        self.add_input(name='inputs')
+        self.add_input(name="inputs")
 
         # dataset_to_dataframe step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
-            'inputs.0'
+            "d3m.primitives.data_transformation.dataset_to_dataframe.Common", "inputs.0"
         )
-        self.set_step_i_of('raw_df')
+        self.set_step_i_of("raw_df")
 
         # column_parser step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.column_parser.Common',
-            self.data_ref_of('raw_df'),
+            "d3m.primitives.data_transformation.column_parser.Common",
+            self.data_ref_of("raw_df"),
             value_hyperparams={
                 # We don't parse categorical data, since we want it to stay as a string
                 # and not be hashed as a long integer. That makes the one hot encoded
                 # names more interpretable.
                 "parse_semantic_types": (
-                    'http://schema.org/Boolean', 'http://schema.org/Integer', 'http://schema.org/Float',
-                    'https://metadata.datadrivendiscovery.org/types/FloatVector', 'http://schema.org/DateTime',
+                    "http://schema.org/Boolean",
+                    "http://schema.org/Integer",
+                    "http://schema.org/Float",
+                    "https://metadata.datadrivendiscovery.org/types/FloatVector",
+                    "http://schema.org/DateTime",
                 )
-            }
+            },
         )
-        self.set_step_i_of('parsed')
+        self.set_step_i_of("parsed")
 
         # extract_columns_by_semantic_types(targets) step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
-            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/TrueTarget'] }
+            "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
+            value_hyperparams={
+                "semantic_types": [
+                    "https://metadata.datadrivendiscovery.org/types/TrueTarget"
+                ]
+            },
         )
-        self.set_step_i_of('target')
+        self.set_step_i_of("target")
 
         # extract_columns_by_semantic_types(attributes) step
         self.add_primitive_step(
-            'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
-            self.data_ref_of('parsed'),
-            value_hyperparams={ 'semantic_types': ['https://metadata.datadrivendiscovery.org/types/Attribute'] }
+            "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
+            self.data_ref_of("parsed"),
+            value_hyperparams={
+                "semantic_types": [
+                    "https://metadata.datadrivendiscovery.org/types/Attribute"
+                ]
+            },
         )
 
         # imputer step
-        self.add_primitive_step('d3m.primitives.data_preprocessing.random_sampling_imputer.BYU')
+        self.add_primitive_step(
+            "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU"
+        )
 
         # encoder step
-        self.add_primitive_step('d3m.primitives.data_preprocessing.encoder.DSBOX')
-        self.set_step_i_of('attrs')
-    
+        self.add_primitive_step("d3m.primitives.data_preprocessing.encoder.DSBOX")
+        self.set_step_i_of("attrs")
+
     def add_predictions_constructor(self, input_data_ref: str = None) -> None:
         """
         Adds the predictions constructor to the pipeline
@@ -389,9 +407,9 @@ class EZPipeline(Pipeline):
         self.add_primitive_step(
             "d3m.primitives.data_transformation.construct_predictions.Common",
             input_data_ref,
-            container_args={ "reference": self.data_ref_of('raw_df') }
+            container_args={"reference": self.data_ref_of("raw_df")},
         )
-    
+
     def concatenate_inputs(self, *data_refs_to_concat) -> str:
         """
         Adds concatenation steps to the pipeline that join the outputs of every data
@@ -406,22 +424,25 @@ class EZPipeline(Pipeline):
         """
         if len(data_refs_to_concat) == 1:
             # No concatenation necessary
-            output_data_ref, = data_refs_to_concat
+            (output_data_ref,) = data_refs_to_concat
             return output_data_ref
-        
+
         data_refs = set(data_refs_to_concat)
 
         while len(data_refs) > 1:
             # first look in the pipeline cache for an already existing
             # concatenation we can use.
             cache_match = self._find_match_in_cache(data_refs)
-            
+
             if cache_match is None:
                 # Manually concatenate a pair of data refs, then add them to the cache.
                 data_ref_pair = sorted(data_refs)[:2]
                 self.add_primitive_step(
-                    'd3m.primitives.data_transformation.horizontal_concat.DataFrameCommon',
-                    container_args={ "left": data_ref_pair[0], "right": data_ref_pair[1] }
+                    "d3m.primitives.data_transformation.horizontal_concat.DataFrameCommon",
+                    container_args={
+                        "left": data_ref_pair[0],
+                        "right": data_ref_pair[1],
+                    },
                 )
                 concat_data_ref = self.curr_step_data_ref
 
@@ -436,24 +457,24 @@ class EZPipeline(Pipeline):
             # need it in `data_refs` anymore.
             data_refs -= cache_match
             data_refs.add(self.concat_cache[cache_match])
-        
-        output_data_ref, = data_refs
+
+        (output_data_ref,) = data_refs
         return output_data_ref
-    
+
     # Private methods
-    
+
     def _check_ref_is_set(self, ref_name: str) -> None:
         if ref_name not in self._step_i_of_refs:
-            raise ValueError(f'{ref_name} has not been set yet')
-    
+            raise ValueError(f"{ref_name} has not been set yet")
+
     def _data_ref_by_step_i(self, step_i: int) -> str:
         step_output_names: List[str] = self.steps[step_i].outputs
         if len(step_output_names) != 1:
             raise AttributeError(
-                f'step {step_i} has more than one output; which output to use is ambiguous'
+                f"step {step_i} has more than one output; which output to use is ambiguous"
             )
-        return f'steps.{step_i}.{step_output_names[0]}'
-    
+        return f"steps.{step_i}.{step_output_names[0]}"
+
     def _get_required_args(self, p: PrimitiveBase) -> List[str]:
         """
         Gets the required arguments for a primitive
@@ -461,12 +482,14 @@ class EZPipeline(Pipeline):
         :return a list of the required args
         """
         required_args = []
-        metadata_args = p.metadata.to_json_structure()['primitive_code']['arguments']
+        metadata_args = p.metadata.to_json_structure()["primitive_code"]["arguments"]
         for arg, arg_info in metadata_args.items():
-            if 'default' not in arg_info and arg_info['kind'] == 'PIPELINE':  # If yes, it is a required argument
+            if (
+                "default" not in arg_info and arg_info["kind"] == "PIPELINE"
+            ):  # If yes, it is a required argument
                 required_args.append(arg)
         return required_args
-    
+
     def _find_match_in_cache(self, data_refs: Set[str]) -> Optional[frozenset]:
         """
         Uses all unordered combinations from `data_refs` (n choose k where k goes
@@ -485,12 +508,10 @@ class EZPipeline(Pipeline):
                 if subset in self.concat_cache:
                     return subset
         return None
-    
+
     def _build_d3m_arg_dict(
-        self,
-        simple_args: Dict[str,str],
-        arg_type: ArgumentType
-    ) -> Dict[str,Dict[str,str]]:
+        self, simple_args: Dict[str, str], arg_type: ArgumentType
+    ) -> Dict[str, Dict[str, str]]:
         """
         Builds a dictionary of arguments. Each argument can be passed
         to the `.add_hyperparameter` or `.add_argument` method of a
@@ -503,18 +524,14 @@ class EZPipeline(Pipeline):
         """
         data_arg_name_by_type = {
             ArgumentType.VALUE: "data",
-            ArgumentType.CONTAINER: "data_reference"
+            ArgumentType.CONTAINER: "data_reference",
         }
 
         if arg_type not in data_arg_name_by_type:
-            raise ValueError(f'unsupported arg_type {arg_type}')
+            raise ValueError(f"unsupported arg_type {arg_type}")
 
         data_arg_name = data_arg_name_by_type[arg_type]
         return {
-            arg_name: { 
-                "name": arg_name,
-                "argument_type": arg_type,
-                data_arg_name: data
-            } for arg_name, data in simple_args.items()
+            arg_name: {"name": arg_name, "argument_type": arg_type, data_arg_name: data}
+            for arg_name, data in simple_args.items()
         }
-

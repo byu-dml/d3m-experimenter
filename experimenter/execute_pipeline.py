@@ -11,10 +11,13 @@ from experimenter.run_fit_pipeline import RunFitPipeline
 from experimenter.run_pipeline import RunPipeline
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
-def execute_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: str, volumes_dir: str):
+def execute_pipeline_on_problem(
+    pipe: Pipeline, problem: str, datasets_dir: str, volumes_dir: str
+):
     """
     The main function to execute a pipeline.  Called in `experimenter_driver.py`  This function will check if the 
     pipeline and dataset has been executed before, run the pipeline, and record the results
@@ -27,10 +30,14 @@ def execute_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: str,
     # Attempt to run the pipeline
     logger.info("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
-    collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
+    collection_name = get_pipeline_run_collection_from_primitives(
+        primitive_list_from_pipeline_object(pipe)
+    )
 
     # check if the pipeline has been run:
-    if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name):
+    if mongo_db.should_not_run_pipeline(
+        problem, pipe.to_json_structure(), collection_name
+    ):
         logger.info("Documents are missing or pipeline has already been run. SKIPPING")
         return
     run_pipeline = RunPipeline(datasets_dir, volumes_dir, problem)
@@ -45,14 +52,28 @@ def execute_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: str,
     fit_pipeline_run = results[0]
     produce_pipeline_run = results[1]
     # put in the fit pipeline
-    handle_successful_pipeline_run(fit_pipeline_run.pipeline_run.to_json_structure(),
-                                            pipe.to_json_structure(), score, problem, mongo_db, collection_name)
+    handle_successful_pipeline_run(
+        fit_pipeline_run.pipeline_run.to_json_structure(),
+        pipe.to_json_structure(),
+        score,
+        problem,
+        mongo_db,
+        collection_name,
+    )
     # put in the produce pipeline
-    handle_successful_pipeline_run(produce_pipeline_run.pipeline_run.to_json_structure(),
-                                   pipe.to_json_structure(), score, problem, mongo_db, collection_name)
+    handle_successful_pipeline_run(
+        produce_pipeline_run.pipeline_run.to_json_structure(),
+        pipe.to_json_structure(),
+        score,
+        problem,
+        mongo_db,
+        collection_name,
+    )
 
 
-def execute_fit_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: str, volumes_dir: str):
+def execute_fit_pipeline_on_problem(
+    pipe: Pipeline, problem: str, datasets_dir: str, volumes_dir: str
+):
     """
     The main function to execute a `metafeatures` pipeline.  Differs from `execute_pipeline_on_problem` by only handling metafeatures
     TODO: combine this with `execute_pipeline_on_problem`
@@ -67,10 +88,13 @@ def execute_fit_pipeline_on_problem(pipe: Pipeline, problem: str, datasets_dir: 
     # Attempt to run the pipeline
     logger.info("\n On problem {}".format(problem))
     mongo_db = PipelineDB()
-    collection_name = get_pipeline_run_collection_from_primitives(primitive_list_from_pipeline_object(pipe))
+    collection_name = get_pipeline_run_collection_from_primitives(
+        primitive_list_from_pipeline_object(pipe)
+    )
     # check if the pipeline has been run:
-    if mongo_db.should_not_run_pipeline(problem, pipe.to_json_structure(), collection_name, skip_pipeline=True)\
-            or mongo_db.metafeature_run_already_exists(problem, pipe.to_json_structure()):
+    if mongo_db.should_not_run_pipeline(
+        problem, pipe.to_json_structure(), collection_name, skip_pipeline=True
+    ) or mongo_db.metafeature_run_already_exists(problem, pipe.to_json_structure()):
         logger.info("Documents are missing or pipeline has already been run. SKIPPING")
         return
     run_pipeline = RunFitPipeline(datasets_dir, volumes_dir, problem)
@@ -96,7 +120,14 @@ def get_pipeline_run_collection_from_primitives(primitive_list: list):
     return "pipeline_runs"
 
 
-def handle_successful_pipeline_run(pipeline_run: dict, pipeline: dict, score: float, problem: str, mongo_db: PipelineDB, collection_name: str):
+def handle_successful_pipeline_run(
+    pipeline_run: dict,
+    pipeline: dict,
+    score: float,
+    problem: str,
+    mongo_db: PipelineDB,
+    collection_name: str,
+):
     """
     Called after a successful pipeline run.  It will output the results to the console and write it to the database
 
@@ -124,14 +155,17 @@ def print_pipeline_and_problem(pipeline: dict, problem: str):
     logger.info(get_list_vertically(primitive_list_from_pipeline_object(pipeline)))
     logger.info("on problem {} \n\n".format(problem))
 
+
 def get_primitive_combo_string(pipeline):
-    prim_string = ''
-    for p in pipeline['steps']:
-        prim_string += p['primitive']['id']
+    prim_string = ""
+    for p in pipeline["steps"]:
+        prim_string += p["primitive"]["id"]
     return prim_string
 
 
-def write_to_mongo_pipeline_run(mongo_db: PipelineDB, pipeline_run: dict, collection_name: str):
+def write_to_mongo_pipeline_run(
+    mongo_db: PipelineDB, pipeline_run: dict, collection_name: str
+):
     """
     A function to write a pipeline_run document to a database.  A wrapper for the function in database_communication.py
 
@@ -166,7 +200,7 @@ def primitive_list_from_pipeline_object(pipeline: Pipeline):
     """
     primitives = []
     for p in pipeline.steps:
-        primitives.append(p.to_json_structure()['primitive']['python_path'])
+        primitives.append(p.to_json_structure()["primitive"]["python_path"])
     return primitives
 
 
@@ -177,8 +211,8 @@ def primitive_list_from_pipeline_json(pipeline_json: dict):
     :param pipeline_json a pipeline object in JSON form
     """
     primitives = []
-    for step in pipeline_json['steps']:
-        primitives.append(step['primitive']['python_path'])
+    for step in pipeline_json["steps"]:
+        primitives.append(step["primitive"]["python_path"])
     return primitives
 
 
@@ -186,4 +220,4 @@ def get_list_vertically(list_to_use: list):
     """
     A helper function to join a list vertically.  Used for debugging printing.
     """
-    return '\n'.join(list_to_use)
+    return "\n".join(list_to_use)

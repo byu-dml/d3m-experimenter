@@ -3,6 +3,7 @@ from typing import Dict, List
 
 from d3m.metadata.pipeline import Pipeline
 
+
 class Experiment(ABC):
     """
     All experiments that are run by the `experimenter.experimenter`
@@ -24,7 +25,7 @@ class Experiment(ABC):
         adding them as keyword arguments to the function signature.
         """
         pass
-    
+
     @abstractmethod
     def generate_pipeline(self) -> Pipeline:
         """

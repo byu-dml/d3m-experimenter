@@ -6,23 +6,23 @@ The job queue is default of "default" priority.
 """
 from rq import Connection, Worker
 import redis, os
+
 try:
-    redis_host = os.environ['REDIS_HOST']
-    redis_port = int(os.environ['REDIS_PORT'])
+    redis_host = os.environ["REDIS_HOST"]
+    redis_port = int(os.environ["REDIS_PORT"])
 except Exception as E:
     print("Exception: environment variables not set")
     raise E
 
-conn = redis.StrictRedis(
-        host=redis_host,
-        port=redis_port)
+conn = redis.StrictRedis(host=redis_host, port=redis_port)
 
 # Preload libraries
 from experimenter_driver import *
+
 # Provide queue names to listen to as arguments to this script,
 # similar to rq worker
 with Connection():
-    qs = sys.argv[1:] or ['default']
+    qs = sys.argv[1:] or ["default"]
     print("Working on queue: {}".format(qs))
     w = Worker(qs, connection=conn)
     print("About to work")

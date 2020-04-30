@@ -2,14 +2,20 @@ import json
 import typing
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 from d3m import exceptions, container
-from d3m.metadata import (base as metadata_base, problem as base_problem, pipeline as pipeline_module,
-                          pipeline_run as pipeline_run_module)
+from d3m.metadata import (
+    base as metadata_base,
+    problem as base_problem,
+    pipeline as pipeline_module,
+    pipeline_run as pipeline_run_module,
+)
 from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import fit, get_dataset, Runtime
+
 
 class RunFitPipeline:
     """
@@ -23,27 +29,40 @@ class RunFitPipeline:
         is empty no output path is used.
     """
 
-    def __init__(self, datasets_dir: str, volumes_dir: str, problem_path: str, output_path: str = None):
+    def __init__(
+        self,
+        datasets_dir: str,
+        volumes_dir: str,
+        problem_path: str,
+        output_path: str = None,
+    ):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
-        self.data_pipeline_path = './experimenter/pipelines/fixed-split-tabular-split.yml'
-        self.scoring_pipeline_path = './experimenter/pipelines/scoring.yml'
+        self.data_pipeline_path = (
+            "./experimenter/pipelines/fixed-split-tabular-split.yml"
+        )
+        self.scoring_pipeline_path = "./experimenter/pipelines/scoring.yml"
         self.output_path = output_path
         self.problem_path = problem_path
         self.problem_name = self.problem_path.split("/")[-1]
 
         # Note that most of these are not needed but included in case it is useful someday
-        self.run_args = {"scoring_pipeline": self.scoring_pipeline_path,
-                         'data_pipeline': self.data_pipeline_path,
-                         'data_split_file': '{}/{}_problem/dataSplits.csv'.
-                             format(self.problem_path, self.problem_name),
-                         'problem': '{}/{}_problem/problemDoc.json'.
-                             format(self.problem_path, self.problem_name),
-                         'inputs': ['{}/{}_dataset/datasetDoc.json'.
-                                        format(self.problem_path, self.problem_name)],
-                         "context": metadata_base.Context.PRODUCTION
-                         }
-
+        self.run_args = {
+            "scoring_pipeline": self.scoring_pipeline_path,
+            "data_pipeline": self.data_pipeline_path,
+            "data_split_file": "{}/{}_problem/dataSplits.csv".format(
+                self.problem_path, self.problem_name
+            ),
+            "problem": "{}/{}_problem/problemDoc.json".format(
+                self.problem_path, self.problem_name
+            ),
+            "inputs": [
+                "{}/{}_dataset/datasetDoc.json".format(
+                    self.problem_path, self.problem_name
+                )
+            ],
+            "context": metadata_base.Context.PRODUCTION,
+        }
 
     def run(self, pipeline: pipeline_module.Pipeline) -> list:
         """
@@ -63,7 +82,9 @@ class RunFitPipeline:
 
         context = metadata_base.Context[arguments["context"]]
 
-        problem_description = base_problem.parse_problem_description(arguments["problem"])
+        problem_description = base_problem.parse_problem_description(
+            arguments["problem"]
+        )
 
         inputs = [
             dataset_resolver(
@@ -71,14 +92,16 @@ class RunFitPipeline:
                 compute_digest=ComputeDigest[ComputeDigest.ONLY_IF_MISSING.name],
                 strict_digest=False,
             )
-            for input_uri in arguments['inputs']
+            for input_uri in arguments["inputs"]
         ]
 
         logger.info(inputs)
 
         try:
             runtime, outputs, results_list = self.our_fit(
-                pipeline, problem_description, inputs,
+                pipeline,
+                problem_description,
+                inputs,
                 context=context,
                 volumes_dir=self.volumes_dir,
                 runtime_environment=runtime_environment,
@@ -89,10 +112,16 @@ class RunFitPipeline:
 
         return results_list
 
-
-    def our_fit(self, pipeline: pipeline_module.Pipeline, problem_description: typing.Dict, inputs: typing.Sequence[container.Dataset], *,
-    context: metadata_base.Context, hyperparams: typing.Sequence = None, volumes_dir: str = None,
-    runtime_environment: pipeline_run_module.RuntimeEnvironment = None,
+    def our_fit(
+        self,
+        pipeline: pipeline_module.Pipeline,
+        problem_description: typing.Dict,
+        inputs: typing.Sequence[container.Dataset],
+        *,
+        context: metadata_base.Context,
+        hyperparams: typing.Sequence = None,
+        volumes_dir: str = None,
+        runtime_environment: pipeline_run_module.RuntimeEnvironment = None,
     ) -> typing.Tuple[Runtime, container.DataFrame, pipeline_run_module.PipelineRun]:
         """
         Our version of D3M's fit so that we can modify it. See the D3M module for documentation
@@ -102,34 +131,40 @@ class RunFitPipeline:
                 raise TypeError(
                     "A standard pipeline's input should be of a container Dataset type, not {input_type}.".format(
                         input_type=type(input),
-                    ))
+                    )
+                )
 
         if len(pipeline.outputs) != 1:
-            raise ValueError("A standard pipeline should have exactly one output, not {outputs}.".format(
-                outputs=len(pipeline.outputs),
-            ))
+            raise ValueError(
+                "A standard pipeline should have exactly one output, not {outputs}.".format(
+                    outputs=len(pipeline.outputs),
+                )
+            )
 
         runtime = Runtime(
-            pipeline, hyperparams,
-            problem_description=problem_description, context=context,
+            pipeline,
+            hyperparams,
+            problem_description=problem_description,
+            context=context,
             volumes_dir=volumes_dir,
-            is_standard_pipeline=False, environment=runtime_environment,
+            is_standard_pipeline=False,
+            environment=runtime_environment,
         )
 
-        result = runtime.fit(inputs, return_values=['outputs.0'])
+        result = runtime.fit(inputs, return_values=["outputs.0"])
         result.check_success()
 
-        output = result.values['outputs.0']
+        output = result.values["outputs.0"]
 
         if not isinstance(output, container.DataFrame):
             raise TypeError(
                 "A standard pipeline's output should be of a container DataFrame type, not {output_type}.".format(
                     output_type=type(output),
-                ))
+                )
+            )
 
         # add dataset information
         for input_value in inputs:
             result.pipeline_run.add_input_dataset(input_value)
 
         return runtime, output, result.pipeline_run
-

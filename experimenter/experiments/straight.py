@@ -15,11 +15,7 @@ class StraightArchitectureExperimenter(Experiment):
     """
 
     def generate_pipelines(
-        self,
-        *
-        preprocessors: List[str],
-        models: Dict[str,str],
-        **unused_args
+        self, *preprocessors: List[str], models: Dict[str, str], **unused_args
     ) -> Dict[str, List[Pipeline]]:
         """
         A high level function to create numerous pipelines for a list of preprocessor and model
@@ -33,13 +29,17 @@ class StraightArchitectureExperimenter(Experiment):
         for type_name, model_list in models.items():
             # Generate all pipelines without preprocessors
             for model in model_list:
-                pipeline_without_preprocessor: Pipeline = self.generate_pipeline(None, model)
+                pipeline_without_preprocessor: Pipeline = self.generate_pipeline(
+                    None, model
+                )
                 generated_pipelines[type_name].append(pipeline_without_preprocessor)
 
             # Generate all pipelines with preprocessors
             for p in preprocessors:
                 for model in model_list:
-                    pipeline_with_preprocessor: Pipeline = self.generate_pipeline(p, model)
+                    pipeline_with_preprocessor: Pipeline = self.generate_pipeline(
+                        p, model
+                    )
                     generated_pipelines[type_name].append(pipeline_with_preprocessor)
 
         return generated_pipelines
@@ -55,9 +55,7 @@ class StraightArchitectureExperimenter(Experiment):
         # Creating Pipeline
         architecture = PipelineArchDesc("straight")
         pipeline_description = EZPipeline(
-            arch_desc=architecture,
-            add_preparation_steps=True,
-            context=Context.TESTING
+            arch_desc=architecture, add_preparation_steps=True, context=Context.TESTING
         )
 
         preprocessor_used = False
@@ -65,12 +63,13 @@ class StraightArchitectureExperimenter(Experiment):
         # Preprocessor Step
         if preprocessor:
             pipeline_description.add_primitive_step(
-                preprocessor,
-                pipeline_description.data_ref_of('attrs')
+                preprocessor, pipeline_description.data_ref_of("attrs")
             )
             preprocessor_used = True
-        
-        pipeline_description.arch_desc.generation_parameters["preprocessor_used"] = preprocessor_used
+
+        pipeline_description.arch_desc.generation_parameters[
+            "preprocessor_used"
+        ] = preprocessor_used
 
         # Classifier Step
 
@@ -79,13 +78,15 @@ class StraightArchitectureExperimenter(Experiment):
         if preprocessor_used:
             model_args_data_ref = pipeline_description.curr_step_data_ref
         else:
-            model_args_data_ref = pipeline_description.data_ref_of('attrs')
+            model_args_data_ref = pipeline_description.data_ref_of("attrs")
 
         pipeline_description.add_primitive_step(classifier, model_args_data_ref)
 
         pipeline_description.add_predictions_constructor()
 
         # Adding output step to the pipeline
-        pipeline_description.add_output(name='Output', data_reference=pipeline_description.curr_step_data_ref)
+        pipeline_description.add_output(
+            name="Output", data_reference=pipeline_description.curr_step_data_ref
+        )
 
         return pipeline_description

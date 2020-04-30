@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 from typing import Dict, List
 from itertools import combinations
@@ -21,7 +22,7 @@ class EnsembleArchitectureExperimenter(Experiment):
         self,
         *,
         preprocessors: List[str],
-        models: Dict[str,str],
+        models: Dict[str, str],
         n_classifiers: int,
         n_preprocessors: int,
         **unused_args
@@ -45,11 +46,17 @@ class EnsembleArchitectureExperimenter(Experiment):
             model_combinations = list(combinations(models[problem_type], n_classifiers))
             for model_list in model_combinations:
                 for preprocessor in preprocessors:
-                    generated = self._generate_k_ensembles(k_ensembles=n_classifiers, n_preprocessors=n_preprocessors,
-                                                          preprocessors=preprocessors, models=models,
-                                                          given_preprocessors=[preprocessor], model=list(model_list),
-                                                          same_model=True, same_preprocessor_order=True,
-                                                          problem_type=problem_type)
+                    generated = self._generate_k_ensembles(
+                        k_ensembles=n_classifiers,
+                        n_preprocessors=n_preprocessors,
+                        preprocessors=preprocessors,
+                        models=models,
+                        given_preprocessors=[preprocessor],
+                        model=list(model_list),
+                        same_model=True,
+                        same_preprocessor_order=True,
+                        problem_type=problem_type,
+                    )
                     all_ensembles[problem_type] += generated[problem_type]
 
         logger.info("Starting same models, different preprocessor")
@@ -57,18 +64,30 @@ class EnsembleArchitectureExperimenter(Experiment):
         for problem_type in models:
             for model in models[problem_type]:
                 for preprocessors in preprocessor_combinations:
-                    generated = self._generate_k_ensembles(k_ensembles=n_classifiers, n_preprocessors=n_preprocessors,
-                                                          preprocessors=preprocessors, models=models,
-                                                          given_preprocessors=preprocessors, model=model,
-                                                          same_model=True, same_preprocessor_order=True,
-                                                          problem_type=problem_type)
+                    generated = self._generate_k_ensembles(
+                        k_ensembles=n_classifiers,
+                        n_preprocessors=n_preprocessors,
+                        preprocessors=preprocessors,
+                        models=models,
+                        given_preprocessors=preprocessors,
+                        model=model,
+                        same_model=True,
+                        same_preprocessor_order=True,
+                        problem_type=problem_type,
+                    )
                     all_ensembles[problem_type] += generated[problem_type]
-
 
         return all_ensembles
 
-    def generate_pipeline(self, k: int, p: int, preprocessor_list: List[str], model_list: List[str], concatenator: str, 
-                                 problem_type: str) -> Pipeline:
+    def generate_pipeline(
+        self,
+        k: int,
+        p: int,
+        preprocessor_list: List[str],
+        model_list: List[str],
+        concatenator: str,
+        problem_type: str,
+    ) -> Pipeline:
         """
         This function does the nitty gritty work of preparing the pipeline and returning it
         :param k: the number of pipelines that will be ensembled
@@ -80,17 +99,14 @@ class EnsembleArchitectureExperimenter(Experiment):
         :return: the ensembled pipeline
         """
 
-        logger.info("Creating {} pipelines of length {}".format(k, p+1))
+        logger.info("Creating {} pipelines of length {}".format(k, p + 1))
 
         # Creating Pipeline
         architecture = PipelineArchDesc(
-            "ensemble",
-            { "width": k, "subpipeline_length": p+1 }
+            "ensemble", {"width": k, "subpipeline_length": p + 1}
         )
         pipeline_description = EZPipeline(
-            arch_desc=architecture,
-            add_preparation_steps=True,
-            context=Context.TESTING
+            arch_desc=architecture, add_preparation_steps=True, context=Context.TESTING
         )
 
         list_of_outputs = []
@@ -102,12 +118,13 @@ class EnsembleArchitectureExperimenter(Experiment):
             model = model_list[pipeline_number % len(model_list)]
 
             # Add Preprocessors Step
-            for index, pre in enumerate(reversed(preprocessor_list[pipeline_number % len(preprocessor_list)])):
+            for index, pre in enumerate(
+                reversed(preprocessor_list[pipeline_number % len(preprocessor_list)])
+            ):
                 if index == p:
                     break
                 pipeline_description.add_primitive_step(
-                    pre,
-                    pipeline_description.data_ref_of('attrs')
+                    pre, pipeline_description.data_ref_of("attrs")
                 )
                 preprocessor_used = True
 
@@ -116,9 +133,11 @@ class EnsembleArchitectureExperimenter(Experiment):
             if preprocessor_used:
                 model_args_data_ref = pipeline_description.curr_step_data_ref
             else:
-                model_args_data_ref = pipeline_description.data_ref_of('attrs')
+                model_args_data_ref = pipeline_description.data_ref_of("attrs")
 
-            pipeline_description.add_primitive_step(model, model_args_data_ref, is_final_model=False)
+            pipeline_description.add_primitive_step(
+                model, model_args_data_ref, is_final_model=False
+            )
             list_of_outputs.append(pipeline_description.curr_step_data_ref)
 
         # concatenate the outputs of the k pipelines together
@@ -131,14 +150,25 @@ class EnsembleArchitectureExperimenter(Experiment):
         pipeline_description.add_predictions_constructor()
 
         # Adding output step to the pipeline
-        pipeline_description.add_output(name='Output', data_reference=pipeline_description.curr_step_data_ref)
+        pipeline_description.add_output(
+            name="Output", data_reference=pipeline_description.curr_step_data_ref
+        )
 
         return pipeline_description
 
-    def _generate_k_ensembles(self, k_ensembles: int, n_preprocessors, preprocessors: list, models: dict,
-                             n_generated_pipelines: int = 1, model: str = None, same_model: bool = True,
-                             same_preprocessor_order: bool = True, problem_type: str = "classification",
-                             given_preprocessors: list = None) -> dict:
+    def _generate_k_ensembles(
+        self,
+        k_ensembles: int,
+        n_preprocessors,
+        preprocessors: list,
+        models: dict,
+        n_generated_pipelines: int = 1,
+        model: str = None,
+        same_model: bool = True,
+        same_preprocessor_order: bool = True,
+        problem_type: str = "classification",
+        given_preprocessors: list = None,
+    ) -> dict:
         """
         This function takes all the options on how to generate ensembles and then returns the created pipelines
         :param k_ensembles: the number of pipelines that will be ensembles together to form one big pipeline.
@@ -156,7 +186,9 @@ class EnsembleArchitectureExperimenter(Experiment):
         """
 
         if model is None and same_model:
-            logger.info("Error: did not specify a model to ensemble with.  Please enter a valid model name.")
+            logger.info(
+                "Error: did not specify a model to ensemble with.  Please enter a valid model name."
+            )
             raise Exception
 
         if k_ensembles == -1:
@@ -172,10 +204,12 @@ class EnsembleArchitectureExperimenter(Experiment):
             n_generated_pipelines = 1
 
         # initialize values and constants
-        generated_pipes = {'classification': [], 'regression': []}
+        generated_pipes = {"classification": [], "regression": []}
         model_list = []
         preprocessor_list = []
-        horizontal_concat = "d3m.primitives.data_transformation.horizontal_concat.DataFrameCommon"
+        horizontal_concat = (
+            "d3m.primitives.data_transformation.horizontal_concat.DataFrameCommon"
+        )
 
         for algorithm_type in problem_types:
             # use the model given, or use random ones from all options
@@ -217,7 +251,9 @@ class EnsembleArchitectureExperimenter(Experiment):
                         if len(given_preprocessors) == 1:
                             logger.info("Only given one preprocessor")
                             preprocessor_to_use = given_preprocessors[0]
-                            preprocessor_list = [[preprocessor_to_use] for x in range(k_ensembles)]
+                            preprocessor_list = [
+                                [preprocessor_to_use] for x in range(k_ensembles)
+                            ]
                         else:
                             logger.info("Only more than one preprocessor")
                             # there is more than one preprocessor given
@@ -241,17 +277,20 @@ class EnsembleArchitectureExperimenter(Experiment):
                 logger.info(model_list)
                 logger.info(preprocessor_list)
                 final_pipeline = self.generate_pipeline(
-                    k_ensembles, n_preprocessors, preprocessor_list,
-                    model_list, horizontal_concat, algorithm_type
+                    k_ensembles,
+                    n_preprocessors,
+                    preprocessor_list,
+                    model_list,
+                    horizontal_concat,
+                    algorithm_type,
                 )
                 generated_pipes[algorithm_type].append(final_pipeline)
 
         return generated_pipes
-    
+
     def _get_ensembler(self, problem_type: str) -> str:
         problem_model_map = {
-            "classification": 'd3m.primitives.classification.random_forest.SKlearn',
-            "regression": "d3m.primitives.regression.random_forest.SKlearn"
+            "classification": "d3m.primitives.classification.random_forest.SKlearn",
+            "regression": "d3m.primitives.regression.random_forest.SKlearn",
         }
         return problem_model_map[problem_type]
-

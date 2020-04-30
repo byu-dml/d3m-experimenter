@@ -6,19 +6,23 @@ from test.config import TEST_PROBLEM_REFERENCES
 
 
 class PipelineGenerationTestCase(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
-        cls.datasets_dir = '/datasets'
-        cls.seed_problem_directory = ['training_datasets/seed_datasets_archive']
+        cls.datasets_dir = "/datasets"
+        cls.seed_problem_directory = ["training_datasets/seed_datasets_archive"]
 
     # @classmethod
     def setUp(self):
-        volumes_dir = '/volumes'
-        models = {'classification': ['d3m.primitives.classification.gaussian_naive_bayes.SKlearn']}
+        volumes_dir = "/volumes"
+        models = {
+            "classification": [
+                "d3m.primitives.classification.gaussian_naive_bayes.SKlearn"
+            ]
+        }
         preprocessors = []  # give no preprocessors
         self.experimenter_driver = Experimenter(
-            self.datasets_dir, volumes_dir,
+            self.datasets_dir,
+            volumes_dir,
             input_problem_directory=[self.seed_problem_directory],
             input_models=models,
             input_preprocessors=preprocessors,
@@ -27,30 +31,38 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     def test_get_classification_problems(self):
         known_seed_classification_problems_test = set(
-            [ref for ref in TEST_PROBLEM_REFERENCES.values() if ref.problem_type == "classification"
-        ])
+            [
+                ref
+                for ref in TEST_PROBLEM_REFERENCES.values()
+                if ref.problem_type == "classification"
+            ]
+        )
 
-        found_problem_paths = set(self.experimenter_driver.problems['classification'])
+        found_problem_paths = set(self.experimenter_driver.problems["classification"])
         for known_problem in known_seed_classification_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
-                f'known problem {known_problem.name} not found at path {known_problem.path}\nknown paths:\n{found_problem_paths}'
+                f"known problem {known_problem.name} not found at path {known_problem.path}\nknown paths:\n{found_problem_paths}",
             )
-    
+
     def test_get_regression_problems(self):
         known_seed_regression_problems_test = set(
-            [ref for ref in TEST_PROBLEM_REFERENCES.values() if ref.problem_type == "regression"
-        ])
+            [
+                ref
+                for ref in TEST_PROBLEM_REFERENCES.values()
+                if ref.problem_type == "regression"
+            ]
+        )
 
-        found_problem_paths = set(self.experimenter_driver.problems['regression'])
+        found_problem_paths = set(self.experimenter_driver.problems["regression"])
         for known_problem in known_seed_regression_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
-                f'known problem {known_problem.name} not found at path {known_problem.path}'
+                f"known problem {known_problem.name} not found at path {known_problem.path}",
             )
-    
+
     def test_basic_pipeline_structure(self):
-        # DatasetToDataFrame -> 
+        # DatasetToDataFrame ->
         # ExtractSemanticTypes(targets) ->
         # ColumnParser ->
         # ExtractSemanticTypes(attributes) ->
@@ -59,20 +71,33 @@ class PipelineGenerationTestCase(unittest.TestCase):
         # SKGaussianNB ->
         # ConstructPredictions
         num_pipeline_steps = 8
-        dataset_to_dataframe = 'd3m.primitives.data_transformation.dataset_to_dataframe.Common'
-        construct_predictions = 'd3m.primitives.data_transformation.construct_predictions.Common'
+        dataset_to_dataframe = (
+            "d3m.primitives.data_transformation.dataset_to_dataframe.Common"
+        )
+        construct_predictions = (
+            "d3m.primitives.data_transformation.construct_predictions.Common"
+        )
 
         print("Testing that the pipelines are what they should be...")
         # should only make one pipeline with no preprocessor
 
         self.assertEqual(
-            1, len(self.experimenter_driver.generated_pipelines['classification']),
-            'Expected 1 pipeline to be generated, but got {}'.format(
-                len(self.experimenter_driver.generated_pipelines['classification'])
-            )
+            1,
+            len(self.experimenter_driver.generated_pipelines["classification"]),
+            "Expected 1 pipeline to be generated, but got {}".format(
+                len(self.experimenter_driver.generated_pipelines["classification"])
+            ),
         )
-        generated_pipeline = self.experimenter_driver.generated_pipelines['classification'][0].to_json_structure()
+        generated_pipeline = self.experimenter_driver.generated_pipelines[
+            "classification"
+        ][0].to_json_structure()
         # make sure there are the normal number of steps in the pipeline
-        self.assertEqual(len(generated_pipeline['steps']), num_pipeline_steps)
-        self.assertEqual(generated_pipeline['steps'][0]['primitive']['python_path'], dataset_to_dataframe)
-        self.assertEqual(generated_pipeline['steps'][-1]['primitive']['python_path'], construct_predictions)
+        self.assertEqual(len(generated_pipeline["steps"]), num_pipeline_steps)
+        self.assertEqual(
+            generated_pipeline["steps"][0]["primitive"]["python_path"],
+            dataset_to_dataframe,
+        )
+        self.assertEqual(
+            generated_pipeline["steps"][-1]["primitive"]["python_path"],
+            construct_predictions,
+        )

@@ -5,10 +5,13 @@ import urllib.request
 from hidden_constants import username, password
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 import yaml
+
 filepath = "/users/guest/o/orionw/database/pipelines/first.json"
+
 
 def yaml_as_python(val):
     """Convert YAML to dict"""
@@ -26,8 +29,8 @@ with open(filepath) as input_file:
 
 results = value_list[0]
 
-headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-url = 'https://metalearning.datadrivendiscovery.org/1.0/pipeline/'
+headers = {"Accept": "application/json", "Content-Type": "application/json"}
+url = "https://metalearning.datadrivendiscovery.org/1.0/pipeline/"
 
 payload = json.dumps(results)
 plogger.info(payload)

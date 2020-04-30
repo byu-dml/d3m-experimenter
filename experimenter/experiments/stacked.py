@@ -4,6 +4,7 @@ from d3m.metadata.pipeline import Pipeline
 
 from experimenter.experiments.experiment import Experiment
 
+
 class StackedArchitectureExperimenter(Experiment):
     """
     Generates diverse pipelines of stacked architectures.
@@ -14,7 +15,7 @@ class StackedArchitectureExperimenter(Experiment):
         TODO: Implement.
         """
         raise NotImplementedError
-    
+
     def generate_pipeline(self) -> Pipeline:
         """
         TODO: Implement.
