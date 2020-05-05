@@ -1,4 +1,4 @@
-from typing import Tuple, List, Any, Dict, Set, Optional
+from typing import List, Any, Dict, Set, Optional
 import itertools
 
 from d3m import utils as d3m_utils
@@ -214,6 +214,21 @@ class EZPipeline(Pipeline):
                 },
             )
 
+            # Since the one hot encoder we do next doesn't encode boolean columns,
+            # and since we don't parse boolean target columns so it matches up
+            # with the truth predictions, convert boolean columns to categorical
+            # columns so the encoder encodes them, so they can be used as input
+            # numerical features for downstream primitives.
+            self.add_primitive_step(
+                "d3m.primitives.data_transformation.replace_semantic_types.Common",
+                value_hyperparams={
+                    "from_semantic_types": ["http://schema.org/Boolean"],
+                    "to_semantic_types": [
+                        "https://metadata.datadrivendiscovery.org/types/CategoricalData"
+                    ],
+                },
+            )
+
             # Next the encoder step
             self.add_primitive_step("d3m.primitives.data_cleaning.label_encoder.DSBOX")
 
@@ -347,16 +362,32 @@ class EZPipeline(Pipeline):
         )
         self.set_step_i_of("raw_df")
 
-        # column_parser step
+        # column_profiler step (determine semantic types)
+        self.add_primitive_step(
+            "d3m.primitives.schema_discovery.profiler.Common",
+            value_hyperparams={
+                "categorical_max_absolute_distinct_values": None,
+                "categorical_max_ratio_distinct_values": 1.0,
+            },
+        )
+        self.set_step_i_of("df")
+
+        # extract_columns_by_semantic_types(targets) step
+        self.add_primitive_step(
+            "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
+            self.data_ref_of("df"),
+            value_hyperparams={
+                "semantic_types": [
+                    "https://metadata.datadrivendiscovery.org/types/TrueTarget"
+                ]
+            },
+        )
+
+        # column_parser step on targets (parse string columns according to their semantic type)
         self.add_primitive_step(
             "d3m.primitives.data_transformation.column_parser.Common",
-            self.data_ref_of("raw_df"),
             value_hyperparams={
-                # We don't parse categorical data, since we want it to stay as a string
-                # and not be hashed as a long integer. That makes the one hot encoded
-                # names more interpretable.
                 "parse_semantic_types": (
-                    "http://schema.org/Boolean",
                     "http://schema.org/Integer",
                     "http://schema.org/Float",
                     "https://metadata.datadrivendiscovery.org/types/FloatVector",
@@ -364,27 +395,34 @@ class EZPipeline(Pipeline):
                 )
             },
         )
-        self.set_step_i_of("parsed")
-
-        # extract_columns_by_semantic_types(targets) step
-        self.add_primitive_step(
-            "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
-            value_hyperparams={
-                "semantic_types": [
-                    "https://metadata.datadrivendiscovery.org/types/TrueTarget"
-                ]
-            },
-        )
         self.set_step_i_of("target")
 
         # extract_columns_by_semantic_types(attributes) step
         self.add_primitive_step(
             "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
-            self.data_ref_of("parsed"),
+            self.data_ref_of("df"),
             value_hyperparams={
                 "semantic_types": [
                     "https://metadata.datadrivendiscovery.org/types/Attribute"
                 ]
+            },
+        )
+
+        # column_parser step on attributes (parse string columns according to their
+        # semantic type)
+        self.add_primitive_step(
+            "d3m.primitives.data_transformation.column_parser.Common",
+            value_hyperparams={
+                # We don't parse categorical or boolean data, since we want them to stay
+                # as strings and not be hashed as long integers. That makes the one hot
+                # encoded names more interpretable.
+                "parse_semantic_types": (
+                    "http://schema.org/Boolean",
+                    "http://schema.org/Integer",
+                    "http://schema.org/Float",
+                    "https://metadata.datadrivendiscovery.org/types/FloatVector",
+                    "http://schema.org/DateTime",
+                )
             },
         )
 
@@ -400,8 +438,9 @@ class EZPipeline(Pipeline):
     def add_predictions_constructor(self, input_data_ref: str = None) -> None:
         """
         Adds the predictions constructor to the pipeline
-        :param input_data_ref: the data reference to be used as the input to the predictions primitive.
-            If `None`, the output data reference to the most recently added step will be used. 
+        :param input_data_ref: the data reference to be used as the input to the
+            predictions primitive. If `None`, the output data reference to the
+            most recently added step will be used.
         """
 
         self.add_primitive_step(
@@ -414,13 +453,14 @@ class EZPipeline(Pipeline):
         """
         Adds concatenation steps to the pipeline that join the outputs of every data
         reference found in `data_refs_to_concat` until they are all a single data frame.
-        If two steps in `data_refs_to_concat` have already been concatenated in another step on
-        the pipeline, then that concatenation step will be referenced during this
-        concatenation, instead of creating a new duplicate concatenation step. Reduces
-        the runtime and memory footprint of the pipeline.
+        If two steps in `data_refs_to_concat` have already been concatenated in another
+        step on the pipeline, then that concatenation step will be referenced during
+        this concatenation, instead of creating a new duplicate concatenation step.
+        Reduces the runtime and memory footprint of the pipeline.
 
-        :param data_refs_to_concat: The data references to the steps whose outputs are to be
-            concatentated together. Data references are strings like `steps.4.produce`.
+        :param data_refs_to_concat: The data references to the steps whose outputs are
+            to be concatentated together. Data references are strings like
+            `steps.4.produce`.
         """
         if len(data_refs_to_concat) == 1:
             # No concatenation necessary

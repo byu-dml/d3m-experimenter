@@ -15,16 +15,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def execute_pipeline_on_problem(
-    pipe: Pipeline, problem: str, datasets_dir: str, volumes_dir: str
-):
+def execute_pipeline_on_problem(pipe: Pipeline, problem: str, volumes_dir: str):
     """
     The main function to execute a pipeline.  Called in `experimenter_driver.py`  This function will check if the 
     pipeline and dataset has been executed before, run the pipeline, and record the results
 
     :param pipe: the pipeline object that will be executed
     :param problem: the path to the problemDoc of the particular dataset
-    :param datasets_dir: a string containing the main directory of datasets
     :param volumes_dir: a string containing the path to the volumes directory
     """
     # Attempt to run the pipeline
@@ -40,7 +37,7 @@ def execute_pipeline_on_problem(
     ):
         logger.info("Documents are missing or pipeline has already been run. SKIPPING")
         return
-    run_pipeline = RunPipeline(datasets_dir, volumes_dir, problem)
+    run_pipeline = RunPipeline(volumes_dir, problem)
     try:
         scores, results = run_pipeline.run(pipeline=pipe)
     except Exception as e:
@@ -71,9 +68,7 @@ def execute_pipeline_on_problem(
     )
 
 
-def execute_fit_pipeline_on_problem(
-    pipe: Pipeline, problem: str, datasets_dir: str, volumes_dir: str
-):
+def execute_fit_pipeline_on_problem(pipe: Pipeline, problem: str, volumes_dir: str):
     """
     The main function to execute a `metafeatures` pipeline.  Differs from `execute_pipeline_on_problem` by only handling metafeatures
     TODO: combine this with `execute_pipeline_on_problem`
@@ -82,7 +77,6 @@ def execute_fit_pipeline_on_problem(
 
     :param pipe: the pipeline object that will be executed
     :param problem: the path to the problemDoc of the particular dataset
-    :param datasets_dir: a string containing the main directory of datasets
     :param volumes_dir: a string containing the path to the volumes directory
     """
     # Attempt to run the pipeline
@@ -97,7 +91,7 @@ def execute_fit_pipeline_on_problem(
     ) or mongo_db.metafeature_run_already_exists(problem, pipe.to_json_structure()):
         logger.info("Documents are missing or pipeline has already been run. SKIPPING")
         return
-    run_pipeline = RunFitPipeline(datasets_dir, volumes_dir, problem)
+    run_pipeline = RunFitPipeline(volumes_dir, problem)
     try:
         results = run_pipeline.run(pipeline=pipe)
     except Exception as e:

@@ -1525,11 +1525,11 @@
                     ],
                     "metadata": {
                       "structural_type": "d3m.container.dataset.Dataset",
-                      "id": "185_baseball_dataset",
+                      "id": "185_baseball_MIN_METADATA_dataset",
                       "version": "2.0",
                       "name": "baseball",
                       "location_uris": [
-                        "file:///datasets/training_datasets/seed_datasets_archive/185_baseball/185_baseball_dataset/datasetDoc.json"
+                        "file:///datasets/seed_datasets_current/185_baseball_MIN_METADATA/185_baseball_MIN_METADATA_dataset/datasetDoc.json"
                       ],
                       "dimension": {
                         "name": "resources",
@@ -1911,11 +1911,11 @@
                     ],
                     "metadata": {
                       "structural_type": "d3m.container.dataset.Dataset",
-                      "id": "185_baseball_dataset",
+                      "id": "185_baseball_MIN_METADATA_dataset",
                       "version": "2.0",
                       "name": "baseball",
                       "location_uris": [
-                        "file:///datasets/training_datasets/seed_datasets_archive/185_baseball/185_baseball_dataset/datasetDoc.json"
+                        "file:///datasets/seed_datasets_current/185_baseball_MIN_METADATA/185_baseball_MIN_METADATA_dataset/datasetDoc.json"
                       ],
                       "dimension": {
                         "name": "resources",
@@ -2342,11 +2342,11 @@
                     ],
                     "metadata": {
                       "structural_type": "d3m.container.dataset.Dataset",
-                      "id": "185_baseball_dataset",
+                      "id": "185_baseball_MIN_METADATA_dataset",
                       "version": "2.0",
                       "name": "baseball",
                       "location_uris": [
-                        "file:///datasets/training_datasets/seed_datasets_archive/185_baseball/185_baseball_dataset/datasetDoc.json"
+                        "file:///datasets/seed_datasets_current/185_baseball_MIN_METADATA/185_baseball_MIN_METADATA_dataset/datasetDoc.json"
                       ],
                       "dimension": {
                         "name": "resources",
@@ -2761,11 +2761,11 @@
                     ],
                     "metadata": {
                       "structural_type": "d3m.container.dataset.Dataset",
-                      "id": "185_baseball_dataset",
+                      "id": "185_baseball_MIN_METADATA_dataset",
                       "version": "2.0",
                       "name": "baseball",
                       "location_uris": [
-                        "file:///datasets/training_datasets/seed_datasets_archive/185_baseball/185_baseball_dataset/datasetDoc.json"
+                        "file:///datasets/seed_datasets_current/185_baseball_MIN_METADATA/185_baseball_MIN_METADATA_dataset/datasetDoc.json"
                       ],
                       "dimension": {
                         "name": "resources",
@@ -3963,7 +3963,7 @@
             "metric": "F1_MACRO"
           },
           "value": 0.6536404274210832,
-          "dataset_id": "185_baseball_dataset",
+          "dataset_id": "185_baseball_MIN_METADATA_dataset",
           "targets": [
             {
               "target_index": 0,
@@ -4004,7 +4004,7 @@
   },
   "context": "TESTING",
   "problem": {
-    "id": "185_baseball_problem",
+    "id": "185_baseball_MIN_METADATA_problem",
     "digest": "869d560e3be422b00dd642c21458bc6df77e466f70de18e1a03390246faf94c9"
   },
   "id": "4dab63df-e522-548f-9a07-4dac10769eca"

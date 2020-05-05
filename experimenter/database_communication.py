@@ -320,7 +320,7 @@ class PipelineDB:
         Checks a dataset document to find whether it is "seed", "LL0", or "LL1"
         :param doc: the document to query
         :return min_name: what directory of problems it came from (seed, LL0, LL1)
-        :return problem_name: the name of the problem (i.e. 185_baseball)
+        :return problem_name: the name of the problem (i.e. 185_baseball_MIN_METADATA)
         """
         enum_of_paths = ["seed", "LL0", "LL1"]
         path = ""

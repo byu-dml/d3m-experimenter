@@ -22,7 +22,6 @@ class RunPipeline:
     """
     In this function we define all the parameters needed to actually execute the pipeline.
 
-    :param datasets_dir: a string denoting the base directory containing all the datasets. For example `/datasets`
     :param volumes_dir: a string denoting the volumes directory, used by the runtime.
     :param pipeline_path: a string containing the full path to the pipeline file to be used (JSON or YML file)
     :param problem_path: a string containing the path to the given problem
@@ -31,13 +30,8 @@ class RunPipeline:
     """
 
     def __init__(
-        self,
-        datasets_dir: str,
-        volumes_dir: str,
-        problem_path: str,
-        output_path: str = None,
+        self, volumes_dir: str, problem_path: str, output_path: str = None,
     ):
-        self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.data_pipeline_path = (
             "./experimenter/pipelines/fixed-split-tabular-split.yml"

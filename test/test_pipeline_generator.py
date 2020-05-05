@@ -9,7 +9,7 @@ class PipelineGenerationTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.datasets_dir = "/datasets"
-        cls.seed_problem_directory = "training_datasets/seed_datasets_archive"
+        cls.seed_problem_directory = "seed_datasets_current"
 
     # @classmethod
     def setUp(self):
@@ -63,14 +63,16 @@ class PipelineGenerationTestCase(unittest.TestCase):
 
     def test_basic_pipeline_structure(self):
         # DatasetToDataFrame ->
+        # Profiler ->
         # ExtractSemanticTypes(targets) ->
-        # ColumnParser ->
+        # ColumnParser(targets) ->
         # ExtractSemanticTypes(attributes) ->
+        # ColumnParser(attributes) ->
         # BYUImputer ->
         # OneHotEncoder ->
         # SKGaussianNB ->
         # ConstructPredictions
-        num_pipeline_steps = 8
+        num_pipeline_steps = 10
         dataset_to_dataframe = (
             "d3m.primitives.data_transformation.dataset_to_dataframe.Common"
         )

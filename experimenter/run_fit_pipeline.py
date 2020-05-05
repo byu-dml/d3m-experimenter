@@ -21,28 +21,19 @@ class RunFitPipeline:
     """
     In this function we define all the parameters needed to actually execute the pipeline.
 
-    :param datasets_dir: a string denoting the base directory containing all the datasets. For example `/datasets`
     :param volumes_dir: a string denoting the volumes directory, used by the runtime.
     :param pipeline_path: a string containing the full path to the pipeline file to be used (JSON or YML file)
     :param problem_path: a string containing the path to the given problem
-    :param output_path: an optional parameter specifying the location to place the finished pipeline_run file.  If it
-        is empty no output path is used.
     """
 
     def __init__(
-        self,
-        datasets_dir: str,
-        volumes_dir: str,
-        problem_path: str,
-        output_path: str = None,
+        self, volumes_dir: str, problem_path: str,
     ):
-        self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.data_pipeline_path = (
             "./experimenter/pipelines/fixed-split-tabular-split.yml"
         )
         self.scoring_pipeline_path = "./experimenter/pipelines/scoring.yml"
-        self.output_path = output_path
         self.problem_path = problem_path
         self.problem_name = self.problem_path.split("/")[-1]
 

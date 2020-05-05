@@ -1,0 +1,38 @@
+{
+  "about": {
+    "datasetID": "1491_one_hundred_plants_margin_MIN_METADATA_dataset",
+    "datasetName": "one_hundred_plants_margin",
+    "description": "Plant Leaf Classification Using Probabilistic Integration of Shape, Texture and Margin Features. Signal Processing, Pattern Recognition and Applications, in press. 2013.     \n\n### Description\n\nOne-hundred plant species leaves dataset (Class = Margin).The original data directory contains the binary images (masks) of the leaf samples (colour images not included).\nThere are three features for each image: Shape, Margin and Texture.\nFor each feature, a 64 element vector is given per leaf sample.\nThese vectors are taken as a contiguous descriptor (for shape) or histograms (for texture and margin).\nSo, there are three different files, one for each feature problem:  \n * 'data_Sha_64.txt' -> prediction based on shape\n * 'data_Tex_64.txt' -> prediction based on texture\n * 'data_Mar_64.txt' -> prediction based on margin [**dataset provided here**] \n\nEach row has a 64-element feature vector followed by the Class label.\nThere is a total of 1600 samples with 16 samples per leaf class (100 classes), and no missing values.\n\n### Attributes Information\n\nThree 64 element feature vectors per sample.\n",
+    "citation": " @article{article,author = {Mallah, Charles and Cope, James and Orwell, James},year = {2013},month = {02},pages = {},title = {Plant Leaf Classification using Probabilistic Integration of Shape, Texture and Margin Features},volume = {3842},journal = {Pattern Recognit. Appl.},doi = {10.2316/P.2013.798-098}} ",
+    "license": " CC Public Domain Mark 1.0 ",
+    "source": "OpenML",
+    "sourceURI": "http://www.openml.org/d/1491",
+    "approximateSize": "",
+    "datasetVersion": "4.0.0",
+    "datasetSchemaVersion": "4.0.0",
+    "redacted": false,
+    "digest": "7737a8530f9d22eaef737aeb883f6ebc2a73332d0f9c3a4c194e0ed7b235adf2"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": {
+        "text/csv": [
+          "csv"
+        ]
+      },
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        }
+      ]
+    }
+  ]
+}

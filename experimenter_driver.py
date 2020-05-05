@@ -187,7 +187,6 @@ class ExperimenterDriver:
                                         execute_pipeline_on_problem,
                                         pipe,
                                         problem,
-                                        self.datasets_dir,
                                         self.volumes_dir,
                                         timeout=60 * 12,
                                     )
@@ -196,13 +195,12 @@ class ExperimenterDriver:
                                         execute_fit_pipeline_on_problem,
                                         pipe,
                                         problem,
-                                        self.datasets_dir,
                                         self.volumes_dir,
                                         timeout=60 * 60,
                                     )
                             else:
                                 execute_pipeline_on_problem(
-                                    pipe, problem, self.datasets_dir, self.volumes_dir
+                                    pipe, problem, self.volumes_dir
                                 )
 
                         except Exception as e:

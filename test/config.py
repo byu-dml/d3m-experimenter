@@ -9,22 +9,28 @@ class ProblemReference(NamedTuple):
     problem_type: str
 
 
-TEST_DATASETS_DIR = "/datasets/training_datasets/seed_datasets_archive"
+TEST_DATASETS_DIR = "/datasets/seed_datasets_current"
 
 TEST_PROBLEM_REFERENCES = {
-    "38_sick": ProblemReference(
-        "38_sick", TEST_DATASETS_DIR + "/38_sick", "classification"
-    ),
-    "1491_one_hundred_plants_margin": ProblemReference(
-        "1491_one_hundred_plants_margin",
-        TEST_DATASETS_DIR + "/1491_one_hundred_plants_margin",
+    "38_sick_MIN_METADATA": ProblemReference(
+        "38_sick_MIN_METADATA",
+        TEST_DATASETS_DIR + "/38_sick_MIN_METADATA",
         "classification",
     ),
-    "185_baseball": ProblemReference(
-        "185_baseball", TEST_DATASETS_DIR + "/185_baseball", "classification"
+    "1491_one_hundred_plants_margin_MIN_METADATA": ProblemReference(
+        "1491_one_hundred_plants_margin_MIN_METADATA",
+        TEST_DATASETS_DIR + "/1491_one_hundred_plants_margin_MIN_METADATA",
+        "classification",
     ),
-    "196_autoMpg": ProblemReference(
-        "196_autoMpg", TEST_DATASETS_DIR + "/196_autoMpg", "regression"
+    "185_baseball_MIN_METADATA": ProblemReference(
+        "185_baseball_MIN_METADATA",
+        TEST_DATASETS_DIR + "/185_baseball_MIN_METADATA",
+        "classification",
+    ),
+    "196_autoMpg_MIN_METADATA": ProblemReference(
+        "196_autoMpg_MIN_METADATA",
+        TEST_DATASETS_DIR + "/196_autoMpg_MIN_METADATA",
+        "regression",
     ),
 }
 
