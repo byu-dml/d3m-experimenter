@@ -7,3 +7,4 @@ env/*
 tests/.cache/
 .vscode/*
 *.egg-info
+d3m/
