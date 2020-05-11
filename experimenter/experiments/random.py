@@ -151,9 +151,7 @@ class RandomArchitectureExperimenter(Experiment):
         structure.add_primitive_step(model_python_path, final_concat_ref)
         structure.set_step_i_of("final_model")
 
-        structure.add_predictions_constructor()
-        # Adding output step to the pipeline
-        structure.add_output(name="Output", data_reference=structure.curr_step_data_ref)
+        structure.finalize()
         return structure
 
     def _sample_parameters(

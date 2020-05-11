@@ -370,29 +370,33 @@ class EZPipeline(Pipeline):
                 "categorical_max_ratio_distinct_values": 1.0,
             },
         )
-        self.set_step_i_of("df")
 
-        # extract_columns_by_semantic_types(targets) step
-        self.add_primitive_step(
-            "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
-            self.data_ref_of("df"),
-            value_hyperparams={
-                "semantic_types": [
-                    "https://metadata.datadrivendiscovery.org/types/TrueTarget"
-                ]
-            },
-        )
-
-        # column_parser step on targets (parse string columns according to their semantic type)
+        # column_parser step (parse string columns according to their semantic type)
         self.add_primitive_step(
             "d3m.primitives.data_transformation.column_parser.Common",
             value_hyperparams={
+                # We don't parse categorical or boolean data, since we want them to stay
+                # as strings and not be hashed as long integers. That makes the one hot
+                # encoded names more interpretable. Also it keeps the target values from
+                # being hashed, so they can still be compared to ground truth target
+                # values.
                 "parse_semantic_types": (
                     "http://schema.org/Integer",
                     "http://schema.org/Float",
                     "https://metadata.datadrivendiscovery.org/types/FloatVector",
                     "http://schema.org/DateTime",
                 )
+            },
+        )
+        self.set_step_i_of("df")
+
+        # extract_columns_by_semantic_types(targets) step
+        self.add_primitive_step(
+            "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
+            value_hyperparams={
+                "semantic_types": [
+                    "https://metadata.datadrivendiscovery.org/types/TrueTarget"
+                ]
             },
         )
         self.set_step_i_of("target")
@@ -412,42 +416,38 @@ class EZPipeline(Pipeline):
         # semantic type)
         self.add_primitive_step(
             "d3m.primitives.data_transformation.column_parser.Common",
-            value_hyperparams={
-                # We don't parse categorical or boolean data, since we want them to stay
-                # as strings and not be hashed as long integers. That makes the one hot
-                # encoded names more interpretable.
-                "parse_semantic_types": (
-                    "http://schema.org/Boolean",
-                    "http://schema.org/Integer",
-                    "http://schema.org/Float",
-                    "https://metadata.datadrivendiscovery.org/types/FloatVector",
-                    "http://schema.org/DateTime",
-                )
-            },
+            value_hyperparams={"parse_semantic_types": ("http://schema.org/Boolean",)},
         )
 
         # imputer step
+        # TODO: Change back to BYU imputer once bug is caught
         self.add_primitive_step(
-            "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU"
+            "d3m.primitives.data_cleaning.imputer.SKlearn",
+            value_hyperparams={
+                "return_result": "replace",
+                "use_semantic_types": True,
+                "strategy": "median",
+            },
         )
 
         # encoder step
         self.add_primitive_step("d3m.primitives.data_preprocessing.encoder.DSBOX")
         self.set_step_i_of("attrs")
 
-    def add_predictions_constructor(self, input_data_ref: str = None) -> None:
+    def finalize(self, input_data_ref: str = None) -> None:
         """
-        Adds the predictions constructor to the pipeline
+        Adds the final component every pipeline needs: The predictions constructor
+        and a reference stating which step give's the pipeline's final output.
         :param input_data_ref: the data reference to be used as the input to the
             predictions primitive. If `None`, the output data reference to the
             most recently added step will be used.
         """
-
         self.add_primitive_step(
             "d3m.primitives.data_transformation.construct_predictions.Common",
             input_data_ref,
-            container_args={"reference": self.data_ref_of("raw_df")},
+            container_args={"reference": self.data_ref_of("df")},
         )
+        self.add_output(name="Output", data_reference=self.curr_step_data_ref)
 
     def concatenate_inputs(self, *data_refs_to_concat) -> str:
         """

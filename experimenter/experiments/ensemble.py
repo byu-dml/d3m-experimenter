@@ -147,12 +147,7 @@ class EnsembleArchitectureExperimenter(Experiment):
         pipeline_description.add_primitive_step(ensembler, concat_result_ref)
 
         # output them as predictions
-        pipeline_description.add_predictions_constructor()
-
-        # Adding output step to the pipeline
-        pipeline_description.add_output(
-            name="Output", data_reference=pipeline_description.curr_step_data_ref
-        )
+        pipeline_description.finalize()
 
         return pipeline_description
 
