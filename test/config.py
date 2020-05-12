@@ -4,18 +4,26 @@ from experimenter.config import random
 
 
 class ProblemReference:
-    def __init__(self, name: str, directory: str, problem_type: str) -> None:
+    def __init__(
+        self,
+        name: str,
+        directory: str,
+        problem_type: str,
+        datasets_dir: str = "/datasets",
+    ) -> None:
         """
         :param name: The name of the directory where this problem's files
             can be found.
-        :param directory: The parent directory of the problem directory
-            identified by `name`.
+        :param directory: The path from the root datasets directory to the parent
+            directory of the problem directory identified by `name`.
         :param problem_type: The type of ML problem e.g. "classification" or
             "regression".
+        :param datasets_dir: The root datasets directory which contains all the
+            problem directories (problem directories may not be direct children
+            of this).
         """
         self.name = name
-        self.dir = directory
-        self.path = os.path.join(self.dir, self.name)
+        self.path = os.path.join(datasets_dir, directory, self.name)
         self.problem_type = problem_type
 
     @property
@@ -31,8 +39,8 @@ class ProblemReference:
         return os.path.join(self.path, f"{self.name}_dataset", "datasetDoc.json")
 
 
-TEST_MIN_METADATA_DATASETS_DIR = "/datasets/seed_datasets_current"
-TEST_DATASETS_DIR = "/datasets/training_datasets/seed_datasets_archive"
+TEST_MIN_METADATA_DATASETS_DIR = "seed_datasets_current"
+TEST_DATASETS_DIR = "training_datasets/seed_datasets_archive"
 
 TEST_PROBLEM_REFERENCES = {
     # MIN_METADATA problems (ones without metadata)

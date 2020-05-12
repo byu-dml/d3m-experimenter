@@ -1,6 +1,4 @@
 import logging
-
-logger = logging.getLogger(__name__)
 from collections import defaultdict
 from .constants import (
     models,
@@ -8,27 +6,22 @@ from .constants import (
     problem_directories,
     blacklist_non_tabular_data,
 )
-from d3m import utils as d3m_utils
-from d3m.primitive_interfaces.base import PrimitiveBase
-from d3m.metadata.pipeline import PrimitiveStep
-from d3m.metadata.base import Context, ArgumentType
-from typing import List, Tuple
-import logging
+from d3m.metadata.base import Context
+from typing import List
 from d3m.metadata.pipeline import Pipeline
 from experimenter.pipeline_builder import EZPipeline
 import os
 import json
 from .database_communication import PipelineDB
-from itertools import combinations
-from bson import json_util
-from d3m.metadata import base as metadata_base, problem as base_problem
 from experimenter.experiments.metafeatures import MetafeatureExperimenter
 from experimenter.experiments.random import RandomArchitectureExperimenter
 from experimenter.experiments.straight import StraightArchitectureExperimenter
 from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
 from experimenter.experiments.stacked import StackedArchitectureExperimenter
-from experimenter.config import d3m_index
 from experimenter import utils
+
+
+logger = logging.getLogger(__name__)
 
 
 class Experimenter:

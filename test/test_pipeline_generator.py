@@ -1,15 +1,17 @@
-import sys
 import unittest
 
 from experimenter.experimenter import Experimenter
-from test.config import TEST_PROBLEM_REFERENCES
+from test.config import (
+    TEST_PROBLEM_REFERENCES,
+    TEST_MIN_METADATA_DATASETS_DIR,
+    TEST_DATASETS_DIR,
+)
 
 
 class PipelineGenerationTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.datasets_dir = "/datasets"
-        cls.seed_problem_directory = "seed_datasets_current"
 
     # @classmethod
     def setUp(self):
@@ -23,7 +25,10 @@ class PipelineGenerationTestCase(unittest.TestCase):
         self.experimenter_driver = Experimenter(
             self.datasets_dir,
             volumes_dir,
-            input_problem_directories=[self.seed_problem_directory],
+            input_problem_directories=[
+                TEST_MIN_METADATA_DATASETS_DIR,
+                TEST_DATASETS_DIR,
+            ],
             input_models=models,
             input_preprocessors=preprocessors,
             generate_problems=True,
@@ -42,7 +47,8 @@ class PipelineGenerationTestCase(unittest.TestCase):
         for known_problem in known_seed_classification_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
-                f"known problem {known_problem.name} not found at path {known_problem.path}\nknown paths: {found_problem_paths}",
+                f"known problem {known_problem.name} not found at path "
+                f"{known_problem.path}\nknown paths: {found_problem_paths}",
             )
 
     def test_get_regression_problems(self):
@@ -58,7 +64,8 @@ class PipelineGenerationTestCase(unittest.TestCase):
         for known_problem in known_seed_regression_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
-                f"known problem {known_problem.name} not found at path {known_problem.path}\nknown paths: {found_problem_paths}",
+                f"known problem {known_problem.name} not found at path "
+                f"{known_problem.path}\nknown paths: {found_problem_paths}",
             )
 
     def test_basic_pipeline_structure(self):
