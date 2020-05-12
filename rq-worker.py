@@ -5,7 +5,9 @@ This means that it will stop being a worker when the Queue is empty.
 The job queue is default of "default" priority.
 """
 from rq import Connection, Worker
-import redis, os
+import redis
+import os
+import sys
 
 try:
     redis_host = os.environ["REDIS_HOST"]
