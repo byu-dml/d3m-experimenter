@@ -18,7 +18,6 @@ from experimenter.pipeline_builder import EZPipeline
 try:
     mongo_host = os.environ["MONGO_HOST"]
     mongo_port = int(os.environ["MONGO_PORT"])
-    docker_hostname = os.environ["DOCKER_HOSTNAME"]
 except Exception as E:
     logger.info("ERROR: environment variables not set")
     raise E

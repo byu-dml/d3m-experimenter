@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 try:
     mongo_host = os.environ["MONGO_HOST"]
     mongo_port = int(os.environ["MONGO_PORT"])
-    docker_hostname = os.environ["DOCKER_HOSTNAME"]
     redis_host = os.environ["REDIS_HOST"]
     redis_port = int(os.environ["REDIS_PORT"])
 except Exception as E:

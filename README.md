@@ -2,7 +2,7 @@
 
 # Overview
 
-This package uses the [D3M ecosystem](https://docs.datadrivendiscovery.org/) for machine learning (ML) to build and execute ML pipelines on problems/datasets, storing the pipelines and results of the pipeline runs in a database. As such, this package is useful for generating meta-datasets for use in metalearning, among other things. It can run on all internal D3M dataset types (seed, LL0, LL1).  It runs on classification and regression (17 regressors) type problems that contain tabular data. It can use 15 classifiers, 17 regressors, and 11 preprocessors to build pipelines with. Future work includes hyper-parameter tuning.
+This package uses the [D3M ecosystem](https://docs.datadrivendiscovery.org/) for machine learning (ML) to build and execute ML pipelines on problems/datasets, storing the pipelines and results of the pipeline runs in a database. As such, this package is useful for generating meta-datasets for use in metalearning, among other things. It can run on all internal D3M dataset types (seed, LL0, LL1).  It runs on classification and regression problems that contain tabular data. It can use 15 classifiers, 17 regressors, and 11 preprocessors to build pipelines with. Future work includes hyper-parameter tuning.
 
 # Getting Started
 
@@ -20,9 +20,9 @@ Note: The directory the repo is cloned to will need to be supplied as a volume i
 
 Next copy the file `.env.example` and name the copy `.env` then make these modifications:
 
-1. Modify the value after `VOLUMES=` to whatever you want your container's docker volumes to be (the default is your home directory). The volumes inside of the docker container can be accessed at the path `/volumes`. Note: If you are planning on running the d3m runtime locally, make sure that you will have access to your cloned d3m repository.
-1. Make sure `DATASETS=` is pointing to the datasets you want the container to have access to. The datasets can be accessed from inside the container at `/datasets`.
-1. Fill in the values for connections to databases and host computers
+1. Make sure `DATASETS=` is pointing to the datasets you want the container to have access to. The datasets can then be accessed from inside the container at `/datasets`.
+1. Modify `EXPERIMENTER=` to point to the root directory of this cloned repo.
+1. Fill in the values for connections to the database and Redis server.
 
 # Usage
 
@@ -110,7 +110,7 @@ python3 experimenter_driver.py
 *   To generate pipelines but not execute them, run `python3 experimenter_driver.py --run-type generate`. This will store them in the MongoDB as well.
 *   To run pipelines from mongodb and not generate new ones, run `python3 experimenter_driver.py --run-type execute`
 *   To only execute created pipelines stored in a folder, add the `--pipeline-folder path/to/pipeline/folder` flag.
-*   To distribute pipelines run `python3 experimenter_driver.py --run-type distribute` (see "Lab Distribution Options" below for more info).
+*   To distribute pipelines for concurrent execution run `python3 experimenter_driver.py --run-type distribute` (see "Lab Distribution Options" below for more info).
 *   For more information, see the documentation in `experimenter_driver.py`.
 
 ### Lab Distribution Options
@@ -130,7 +130,7 @@ This pulls all the pipelines out of the database and adds them to the RQ queue a
 #### Running Jobs
 
 1.  Join machines to the queue as workers by using `clusterssh`. Install it, if it is not installed (`sudo apt-get install clusterssh`). A tutorial for using `clusterssh` can be found [here](https://www.linux.com/tutorials/managing-multiple-linux-servers-clusterssh/).
-1.  Execute the command `cssh` followed the by all the names of the machine you want it to run on.  For example `cssh lab1 lab2`. If you encounter an error about not being able to authenticate with the other machine, make sure you can regular SSH into it first and then try again.
+1.  Execute the command `cssh` followed by all the names of the machine you want it to run on.  For example `cssh lab1 lab2`. If you encounter an error about not being able to authenticate with the other machine, make sure you can regular SSH into it first and then try again.
 1.  To prep a lab computer that has not already been set up to run as a worker, first clone the repo onto that computer, change into it, then run `prep-machine.sh`.  Once that is run and you are in the Docker container run `python3 rq-worker.py` to become a worker. Being a worker means that machine will take jobs (pipelines) off the RQ queue, execute them, and persist the resulting pipeline runs in the database. Note: This step can be executed in parallel on all workers from the `clusterssh` terminal.
 
 ### Accessing the DB
@@ -147,7 +147,7 @@ For specific DB commands see `get_documents.py`. The outputs from the above step
 
 ## Random Numbers
 
-For reproducibility, when using random numbers in the repo, use the `random_seed` variable importable from `experimenter.config` to seed your random number generator. If you are using the native `random` python package, you can import `random` from `experimenter.config`. It is a version of the `random` package that's already been seeded with the repo's shared seed. If you want the tests to run deterministically, supply an environment variable called `SEED` with the same value each time. The repo will then use that value as it's common random seed.
+For reproducibility, when using random numbers in the repo, use the `random_seed` variable importable from `experimenter.config` to seed your random number generator. If you are using the native `random` python package, you can import `random` from `experimenter.config`. It is a version of the `random` package that's already been seeded with the repo's shared seed. If you want the tests to run deterministically, supply an environment variable called `SEED` with the same value each time. The repo will then use that value as its common random seed.
 
 ## Managing The Database & Redis Queue
 
