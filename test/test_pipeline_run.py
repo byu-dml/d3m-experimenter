@@ -10,7 +10,7 @@ from d3m.runtime import get_pipeline
 from d3m.metadata import pipeline as pipeline_module
 
 from experimenter.run_pipeline import RunPipeline
-from test.config import TEST_PROBLEM_REFERENCES, TEST_DATASETS_DIR
+from test.config import TEST_PROBLEM_REFERENCES, ProblemReference
 from test.utils import run_experimenter_from_pipeline
 
 
@@ -63,7 +63,7 @@ class TestExecutingPipelines(unittest.TestCase):
             pass
 
     def test_d3m_runtime_works(self):
-        self.run_d3m(self.problem_ref.name)
+        self.run_d3m(self.problem_ref)
 
     def test_experimenter_run_works_from_pipeline(self):
         run_experimenter_from_pipeline(self.pipeline, problem=self.problem_ref)
@@ -73,7 +73,7 @@ class TestExecutingPipelines(unittest.TestCase):
         experimenter_score = run_experimenter_from_pipeline(
             self.pipeline, problem=self.problem_ref
         )
-        self.run_d3m(self.problem_ref.name)
+        self.run_d3m(self.problem_ref)
 
         # get results from d3m output file
         with open(self.TEST_RESULTS_PATH, "r") as file:
@@ -91,7 +91,7 @@ class TestExecutingPipelines(unittest.TestCase):
             ),
         )
 
-    def run_d3m(self, problem_name):
+    def run_d3m(self, problem: ProblemReference):
         # Check that D3M is working and get results
         parser = argparse.ArgumentParser(
             description="Run D3M pipelines with default hyper-parameters."
@@ -106,14 +106,11 @@ class TestExecutingPipelines(unittest.TestCase):
             "-d",
             self.data_pipeline_path,
             "--data-split-file",
-            TEST_DATASETS_DIR
-            + "/{}/{}_problem/dataSplits.csv".format(problem_name, problem_name),
+            problem.data_splits_path,
             "-r",
-            TEST_DATASETS_DIR
-            + "/{}/{}_problem/problemDoc.json".format(problem_name, problem_name),
+            problem.problem_doc_path,
             "-i",
-            TEST_DATASETS_DIR
-            + "/{}/{}_dataset/datasetDoc.json".format(problem_name, problem_name),
+            problem.dataset_doc_path,
             "-O",
             self.TEST_RESULTS_PATH,
         ]

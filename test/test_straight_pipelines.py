@@ -3,7 +3,7 @@ import random
 
 from experimenter.experiments.straight import StraightArchitectureExperimenter
 from experimenter.constants import models, bulletproof_preprocessors
-from test.config import test_problem_reference
+from test.config import test_problem_reference, random
 from test.utils import run_experimenter_from_pipeline
 
 

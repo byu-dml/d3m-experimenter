@@ -91,9 +91,8 @@ primitives_needing_gt_one_column = {
 }
 
 problem_directories = [
-    "seed_datasets_current"
-    # These two have metadata -- we do only min_metadata problems
-    # "training_datasets/seed_datasets_archive",
+    "seed_datasets_current",
+    "training_datasets/seed_datasets_archive",
     # "training_datasets/LL0/",
     # Contains mostly non-tabular or huge tabular datasets
     # "training_datasets/LL1/",
