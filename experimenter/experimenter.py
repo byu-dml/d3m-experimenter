@@ -110,9 +110,12 @@ class Experimenter:
 
     def get_possible_problems(self) -> dict:
         """
-        The high level function to get all problems.  It seperates them into classification and regression problems and ignores the rest
-        This function also adds the problem docs and dataset docs to our database if they do not already exist
-        :return a dictionary containing two keys of file paths: `classification` and `regression`.  Each key is a list of file paths.
+        The high level function to get all problems.  It seperates them into
+        classification and regression problems and ignores the rest This function
+        also adds the problem docs and dataset docs to our database if they do not
+        already exist.
+        :return: a dictionary containing two keys of file paths: `classification`
+            and `regression`.  Each key is a list of file paths.
         """
         problems_list = {"classification": [], "regression": []}
         for problem_directory in self.problem_directories:
@@ -192,7 +195,7 @@ class Experimenter:
 
     def output_pipelines_to_mongodb(self):
         """
-        Writes pipelines to mongo, if they don't already exist
+        Writes pipelines to mongo, if they don't already exist.
         """
         added_pipeline_sum = 0
         for pipeline_type in self.generated_pipelines:
@@ -200,9 +203,9 @@ class Experimenter:
                 added_pipeline_sum += self.mongo_database.add_to_pipelines_mongo(pipe)
 
         logger.info(
-            "Results: {} pipelines added. {} pipelines already exist in database".format(
-                added_pipeline_sum, self.num_pipelines - added_pipeline_sum
-            )
+            f"Results: {added_pipeline_sum} pipelines added. "
+            f"{self.num_pipelines - added_pipeline_sum} pipelines already exist in "
+            "database"
         )
 
     def generate_default_pipeline(self) -> Pipeline:

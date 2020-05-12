@@ -1,7 +1,4 @@
 import logging
-
-logger = logging.getLogger(__name__)
-import collections
 import json
 import os
 import pymongo
@@ -10,10 +7,11 @@ import re
 from typing import List
 from bson import json_util, ObjectId
 from d3m.metadata.pipeline import Pipeline
-import datetime
 from dateutil.parser import parse
 from experimenter.validation import validate_pipeline_run
 from experimenter.pipeline_builder import EZPipeline
+
+logger = logging.getLogger(__name__)
 
 try:
     mongo_host = os.environ["MONGO_HOST"]
@@ -25,10 +23,10 @@ except Exception as E:
 
 class PipelineDB:
     """
-    This class is a helper function for connecting with the databases holding our info
+    This class is a helper function for connecting with the databases holding our info.
 
-    Note: Running this file on the command line will export the pipeline runs from the database into the default folder
-    as defined below.
+    Note: Running this file on the command line will export the pipeline runs from the
+    database into the default folder as defined below.
     """
 
     def __init__(self, mongo_host: str = mongo_host, mongo_port: int = mongo_port):
@@ -50,12 +48,15 @@ class PipelineDB:
         collection_names: list = ["pipeline_runs", "pipelines", "datasets", "problems"],
     ):
         """
-        This function will create or find the directory given and export all pipeline runs from the database to
-        the folder.  The pipeline runs are saved as JSON files.
-        :param folder_directory: the directory for the pipeline runs to be saved in -> there must be two folders in
-        that directory, "pipeline_runs" and "pipelines" unless otherwise specified
-        :param collection_names: A list of the collections that documents will be gathered from. Note this name is the
-        same as the subfolder that must exist for them to put into
+        This function will create or find the directory given and export all pipeline
+        runs from the database to the folder. The pipeline runs are saved as JSON files.
+
+        :param folder_directory: the directory for the pipeline runs to be saved in ->
+            there must be two folders in that directory, "pipeline_runs" and "pipelines"
+            unless otherwise specified
+        :param collection_names: A list of the collections that documents will be
+            gathered from. Note this name is the same as the subfolder that must exist
+            for them to put into
         """
         if not os.path.expanduser(folder_directory):
             # directory not found. Create and give the computer access
@@ -85,7 +86,7 @@ class PipelineDB:
                         type = doc["steps"][-2]["primitive"]["python_path"].split(".")[
                             -3
                         ]
-                    except Exception as e:
+                    except Exception:
                         type = "unknown"
                     file_path = os.path.join(
                         output_directory,
@@ -149,7 +150,7 @@ class PipelineDB:
             # logger.info("Clearing pipeline_runs collection")
             # db.pipeline_runs.remove({})
             # logger.info("Clearing pipeline collection")
-            # db.pipelines.remove({})
+            # db.pipelines_to_run.remove({})
             # logger.info("Clearing datasets collection")
             # db.datasets.remove({})
             # logger.info("Clearing problems collection")
@@ -165,13 +166,16 @@ class PipelineDB:
         skip_pipeline: bool = False,
     ) -> bool:
         """
-         Used by experimenter_driver.py to check whether or not to run a pipeline on a specific problem
-         Currently checks for duplicates and for whether or not the pipeline and dataset exists in the the db
-         :param problem: the name of the problem 
-         :param pipeline: the pipeline json that is being checked
-         :param collection_name: the collection name to check if it exists already
-         :param skip_pipeline: a flag to skip checking the database for it by assuming it already exists
-         :return True if the pipeline should not be run, False if we should proceed
+        Used by experimenter_driver.py to check whether or not to run a pipeline on a
+        specific problem. Currently checks for duplicates and for whether or not the
+        pipeline and dataset exists in the the db.
+
+        :param problem: the name of the problem
+        :param pipeline: the pipeline json that is being checked
+        :param collection_name: the collection name to check if it exists already
+        :param skip_pipeline: a flag to skip checking the database for it by assuming
+            it already exists
+        :return True if the pipeline should not be run, False if we should proceed
          """
         db = self.mongo_client.metalearning
         collection = db[collection_name]
@@ -180,7 +184,7 @@ class PipelineDB:
         problem_id = problem.split("/")[-1] + "_problem"
 
         # Make sure the pipeline, problem, and dataset docs exist already:
-        pipeline_collection = db.pipelines
+        pipeline_collection = db.pipelines_to_run
         dataset_collection = db.datasets
         problem_collection = db.problems
         dataset_exists = dataset_collection.count_documents(
@@ -198,12 +202,12 @@ class PipelineDB:
         # check for existence
         if not dataset_exists or not problem_exists or not pipeline_exists:
             logger.info(
-                "This pipeline, problem, and or dataset has not been entered in the database yet"
+                "This pipeline, problem, and or dataset "
+                "has not been entered in the database yet"
             )
             logger.info(
-                "Missing pipeline {}, missing dataset doc: {}, missing problem doc: {}".format(
-                    not pipeline_exists, not problem_exists, not dataset_exists
-                )
+                f"Missing pipeline {not pipeline_exists}, missing dataset doc: "
+                f"{not problem_exists}, missing problem doc: {not dataset_exists}"
             )
             return True
         # check for duplicates
@@ -216,7 +220,9 @@ class PipelineDB:
 
     def add_to_pipeline_runs_mongo(self, pipeline_run: dict, collection_name: str):
         """
-        Adds a pipeline run to the database.  Minimal error checking as we assume "has_duplicate_pipeline_run" has been run.
+        Adds a pipeline run to the database.  Minimal error checking as we assume
+        "has_duplicate_pipeline_run" has been run.
+
         :param pipeline_run: the json document of the pipeline_run
         :param collection_name: the name of the collection to add the pipeline_run to
         """
@@ -235,17 +241,19 @@ class PipelineDB:
             )
         else:
             logger.info(
-                "\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n"
+                "\n\nWARNING: PIPELINE_RUN ALREADY "
+                "EXISTS IN DATABASE. NOTHING WRITTEN.\n\n"
             )
 
     def add_to_pipelines_mongo(self, new_pipeline: EZPipeline) -> bool:
         """
         Function to add a pipeline to the mongodb database of pipelines.
         :param new_pipeline: the new pipeline to add to mongo
-        :return False if the database already contains it, True if the pipeline was added to the database
+        :return False if the database already contains it, True if the pipeline was
+            added to the database
         """
         db = self.mongo_client.metalearning
-        collection = db.pipelines
+        collection = db.pipelines_to_run
         new_pipeline_json = new_pipeline.to_json_structure()
         digest = new_pipeline_json["digest"]
         id = new_pipeline_json["id"]
@@ -300,13 +308,15 @@ class PipelineDB:
         self, problem: str, primitives_string: str
     ) -> int:
         """
-        Finds a pipeline by taking the primities used and concatenating them, and then finding same pipelines
-        TODO: is this ever used?
+        Finds a pipeline by taking the primities used and concatenating them, and then
+        finding same pipelines. TODO: is this ever used?
+
         :param problem: the problem the pipeline ran on
         :param primitives_string: the concatenated string of primitives
         :return the count of pipelines that match that primitives_string
         """
-        # Attempt to uniquely identify a pipeline_run by the combination of inputs and pipeline
+        # Attempt to uniquely identify a pipeline_run by the combination of inputs and
+        # pipeline
         problem_name = problem.split("/")[-1]
         primitives_id_string = problem_name + primitives_string
 
@@ -324,7 +334,8 @@ class PipelineDB:
         enum_of_paths = ["seed", "LL0", "LL1"]
         path = ""
         # TODO: this is super ugly but the only way I can find to do this
-        # try to get the URI from the docs. Depending on the pipeline this is the first through the third.
+        # try to get the URI from the docs. Depending on the pipeline this is the first
+        # through the third.
         for index in range(3):
             try:
                 path = doc["steps"][0]["method_calls"][index]["metadata"]["produce"][0][
@@ -336,7 +347,8 @@ class PipelineDB:
                 logger.info("WARNING: could not get the URI")
                 return "unknown", "unknown"
 
-        # search for the first one of these. The first one to appear is which folder it is in.
+        # search for the first one of these. The first one to appear is which folder
+        # it is in.
         seed = path.find(enum_of_paths[0])
         LL0 = path.find(enum_of_paths[1])
         LL1 = path.find(enum_of_paths[2])
@@ -351,7 +363,7 @@ class PipelineDB:
         return min_name, problem_name
 
     def is_phrase_in(self, phrase: str, text: str) -> bool:
-        """ 
+        """
         a helper function for regex-ing through text
         :param phrase: the phrase to look in the text for
         :param text: the text to be searched
@@ -362,11 +374,12 @@ class PipelineDB:
     def get_all_pipelines(self) -> dict:
         """
         Used to gather pipelines for the experimenter_driver.py
-        :returns a dictionary with two keys "classification" and "regression" each full of pipelines from the database
+        :returns a dictionary with two keys "classification" and "regression" each full
+            of pipelines from the database
         """
         pipelines = {"classification": [], "regression": []}
         db = self.mongo_client.metalearning
-        collection = db.pipelines
+        collection = db.pipelines_to_run
         pipeline_cursor = collection.find({})
         for index, pipeline in enumerate(pipeline_cursor):
             if index % 1000 == 0:
@@ -449,9 +462,9 @@ class PipelineDB:
         """
         delete_these_pipelines = []
         db = self.mongo_client.metalearning
-        collection = db.pipelines
+        collection = db.pipelines_to_run
         pipeline_cursor = collection.find({})
-        for index, pipeline in enumerate(pipeline_cursor):
+        for pipeline in pipeline_cursor:
             pipeline_steps_to_compare = primitive_list_from_pipeline_json(pipeline)
             for primitive in bad_primitives:
                 if primitive in pipeline_steps_to_compare:
@@ -464,13 +477,14 @@ class PipelineDB:
         pdb.set_trace()
 
         for document_id in delete_these_pipelines:
-            result = collection.delete_one({"_id": ObjectId(document_id)})
+            collection.delete_one({"_id": ObjectId(document_id)})
 
         return
 
     def clean_pipeline_runs(self):
         """
-        A function for deleting all pipeline_runs that do not match all the checks (verified problem, dataset, and pipeline, etc.)
+        A function for deleting all pipeline_runs that do not match all the checks
+        (verified problem, dataset, and pipeline, etc.)
         """
         delete_these_documents = []
         db = self.mongo_client.metalearning
@@ -490,7 +504,7 @@ class PipelineDB:
             no_dataset = not db.datasets.count_documents(
                 {"about.digest": dataset_digest}
             )
-            no_pipeline = not db.pipelines.count_documents(
+            no_pipeline = not db.pipelines_to_run.count_documents(
                 {"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]}
             )
             if no_dataset and no_pipeline:
@@ -511,7 +525,7 @@ class PipelineDB:
         pdb.set_trace()
 
         for document_id in delete_these_documents:
-            result = collection.delete_one({"_id": ObjectId(document_id)})
+            collection.delete_one({"_id": ObjectId(document_id)})
 
         return
 
@@ -556,13 +570,13 @@ class PipelineDB:
         ):
             pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
             logger.info(
-                "Wrote metafeature pipeline run to the database with inserted_id: {}".format(
-                    pipeline_run_id
-                )
+                "Wrote metafeature pipeline run to "
+                f"the database with inserted_id: {pipeline_run_id}"
             )
         else:
             logger.info(
-                "\n\nWARNING: PIPELINE_RUN ALREADY EXISTS IN DATABASE. NOTHING WRITTEN.\n\n"
+                "\n\nWARNING: PIPELINE_RUN ALREADY "
+                "EXISTS IN DATABASE. NOTHING WRITTEN.\n\n"
             )
 
     def get_pipeline_run_score_distribution(self):

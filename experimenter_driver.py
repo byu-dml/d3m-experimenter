@@ -1,20 +1,19 @@
 from typing import List
-import warnings, argparse, logging
+import warnings
+import argparse
+import logging
 import logging.config as log_config
-from d3m.metadata.pipeline import Pipeline
+import os
+import traceback
+import sys
 
-# disable d3m's deluge of warnings
-log_config.dictConfig(
-    {"version": 1, "disable_existing_loggers": True,}
-)
-logger = logging.getLogger(__name__)
-from experimenter.experimenter import Experimenter
-import os, json, pdb, traceback, sys
-from experimenter.database_communication import PipelineDB
-from experimenter.experimenter import pretty_print_json
-import warnings, argparse
+from d3m.metadata.pipeline import Pipeline
 import redis
 from rq import Queue
+
+from experimenter.experimenter import Experimenter
+from experimenter.database_communication import PipelineDB
+from experimenter.experimenter import pretty_print_json
 from experimenter.execute_pipeline import (
     execute_pipeline_on_problem,
     execute_fit_pipeline_on_problem,
@@ -22,6 +21,10 @@ from experimenter.execute_pipeline import (
     get_list_vertically,
     print_pipeline_and_problem,
 )
+
+# disable d3m's deluge of warnings
+log_config.dictConfig({"version": 1, "disable_existing_loggers": True})
+logger = logging.getLogger(__name__)
 
 try:
     redis_host = os.environ["REDIS_HOST"]
@@ -33,7 +36,8 @@ except Exception as E:
 
 class ExperimenterDriver:
     """
-    This is the main class for running the experimenter.  Command line options for running this file are found at the bottom of the file.
+    This is the main class for running the experimenter.  Command line options for
+    running this file are found at the bottom of the file.
     """
 
     def __init__(
@@ -70,7 +74,7 @@ class ExperimenterDriver:
                     self.queue = Queue("metafeatures", connection=conn)
                 else:
                     self.queue = Queue(connection=conn)
-            except:
+            except Exception:
                 raise ConnectionRefusedError
 
     def handle_keyboard_interrupt(self):
@@ -249,7 +253,8 @@ def main(**cli_args):
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         if run_type == "all":
-            # Generate all possible problems and get pipelines - use default directory, classifiers, and preprocessors
+            # Generate all possible problems and get pipelines - use default directory,
+            # classifiers, and preprocessors
             Experimenter(
                 datasets_dir,
                 volumes_dir,
@@ -363,8 +368,8 @@ def get_cli_args(raw_args: List[str] = None):
         nargs=2,
         type=int,
         help=(
-            "the range to sample pipeline max widths from for the random experiment e.g. "
-            "`-mwsr 2 10` will sample in the integer range [2,10]"
+            "the range to sample pipeline max widths from for the random experiment "
+            "e.g. `-mwsr 2 10` will sample in the integer range [2,10]"
         ),
         default=[1, 8],
         metavar=("lower", "upper"),
@@ -375,8 +380,9 @@ def get_cli_args(raw_args: List[str] = None):
         nargs=2,
         type=int,
         help=(
-            "the range to sample the number of inputs for each primitive in a pipeline from "
-            "for the random experiment e.g. `-misr 2 10` will sample in the integer range [2,10]"
+            "the range to sample the number of inputs for each primitive in a "
+            "pipeline from for the random experiment e.g. `-misr 2 10` will sample "
+            "in the integer range [2,10]"
         ),
         default=[1, 4],
         metavar=("lower", "upper"),
@@ -386,8 +392,8 @@ def get_cli_args(raw_args: List[str] = None):
         "-mcf",
         type=int,
         help=(
-            "pipeline structures produced by the random experiment will each honor this constraint: "
-            "`depth * max_width * max_inputs < max_complexity_factor`"
+            "pipeline structures produced by the random experiment will each honor "
+            "this constraint: `depth * max_width * max_inputs < max_complexity_factor`"
         ),
         default=24,
     )
