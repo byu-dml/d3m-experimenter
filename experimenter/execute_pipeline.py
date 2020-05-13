@@ -1,12 +1,13 @@
 """
 FILE INFORMATION:
-This file needs to be a stand alone file so that it can be imported and used by the experimenter_driver.py.  This is
-because RQ only accepts a function that is imported and not defined in __main__.  These functions are what is needed
-to execute a pipeline on a problem and can be used by an individual machine, or used in a RQ job queue.
+This file needs to be a stand alone file so that it can be imported and used by the
+experimenter_driver.py.  This is because RQ only accepts a function that is imported
+and not defined in __main__.  These functions are what is needed to execute a pipeline
+on a problem and can be used by an individual machine, or used in a RQ job queue.
 """
 from d3m.metadata.pipeline import Pipeline
 from typing import List
-from experimenter.database_communication import PipelineDB
+from experimenter.databases.aml_mtl import PipelineDB
 from experimenter.run_fit_pipeline import RunFitPipeline
 from experimenter.run_pipeline import RunPipeline
 
@@ -17,8 +18,9 @@ logger = logging.getLogger(__name__)
 
 def execute_pipeline_on_problem(pipe: Pipeline, problem: str, volumes_dir: str):
     """
-    The main function to execute a pipeline.  Called in `experimenter_driver.py`  This function will check if the 
-    pipeline and dataset has been executed before, run the pipeline, and record the results
+    The main function to execute a pipeline. Called in `experimenter_driver.py`.
+    This function will check if the  pipeline and dataset has been executed before,
+    run the pipeline, and record the results
 
     :param pipe: the pipeline object that will be executed
     :param problem: the path to the problemDoc of the particular dataset
@@ -161,11 +163,13 @@ def write_to_mongo_pipeline_run(
     mongo_db: PipelineDB, pipeline_run: dict, collection_name: str
 ):
     """
-    A function to write a pipeline_run document to a database.  A wrapper for the function in database_communication.py
+    A function to write a pipeline_run document to a database.  A wrapper for the
+    function in databases.aml_mtl.py
 
     :param mongo_db: the database connection
     :param pipeline_run: the json object to be written to the database
-    :param collection_name: the name of the pipeline_run collection to insert it into: baselines or pipeline_runs
+    :param collection_name: the name of the pipeline_run collection to insert it into:
+        baselines or pipeline_runs
     """
     mongo_db.add_to_pipeline_runs_mongo(pipeline_run, collection_name)
 

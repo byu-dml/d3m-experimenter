@@ -24,6 +24,8 @@ except Exception as E:
 class PipelineDB:
     """
     This class is a helper function for connecting with the databases holding our info.
+    It interfaces with the BYU Applied Machine Learning lab's MongoDB metalearning
+    database.
 
     Note: Running this file on the command line will export the pipeline runs from the
     database into the default folder as defined below.

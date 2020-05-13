@@ -1,6 +1,6 @@
 import unittest
 from experimenter.experimenter import *
-from experimenter.database_communication import primitive_list_from_pipeline_json
+from experimenter.databases.aml_mtl import primitive_list_from_pipeline_json
 from experimenter.constants import models, bulletproof_preprocessors
 from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
 

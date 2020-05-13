@@ -1,4 +1,4 @@
-from .database_communication import PipelineDB
+from experimenter.databases.aml_mtl_db import PipelineDB
 import argparse
 
 """

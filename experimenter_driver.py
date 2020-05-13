@@ -12,7 +12,7 @@ import redis
 from rq import Queue
 
 from experimenter.experimenter import Experimenter
-from experimenter.database_communication import PipelineDB
+from experimenter.databases.aml_mtl import PipelineDB
 from experimenter.experimenter import pretty_print_json
 from experimenter.execute_pipeline import (
     execute_pipeline_on_problem,
@@ -187,7 +187,7 @@ class ExperimenterDriver:
                             # if we are trying to distribute, add to the RQ
                             if self.run_type == "distribute":
                                 if not self.fit_only:
-                                    async_results = self.queue.enqueue(
+                                    self.queue.enqueue(
                                         execute_pipeline_on_problem,
                                         pipe,
                                         problem,
@@ -195,7 +195,7 @@ class ExperimenterDriver:
                                         timeout=60 * 12,
                                     )
                                 else:
-                                    async_results = self.queue.enqueue(
+                                    self.queue.enqueue(
                                         execute_fit_pipeline_on_problem,
                                         pipe,
                                         problem,

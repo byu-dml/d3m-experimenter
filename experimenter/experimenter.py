@@ -12,7 +12,7 @@ from d3m.metadata.pipeline import Pipeline
 from experimenter.pipeline_builder import EZPipeline
 import os
 import json
-from .database_communication import PipelineDB
+from experimenter.databases.aml_mtl import PipelineDB
 from experimenter.experiments.metafeatures import MetafeatureExperimenter
 from experimenter.experiments.random import RandomArchitectureExperimenter
 from experimenter.experiments.straight import StraightArchitectureExperimenter

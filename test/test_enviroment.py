@@ -3,7 +3,7 @@ import redis
 import os
 import logging
 import unittest
-from experimenter.database_communication import PipelineDB
+from experimenter.databases.aml_mtl import PipelineDB
 
 logger = logging.getLogger(__name__)
 

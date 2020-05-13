@@ -1,8 +1,9 @@
 import logging
+import argparse
+
+from experimenter.databases.aml_mtl import PipelineDB
 
 logger = logging.getLogger(__name__)
-from experimenter.database_communication import PipelineDB
-import argparse
 
 """
 COMMAND LINE ARGUMENTS:
