@@ -35,6 +35,7 @@ class PipelineDB:
 
         try:
             self.mongo_client = pymongo.MongoClient(self.mongo_host, self.mongo_port)
+            self.db = self.mongo_client.metalearning
         except Exception as e:
             logger.info(
                 "Cannot connect to the Mongo Client at port {}. Error is {}".format(
@@ -67,18 +68,17 @@ class PipelineDB:
         # connect to the database
         for collection_name in collection_names:
             output_directory = folder_directory + collection_name + "/"
-            db = self.mongo_client.metalearning
-            collection = db[collection_name]
+            collection = self.db[collection_name]
             pipeline_runs_cursor = collection.find({})
             # go through each pipeline run
             for doc in pipeline_runs_cursor:
-                if collection_name in ["pipeline_runs"]:
+                if collection_name == "pipeline_runs":
                     location, problem_name = self._get_location_of_dataset(doc)
                     file_path = os.path.join(
                         output_directory,
                         "{}_{}_{}{}".format(location, problem_name, doc["id"], ".json"),
                     )
-                elif collection_name in ["pipelines"]:
+                elif collection_name == "pipelines":
                     predictor_model = doc["steps"][-2]["primitive"][
                         "python_path"
                     ].split(".")[-2]
@@ -135,28 +135,29 @@ class PipelineDB:
         ]
         # connect to the database
         for collection_name in collection_names:
-            db = self.mongo_client.metalearning
-            collection = db[collection_name]
+            collection = self.db[collection_name]
             sum_docs = collection.estimated_document_count()
-            logger.info("There are {} in {}".format(sum_docs, collection_name))
+            logger.info(
+                "There are ~{} documents in {}".format(sum_docs, collection_name)
+            )
 
     def erase_mongo_database(self, are_you_sure: bool = False):
         """
         Erases all collections of the database, for debug purposes.
         :param are_you_sure: a check to make sure you're ready for the consequences
         """
-        if are_you_sure:
-            db = self.mongo_client.metalearning
-            # logger.info("Clearing pipeline_runs collection")
-            # db.pipeline_runs.remove({})
-            # logger.info("Clearing pipeline collection")
-            # db.pipelines_to_run.remove({})
-            # logger.info("Clearing datasets collection")
-            # db.datasets.remove({})
-            # logger.info("Clearing problems collection")
-            # db.problems.remove({})
-            # logger.info("Clearing metafeatures collection")
-            # db.metafeatures.remove({})
+        pass
+        # if are_you_sure:
+        # logger.info("Clearing pipeline_runs collection")
+        # db.pipeline_runs.remove({})
+        # logger.info("Clearing pipeline collection")
+        # db.pipelines.remove({})
+        # logger.info("Clearing datasets collection")
+        # db.datasets.remove({})
+        # logger.info("Clearing problems collection")
+        # db.problems.remove({})
+        # logger.info("Clearing metafeatures collection")
+        # db.metafeatures.remove({})
 
     def should_not_run_pipeline(
         self,
@@ -168,7 +169,7 @@ class PipelineDB:
         """
         Used by experimenter_driver.py to check whether or not to run a pipeline on a
         specific problem. Currently checks for duplicates and for whether or not the
-        pipeline and dataset exists in the the db.
+        pipeline and dataset exists in the db.
 
         :param problem: the name of the problem
         :param pipeline: the pipeline json that is being checked
@@ -177,16 +178,15 @@ class PipelineDB:
             it already exists
         :return True if the pipeline should not be run, False if we should proceed
          """
-        db = self.mongo_client.metalearning
-        collection = db[collection_name]
+        collection = self.db[collection_name]
         pipeline_id = pipeline["id"]
         dataset_id = problem.split("/")[-1] + "_dataset"
         problem_id = problem.split("/")[-1] + "_problem"
 
         # Make sure the pipeline, problem, and dataset docs exist already:
-        pipeline_collection = db.pipelines_to_run
-        dataset_collection = db.datasets
-        problem_collection = db.problems
+        pipeline_collection = self.db.pipelines
+        dataset_collection = self.db.datasets
+        problem_collection = self.db.problems
         dataset_exists = dataset_collection.count_documents(
             {"about.datasetID": dataset_id}
         )
@@ -230,8 +230,7 @@ class PipelineDB:
         if not validated:
             return False
 
-        db = self.mongo_client.metalearning
-        collection = db[collection_name]
+        collection = self.db[collection_name]
         if not collection.count_documents({"id": pipeline_run["id"]}):
             pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
             logger.info(
@@ -252,8 +251,7 @@ class PipelineDB:
         :return False if the database already contains it, True if the pipeline was
             added to the database
         """
-        db = self.mongo_client.metalearning
-        collection = db.pipelines_to_run
+        collection = self.db.pipelines
         new_pipeline_json = new_pipeline.to_json_structure()
         digest = new_pipeline_json["digest"]
         id = new_pipeline_json["id"]
@@ -300,8 +298,7 @@ class PipelineDB:
         :returns a count of how many pipelines match that idea (should be 0 or 1)
         TODO: assert the check of 0 or 1
         """
-        db = self.mongo_client.metalearning
-        collection = db.pipeline_runs
+        collection = self.db.pipeline_runs
         return collection.count_documents({"id": pipeline_run_id})
 
     def find_mongo_pipeline_by_primitive_ids(
@@ -320,8 +317,7 @@ class PipelineDB:
         problem_name = problem.split("/")[-1]
         primitives_id_string = problem_name + primitives_string
 
-        db = self.mongo_client.metalearning
-        collection = db.pipeline_runs
+        collection = self.db.pipeline_runs
         return collection.count_documents({"primitives_used": primitives_id_string})
 
     def _get_location_of_dataset(self, doc: dict) -> tuple((str, str)):
@@ -378,8 +374,7 @@ class PipelineDB:
             of pipelines from the database
         """
         pipelines = {"classification": [], "regression": []}
-        db = self.mongo_client.metalearning
-        collection = db.pipelines_to_run
+        collection = self.db.pipelines
         pipeline_cursor = collection.find({})
         for index, pipeline in enumerate(pipeline_cursor):
             if index % 1000 == 0:
@@ -415,8 +410,7 @@ class PipelineDB:
         :param problem_doc: the problem document
         :return: bool indicating whether or not the document was inserted
         """
-        db = self.mongo_client.metalearning
-        collection = db.problems
+        collection = self.db.problems
         id = problem_doc["about"]["problemID"]
 
         if collection.count_documents({"about.problemID": id}):
@@ -436,8 +430,7 @@ class PipelineDB:
         :param dataset_doc: the dataset document describing the dataset
         :return: bool indicating whether or not the document was inserted
         """
-        db = self.mongo_client.metalearning
-        collection = db.datasets
+        collection = self.db.datasets
         id = dataset_doc["about"]["datasetID"]
         digest = dataset_doc["about"]["digest"]
 
@@ -461,8 +454,7 @@ class PipelineDB:
         :param bad_primitives: a list of primitive ids
         """
         delete_these_pipelines = []
-        db = self.mongo_client.metalearning
-        collection = db.pipelines_to_run
+        collection = self.db.pipelines
         pipeline_cursor = collection.find({})
         for pipeline in pipeline_cursor:
             pipeline_steps_to_compare = primitive_list_from_pipeline_json(pipeline)
@@ -487,8 +479,7 @@ class PipelineDB:
         (verified problem, dataset, and pipeline, etc.)
         """
         delete_these_documents = []
-        db = self.mongo_client.metalearning
-        collection = db.pipeline_runs
+        collection = self.db.pipeline_runs
         pipeline_cursor = collection.find({})
         for index, pipeline_run in enumerate(pipeline_cursor):
             if index % 1000 == 0:
@@ -501,10 +492,10 @@ class PipelineDB:
             pipeline_id = pipeline_run["pipeline"]["id"]
             dataset_digest = pipeline_run["datasets"][0]["digest"]
             # There is no pipeline matching that info or no dataset matching that info == bad data!
-            no_dataset = not db.datasets.count_documents(
+            no_dataset = not self.db.datasets.count_documents(
                 {"about.digest": dataset_digest}
             )
-            no_pipeline = not db.pipelines_to_run.count_documents(
+            no_pipeline = not self.db.pipelines.count_documents(
                 {"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]}
             )
             if no_dataset and no_pipeline:
@@ -538,8 +529,7 @@ class PipelineDB:
         list_of_times = []
         logger.info("Collecting Times...")
         for collection_name in collection_names:
-            db = self.mongo_client.metalearning
-            collection = db[collection_name]
+            collection = self.db[collection_name]
             pipeline_runs_cursor = collection.find({})
             # go through each pipeline run
             for index, doc in enumerate(pipeline_runs_cursor):
@@ -560,8 +550,7 @@ class PipelineDB:
         Adds a pipeline_run to the metafeatures collection
         :param pipeline_run: the pipeline_run to add
         """
-        db = self.mongo_client.metalearning
-        collection = db.metafeatures
+        collection = self.db.metafeatures
         pipeline_id = pipeline_run["pipeline"]["id"]
         dataset_id = pipeline_run["datasets"][0]["id"]
 
@@ -588,8 +577,7 @@ class PipelineDB:
         list_of_times = []
         logger.info("Collecting Times...")
         for collection_name in collection_names:
-            db = self.mongo_client.metalearning
-            collection = db[collection_name]
+            collection = self.db[collection_name]
             pipeline_runs_cursor = collection.find({})
             # go through each pipeline run
             for index, doc in enumerate(pipeline_runs_cursor):
@@ -610,8 +598,7 @@ class PipelineDB:
         :param pipeline: the metafeature pipeline
         :return a count of existing pipelines
         """
-        db = self.mongo_client.metalearning
-        collection = db.metafeatures
+        collection = self.db.metafeatures
         pipeline_id = pipeline["id"]
         dataset_id = problem
         logger.info(problem)
