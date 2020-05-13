@@ -1,5 +1,4 @@
 import unittest
-import random
 
 from experimenter.experiments.straight import StraightArchitectureExperimenter
 from experimenter.constants import models, bulletproof_preprocessors
