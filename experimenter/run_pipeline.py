@@ -1,10 +1,6 @@
 import logging
-
-logger = logging.getLogger(__name__)
-
-import pandas
-from d3m import exceptions
 import json
+import pandas
 from d3m.metadata import base as metadata_base, problem as base_problem
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.pipeline_run import RuntimeEnvironment
@@ -16,17 +12,19 @@ from d3m.runtime import (
     get_dataset,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class RunPipeline:
 
     """
-    In this function we define all the parameters needed to actually execute the pipeline.
+    In this function we define all the parameters needed to actually execute the
+    pipeline.
 
     :param volumes_dir: a string denoting the volumes directory, used by the runtime.
-    :param pipeline_path: a string containing the full path to the pipeline file to be used (JSON or YML file)
     :param problem_path: a string containing the path to the given problem
-    :param output_path: an optional parameter specifying the location to place the finished pipeline_run file.  If it
-        is empty no output path is used.
+    :param output_path: an optional parameter specifying the location to place the
+        finished pipeline_run file. If it is empty no output path is used.
     """
 
     def __init__(
@@ -60,13 +58,16 @@ class RunPipeline:
 
     def run(self, pipeline: Pipeline) -> list:
         """
-        This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
-        Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
-        function does not allow for returning the data, so it did not fit in the workflow.
+        This function is what actually executes the pipeline, splits it, and returns
+        the final predictions and scores. Note that this function is EXTREMELY
+        simimlar to that of `_evaluate` in the Runtime code. The aforementioned
+        function does not allow for returning the data, so it did not fit in the
+        workflow.
         
-        :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
-        :returns results_list: a list containing, in order, the scores from the pipeline predictions, the fit pipeline_run 
-            and the produce pipeline_run.
+        :param pipeline: the pipeline object to be run OR the path to the pipeline file
+            to be used
+        :returns results_list: a list containing, in order, the scores from the pipeline
+            predictions, the fit pipeline_run and the produce pipeline_run.
         """
 
         arguments = self.run_args

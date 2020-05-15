@@ -111,9 +111,10 @@ class Experimenter:
     def get_possible_problems(self) -> dict:
         """
         The high level function to get all problems.  It seperates them into
-        classification and regression problems and ignores the rest This function
+        classification and regression problems and ignores the rest. This function
         also adds the problem docs and dataset docs to our database if they do not
         already exist.
+        
         :return: a dictionary containing two keys of file paths: `classification`
             and `regression`.  Each key is a list of file paths.
         """
