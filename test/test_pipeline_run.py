@@ -9,8 +9,8 @@ from d3m.cli import runtime_handler, runtime_configure_parser
 from d3m.runtime import get_pipeline
 from d3m.metadata import pipeline as pipeline_module
 
-from experimenter.run_pipeline import RunPipeline
-from test.config import TEST_PROBLEM_REFERENCES, ProblemReference
+from experimenter.problem import ProblemReference
+from test.config import TEST_PROBLEM_REFERENCES
 from test.utils import run_experimenter_from_pipeline
 
 

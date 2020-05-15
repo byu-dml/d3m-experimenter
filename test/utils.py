@@ -1,4 +1,5 @@
-from test.config import test_problem_reference, ProblemReference
+from test.config import test_problem_reference
+from experimenter.problem import ProblemReference
 from experimenter.pipeline_builder import EZPipeline
 from experimenter.run_pipeline import RunPipeline
 
