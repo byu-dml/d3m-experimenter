@@ -1,7 +1,6 @@
-import os
-
 from d3m.metadata.base import ArgumentType, PrimitiveFamily
 
+D3M_MTL_DB_URL = "https://metalearning.datadrivendiscovery.org/1.0/"
 
 # It is ok to use these temperamental preprocessors in production because
 # we're ok with some pipelines degenerating on some datasets.

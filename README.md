@@ -22,7 +22,7 @@ Next copy the file `.env.example` and name the copy `.env` then make these modif
 
 1. Make sure `DATASETS=` is pointing to the datasets you want the container to have access to. The datasets can then be accessed from inside the container at `/datasets`.
 1. Modify `EXPERIMENTER=` to point to the root directory of this cloned repo.
-1. Fill in the values for connections to the database and Redis server.
+1. Fill in the values for connections to the local Mongo database and Redis server, and to D3M's database.
 
 # Usage
 
