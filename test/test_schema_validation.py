@@ -1,11 +1,9 @@
 import json
 import os
-import typing
 import unittest
 
-import d3m.exceptions as d3m_exceptions
 from d3m.metadata import pipeline as pipeline_module
-from experimenter.validation import *
+from experimenter.validation import validate_pipeline_run
 
 
 class TestSchemaValidation(unittest.TestCase):
@@ -52,6 +50,7 @@ class TestSchemaValidation(unittest.TestCase):
                 pipeline_to_check = pipeline_module.Pipeline.from_json(
                     string_or_file=file
                 )
+                pipeline_to_check.check()
                 self.fail(
                     "Invalid pipeline schema validated when it should have FAILED"
                 )

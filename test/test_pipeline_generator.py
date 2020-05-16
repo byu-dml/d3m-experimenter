@@ -11,7 +11,7 @@ from test.config import (
 class PipelineGenerationTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.datasets_dir = "/datasets"
+        cls.datasets_dir = "./datasets"
 
     # @classmethod
     def setUp(self):
@@ -43,7 +43,9 @@ class PipelineGenerationTestCase(unittest.TestCase):
             ]
         )
 
-        found_problem_paths = set(self.experimenter_driver.problems["classification"])
+        found_problem_paths = set(
+            p.path for p in self.experimenter_driver.problems["classification"]
+        )
         for known_problem in known_seed_classification_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,
@@ -60,7 +62,9 @@ class PipelineGenerationTestCase(unittest.TestCase):
             ]
         )
 
-        found_problem_paths = set(self.experimenter_driver.problems["regression"])
+        found_problem_paths = set(
+            p.path for p in self.experimenter_driver.problems["regression"]
+        )
         for known_problem in known_seed_regression_problems_test:
             self.assertTrue(
                 known_problem.path in found_problem_paths,

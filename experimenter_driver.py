@@ -19,7 +19,6 @@ from experimenter.execute_pipeline import (
     execute_fit_pipeline_on_problem,
     primitive_list_from_pipeline_object,
     get_list_vertically,
-    print_pipeline_and_problem,
 )
 
 # disable d3m's deluge of warnings
@@ -173,16 +172,9 @@ class ExperimenterDriver:
                     sys.stdout.write("[%-20s] %d%%" % ("=" * index, percent * index))
                     sys.stdout.flush()
                     for pipe in pipeline_list:
-                        if self.mongo_db.should_not_run_pipeline(
-                            problem,
-                            pipe.to_json_structure(),
-                            collection_name="pipeline_runs",
-                            skip_pipeline=self.fit_only,
-                        ):
-                            logger.info("\n SKIPPING. Pipeline already run.")
-                            print_pipeline_and_problem(pipe, problem)
-                            continue
-
+                        # TODO: `continue` if a pipeline run document for this pipeline
+                        # and problem already exists in the D3M MtL DB.
+                        # Issue: https://github.com/byu-dml/d3m-experimenter/issues/87
                         try:
                             # if we are trying to distribute, add to the RQ
                             if self.run_type == "distribute":

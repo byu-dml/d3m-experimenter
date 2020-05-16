@@ -1,9 +1,6 @@
-import json
 import typing
 
 import logging
-
-logger = logging.getLogger(__name__)
 
 from d3m import exceptions, container
 from d3m.metadata import (
@@ -14,56 +11,55 @@ from d3m.metadata import (
 )
 from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
-from d3m.runtime import fit, get_dataset, Runtime
+from d3m.runtime import get_dataset, Runtime
+
+from experimenter.problem import ProblemReference
+
+logger = logging.getLogger(__name__)
 
 
 class RunFitPipeline:
     """
-    In this function we define all the parameters needed to actually execute the pipeline.
+    In this function we define all the parameters needed to actually execute the
+    pipeline.
 
     :param volumes_dir: a string denoting the volumes directory, used by the runtime.
-    :param pipeline_path: a string containing the full path to the pipeline file to be used (JSON or YML file)
+    :param pipeline_path: a string containing the full path to the pipeline file to
+        be used (JSON or YML file)
     :param problem_path: a string containing the path to the given problem
     """
 
     def __init__(
-        self, volumes_dir: str, problem_path: str,
+        self, volumes_dir: str, problem: ProblemReference,
     ):
         self.volumes_dir = volumes_dir
         self.data_pipeline_path = (
             "./experimenter/pipelines/fixed-split-tabular-split.yml"
         )
         self.scoring_pipeline_path = "./experimenter/pipelines/scoring.yml"
-        self.problem_path = problem_path
-        self.problem_name = self.problem_path.split("/")[-1]
 
-        # Note that most of these are not needed but included in case it is useful someday
+        # Note that most of these are not needed but included in case it is useful
+        # someday
         self.run_args = {
             "scoring_pipeline": self.scoring_pipeline_path,
             "data_pipeline": self.data_pipeline_path,
-            "data_split_file": "{}/{}_problem/dataSplits.csv".format(
-                self.problem_path, self.problem_name
-            ),
-            "problem": "{}/{}_problem/problemDoc.json".format(
-                self.problem_path, self.problem_name
-            ),
-            "inputs": [
-                "{}/{}_dataset/datasetDoc.json".format(
-                    self.problem_path, self.problem_name
-                )
-            ],
+            "data_split_file": problem.data_splits_path,
+            "problem": problem.problem_doc_path,
+            "inputs": [problem.dataset_doc_path],
             "context": metadata_base.Context.PRODUCTION,
         }
 
     def run(self, pipeline: pipeline_module.Pipeline) -> list:
         """
-        This function is what actually executes the pipeline, splits it, and returns the final predictions and scores. 
-        Note that this function is EXTREMELY simimlar to that of `_evaluate` in the Runtime code. The aforementioned
-        function does not allow for returning the data, so it did not fit in the workflow.
+        This function is what actually executes the pipeline, splits it, and returns
+        the final predictions and scores. Note that this function is EXTREMELY simimlar
+        to that of `_evaluate` in the Runtime code. The aforementioned function does
+        not allow for returning the data, so it did not fit in the workflow.
 
-        :param pipeline: the pipeline object to be run OR the path to the pipeline file to be used
-        :returns results_list: a list containing, in order, scores from the pipeline predictions, the fit pipeline_run 
-            and the produce pipeline_run.
+        :param pipeline: the pipeline object to be run OR the path to the pipeline file
+            to be used
+        :returns results_list: a list containing, in order, scores from the pipeline
+            predictions, the fit pipeline_run and the produce pipeline_run.
         """
         arguments = self.run_args
 
@@ -115,7 +111,8 @@ class RunFitPipeline:
         runtime_environment: pipeline_run_module.RuntimeEnvironment = None,
     ) -> typing.Tuple[Runtime, container.DataFrame, pipeline_run_module.PipelineRun]:
         """
-        Our version of D3M's fit so that we can modify it. See the D3M module for documentation
+        Our version of D3M's fit so that we can modify it. See the D3M module for
+        documentation.
         """
         for input in inputs:
             if not isinstance(input, container.Dataset):

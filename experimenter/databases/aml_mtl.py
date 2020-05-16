@@ -8,7 +8,6 @@ from typing import List
 from bson import json_util, ObjectId
 from d3m.metadata.pipeline import Pipeline
 from dateutil.parser import parse
-from experimenter.validation import validate_pipeline_run
 from experimenter.pipeline_builder import EZPipeline
 
 logger = logging.getLogger(__name__)
@@ -68,7 +67,7 @@ class PipelineDB:
 
         folder_directory = os.path.expanduser(folder_directory)
         # connect to the database
-        for collection_name in collection_names:
+        for collection_name in set(collection_names):
             output_directory = folder_directory + collection_name + "/"
             collection = self.db[collection_name]
             pipeline_runs_cursor = collection.find({})
@@ -126,17 +125,7 @@ class PipelineDB:
         """
         This function will tell us how many items are in each collection
         """
-
-        collection_names = [
-            "pipeline_runs",
-            "pipelines",
-            "datasets",
-            "problems",
-            "metafeatures",
-            "pipeline_runs_old",
-        ]
-        # connect to the database
-        for collection_name in collection_names:
+        for collection_name in self.db.list_collection_names():
             collection = self.db[collection_name]
             sum_docs = collection.estimated_document_count()
             logger.info(
@@ -146,114 +135,24 @@ class PipelineDB:
     def erase_mongo_database(self, are_you_sure: bool = False):
         """
         Erases all collections of the database, for debug purposes.
+
         :param are_you_sure: a check to make sure you're ready for the consequences
         """
         pass
         # if are_you_sure:
-        # logger.info("Clearing pipeline_runs collection")
-        # db.pipeline_runs.remove({})
-        # logger.info("Clearing pipeline collection")
-        # db.pipelines.remove({})
-        # logger.info("Clearing datasets collection")
-        # db.datasets.remove({})
-        # logger.info("Clearing problems collection")
-        # db.problems.remove({})
-        # logger.info("Clearing metafeatures collection")
-        # db.metafeatures.remove({})
-
-    def should_not_run_pipeline(
-        self,
-        problem: str,
-        pipeline: dict,
-        collection_name: str,
-        skip_pipeline: bool = False,
-    ) -> bool:
-        """
-        Used by experimenter_driver.py to check whether or not to run a pipeline on a
-        specific problem. Currently checks for duplicates and for whether or not the
-        pipeline and dataset exists in the db.
-
-        :param problem: the name of the problem
-        :param pipeline: the pipeline json that is being checked
-        :param collection_name: the collection name to check if it exists already
-        :param skip_pipeline: a flag to skip checking the database for it by assuming
-            it already exists
-        :return True if the pipeline should not be run, False if we should proceed
-         """
-        collection = self.db[collection_name]
-        pipeline_id = pipeline["id"]
-        dataset_id = problem.split("/")[-1] + "_dataset"
-        problem_id = problem.split("/")[-1] + "_problem"
-
-        # Make sure the pipeline, problem, and dataset docs exist already:
-        pipeline_collection = self.db.pipelines
-        dataset_collection = self.db.datasets
-        problem_collection = self.db.problems
-        dataset_exists = dataset_collection.count_documents(
-            {"about.datasetID": dataset_id}
-        )
-        pipeline_exists = (
-            True
-            if skip_pipeline
-            else pipeline_collection.count_documents({"id": pipeline_id})
-        )
-        problem_exists = problem_collection.count_documents(
-            {"about.problemID": problem_id}
-        )
-
-        # check for existence
-        if not dataset_exists or not problem_exists or not pipeline_exists:
-            logger.info(
-                "This pipeline, problem, and or dataset "
-                "has not been entered in the database yet"
-            )
-            logger.info(
-                f"Missing pipeline {not pipeline_exists}, missing dataset doc: "
-                f"{not problem_exists}, missing problem doc: {not dataset_exists}"
-            )
-            return True
-        # check for duplicates
-        if collection.count_documents(
-            {"$and": [{"pipeline.id": pipeline_id}, {"datasets.id": dataset_id}]}
-        ):
-            return True
-        else:
-            return False
-
-    def add_to_pipeline_runs_mongo(self, pipeline_run: dict, collection_name: str):
-        """
-        Adds a pipeline run to the database.  Minimal error checking as we assume
-        "has_duplicate_pipeline_run" has been run.
-
-        :param pipeline_run: the json document of the pipeline_run
-        :param collection_name: the name of the collection to add the pipeline_run to
-        """
-        validated = validate_pipeline_run(pipeline_run)
-        if not validated:
-            return False
-
-        collection = self.db[collection_name]
-        if not collection.count_documents({"id": pipeline_run["id"]}):
-            pipeline_run_id = collection.insert_one(pipeline_run).inserted_id
-            logger.info(
-                "Wrote pipeline run to the database with inserted_id: {}".format(
-                    pipeline_run_id
-                )
-            )
-        else:
-            logger.info(
-                "\n\nWARNING: PIPELINE_RUN ALREADY "
-                "EXISTS IN DATABASE. NOTHING WRITTEN.\n\n"
-            )
+        #     for collection_name in self.db.list_collection_names():
+        #         logger.info(f"Clearing {collection_name} collection")
+        #         self.db[collection_name].remove({})
 
     def add_to_pipelines_mongo(self, new_pipeline: EZPipeline) -> bool:
         """
         Function to add a pipeline to the mongodb database of pipelines.
+
         :param new_pipeline: the new pipeline to add to mongo
         :return False if the database already contains it, True if the pipeline was
             added to the database
         """
-        collection = self.db.pipelines
+        collection = self.db.pipelines_to_run
         new_pipeline_json = new_pipeline.to_json_structure()
         digest = new_pipeline_json["digest"]
         id = new_pipeline_json["id"]
@@ -293,38 +192,10 @@ class PipelineDB:
         )
         return True
 
-    def find_mongo_pipeline_run_by_id(self, pipeline_run_id: str) -> int:
-        """
-        A helper function to find a pipeline_run by id
-        :param pipeline_run_id: the id of the pipeline run
-        :returns a count of how many pipelines match that idea (should be 0 or 1)
-        TODO: assert the check of 0 or 1
-        """
-        collection = self.db.pipeline_runs
-        return collection.count_documents({"id": pipeline_run_id})
-
-    def find_mongo_pipeline_by_primitive_ids(
-        self, problem: str, primitives_string: str
-    ) -> int:
-        """
-        Finds a pipeline by taking the primities used and concatenating them, and then
-        finding same pipelines. TODO: is this ever used?
-
-        :param problem: the problem the pipeline ran on
-        :param primitives_string: the concatenated string of primitives
-        :return the count of pipelines that match that primitives_string
-        """
-        # Attempt to uniquely identify a pipeline_run by the combination of inputs and
-        # pipeline
-        problem_name = problem.split("/")[-1]
-        primitives_id_string = problem_name + primitives_string
-
-        collection = self.db.pipeline_runs
-        return collection.count_documents({"primitives_used": primitives_id_string})
-
     def _get_location_of_dataset(self, doc: dict) -> tuple((str, str)):
         """
-        Checks a dataset document to find whether it is "seed", "LL0", or "LL1"
+        Checks a dataset document to find whether it is "seed", "LL0", or "LL1".
+
         :param doc: the document to query
         :return min_name: what directory of problems it came from (seed, LL0, LL1)
         :return problem_name: the name of the problem (i.e. 185_baseball_MIN_METADATA)
@@ -362,7 +233,8 @@ class PipelineDB:
 
     def is_phrase_in(self, phrase: str, text: str) -> bool:
         """
-        a helper function for regex-ing through text
+        A helper function for regex-ing through text.
+
         :param phrase: the phrase to look in the text for
         :param text: the text to be searched
         :return a boolean of whether the phrase exists
@@ -371,12 +243,13 @@ class PipelineDB:
 
     def get_all_pipelines(self) -> dict:
         """
-        Used to gather pipelines for the experimenter_driver.py
-        :returns a dictionary with two keys "classification" and "regression" each full
+        Used to gather pipelines for the `experimenter_driver.py`.
+
+        :return: a dictionary with two keys "classification" and "regression" each full
             of pipelines from the database
         """
         pipelines = {"classification": [], "regression": []}
-        collection = self.db.pipelines
+        collection = self.db.pipelines_to_run
         pipeline_cursor = collection.find({})
         for index, pipeline in enumerate(pipeline_cursor):
             if index % 1000 == 0:
@@ -388,15 +261,19 @@ class PipelineDB:
                 "d3m.primitives.regression", json.dumps(pipeline["steps"])
             )
             if is_classification and is_regression:
-                logger.info("Cannot be both")
-                raise Exception
+                raise Exception(
+                    f"cannot use pipeline (digest={pipeline['digest']}) for "
+                    "both regression and classification"
+                )
             elif is_classification:
                 predictor_model = "classification"
             elif is_regression:
                 predictor_model = "regression"
             else:
-                logger.info("Could not find classification or regression")
-                raise Exception
+                raise Exception(
+                    "could not find classification or regression "
+                    f"for pipeline (digest={pipeline['digest']})"
+                )
             pipeline_json = json.dumps(
                 pipeline, sort_keys=True, indent=4, default=json_util.default
             )
@@ -406,57 +283,13 @@ class PipelineDB:
             len(pipelines["regression"]) + len(pipelines["classification"]),
         )
 
-    def add_to_problems(self, problem_doc: dict) -> bool:
-        """
-        A function for adding to the problems collection
-        :param problem_doc: the problem document
-        :return: bool indicating whether or not the document was inserted
-        """
-        collection = self.db.problems
-        id = problem_doc["about"]["problemID"]
-
-        if collection.count_documents({"about.problemID": id}):
-            return False
-
-        pipeline_id = collection.insert_one(problem_doc).inserted_id
-        logger.info(
-            "Wrote PROBLEM to the database with inserted_id from mongo: {}".format(
-                pipeline_id
-            )
-        )
-        return True
-
-    def add_to_datasets(self, dataset_doc: dict) -> bool:
-        """
-        A function for adding to the problems collection
-        :param dataset_doc: the dataset document describing the dataset
-        :return: bool indicating whether or not the document was inserted
-        """
-        collection = self.db.datasets
-        id = dataset_doc["about"]["datasetID"]
-        digest = dataset_doc["about"]["digest"]
-
-        if collection.count_documents({"about.digest": digest}):
-            return False
-
-        if collection.count_documents({"about.datasetID": id}):
-            return False
-
-        pipeline_id = collection.insert_one(dataset_doc).inserted_id
-        logger.info(
-            "Wrote PROBLEM to the database with inserted_id from mongo: {}".format(
-                pipeline_id
-            )
-        )
-        return True
-
     def remove_pipelines_containing(self, bad_primitives: List[str]):
         """
         A function to deleting all pipelines that contain bad primitives
         :param bad_primitives: a list of primitive ids
         """
         delete_these_pipelines = []
-        collection = self.db.pipelines
+        collection = self.db.pipelines_to_run
         pipeline_cursor = collection.find({})
         for pipeline in pipeline_cursor:
             pipeline_steps_to_compare = primitive_list_from_pipeline_json(pipeline)
@@ -472,55 +305,6 @@ class PipelineDB:
 
         for document_id in delete_these_pipelines:
             collection.delete_one({"_id": ObjectId(document_id)})
-
-        return
-
-    def clean_pipeline_runs(self):
-        """
-        A function for deleting all pipeline_runs that do not match all the checks
-        (verified problem, dataset, and pipeline, etc.)
-        """
-        delete_these_documents = []
-        collection = self.db.pipeline_runs
-        pipeline_cursor = collection.find({})
-        for index, pipeline_run in enumerate(pipeline_cursor):
-            if index % 1000 == 0:
-                logger.info(
-                    "At {}, length of deletion is {}".format(
-                        index, len(delete_these_documents)
-                    )
-                )
-            pipeline_digest = pipeline_run["pipeline"]["digest"]
-            pipeline_id = pipeline_run["pipeline"]["id"]
-            dataset_digest = pipeline_run["datasets"][0]["digest"]
-            # There is no pipeline matching that info or no dataset matching that info == bad data!
-            no_dataset = not self.db.datasets.count_documents(
-                {"about.digest": dataset_digest}
-            )
-            no_pipeline = not self.db.pipelines.count_documents(
-                {"$and": [{"id": pipeline_id}, {"digest": pipeline_digest}]}
-            )
-            if no_dataset and no_pipeline:
-                logger.info(
-                    "The pipeline run did not have a referenced pipeline or dataset"
-                )
-                delete_these_documents.append(pipeline_run["_id"])
-            elif no_dataset:
-                logger.info("The pipeline run did not have a referenced dataset")
-                delete_these_documents.append(pipeline_run["_id"])
-            elif no_pipeline:
-                logger.info("The pipeline run did not have a referenced pipeline")
-                delete_these_documents.append(pipeline_run["_id"])
-
-        # so you can check before you delete everything
-        import pdb
-
-        pdb.set_trace()
-
-        for document_id in delete_these_documents:
-            collection.delete_one({"_id": ObjectId(document_id)})
-
-        return
 
     def get_pipeline_run_time_distribution(self):
         """

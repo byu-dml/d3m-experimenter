@@ -1,5 +1,6 @@
 import logging
 import json
+
 import pandas
 from d3m.metadata import base as metadata_base, problem as base_problem
 from d3m.metadata.pipeline import Pipeline
@@ -12,6 +13,8 @@ from d3m.runtime import (
     get_dataset,
 )
 
+from experimenter.problem import ProblemReference
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,13 +25,13 @@ class RunPipeline:
     pipeline.
 
     :param volumes_dir: a string denoting the volumes directory, used by the runtime.
-    :param problem_path: a string containing the path to the given problem
+    :param problem: the problem pipelines will be run on.
     :param output_path: an optional parameter specifying the location to place the
         finished pipeline_run file. If it is empty no output path is used.
     """
 
     def __init__(
-        self, volumes_dir: str, problem_path: str, output_path: str = None,
+        self, volumes_dir: str, problem: ProblemReference, output_path: str = None,
     ):
         self.volumes_dir = volumes_dir
         self.data_pipeline_path = (
@@ -36,23 +39,13 @@ class RunPipeline:
         )
         self.scoring_pipeline_path = "./experimenter/pipelines/scoring.yml"
         self.output_path = output_path
-        self.problem_path = problem_path
-        self.problem_name = self.problem_path.split("/")[-1]
 
         self.run_args = {
             "scoring_pipeline": self.scoring_pipeline_path,
             "data_pipeline": self.data_pipeline_path,
-            "data_split_file": "{}/{}_problem/dataSplits.csv".format(
-                self.problem_path, self.problem_name
-            ),
-            "problem": "{}/{}_problem/problemDoc.json".format(
-                self.problem_path, self.problem_name
-            ),
-            "inputs": [
-                "{}/{}_dataset/datasetDoc.json".format(
-                    self.problem_path, self.problem_name
-                )
-            ],
+            "data_split_file": problem.data_splits_path,
+            "problem": problem.problem_doc_path,
+            "inputs": [problem.dataset_doc_path],
             "context": metadata_base.Context.PRODUCTION,
         }
 

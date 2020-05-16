@@ -4,3 +4,4 @@ scikit-learn[alldeps]==0.21.3
 rq==0.13.0
 rq-dashboard
 requests
+bson

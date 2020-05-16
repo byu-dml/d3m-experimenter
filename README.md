@@ -96,7 +96,7 @@ Some basic facts about the experimenter driver:
 *   The driver generates all possible problems from the list of problem directories given to it in constants.py
 *   It uses the `Experimenter` class to generate all possible pipelines from lists of pipelines types.  These are generated in Experimenter.py but the models used are in `constants.py`.
 *   For each problem type (e.g. classification, regression), it runs all pipelines of that problem type with all problems of that problem type.
-*   When a pipeline runs successfully, the driver writes a pipeline run file to the MongoDB instance specified in the `.env` file.  The default is a computer in our lab.
+*   When a pipeline runs successfully, the driver writes a pipeline run file to the public D3M metalearning database, if the appropriate environment variable is set (see note below). 
 
 The most basic way to run the experimenter is:
 
@@ -104,11 +104,13 @@ The most basic way to run the experimenter is:
 python3 experimenter_driver.py
 ```
 
+**Note**: In order for the experimenter results to be saved to the D3M database, the `SAVE_TO_D3M` environment variable must be set to true e.g. `SAVE_TO_D3M=True`. It is not set by default to ensure the unit tests do not save to the DB, and that you only save to the DB when you are deliberately trying to. To ensure the environment variable is not set to True when you don't want it to be, it is recommended to only set it at the same time the experimenter CLI is invoked, to ensure it is only set for the life of running the experimenter that one time e.g. `SAVE_TO_D3M=True python3 experimenter_driver.py`.
+
 ### Run Options
 
 *   To generate and execute pipelines in one command run `python3 experimenter_driver.py` 
-*   To generate pipelines but not execute them, run `python3 experimenter_driver.py --run-type generate`. This will store them in the MongoDB as well.
-*   To run pipelines from mongodb and not generate new ones, run `python3 experimenter_driver.py --run-type execute`
+*   To generate pipelines but not execute them, run `python3 experimenter_driver.py --run-type generate`. This will store them in the lab's local MongoDB database.
+*   To run pipelines from MongoDB and not generate new ones, run `python3 experimenter_driver.py --run-type execute`
 *   To only execute created pipelines stored in a folder, add the `--pipeline-folder path/to/pipeline/folder` flag.
 *   To distribute pipelines for concurrent execution run `python3 experimenter_driver.py --run-type distribute` (see "Lab Distribution Options" below for more info).
 *   For more information, see the documentation in `experimenter_driver.py`.

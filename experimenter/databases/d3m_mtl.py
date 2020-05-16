@@ -18,6 +18,9 @@ class D3MMtLDB:
 
     def __init__(self) -> None:
         self._url = D3M_MTL_DB_URL
+        # This env var allows code calling this class to be run during
+        # unit tests without actually saving to the production DB.
+        self.should_save = os.getenv("SAVE_TO_D3M") == "True"
         # Our submitter name.
         self._submitter = os.getenv("D3M_DB_SUBMITTER")
         # The secret verifying us as the submitter we say we are.
@@ -49,9 +52,9 @@ class D3MMtLDB:
                 if isinstance(step, PrimitiveStep)
             ]
             for primitive in primitives:
-                save_successful = self.save_primitive(primitive)
-                if not save_successful:
-                    return False
+                primitive_save_result = self.save_primitive(primitive)
+                if not primitive_save_result.ok:
+                    return primitive_save_result
 
         # First, normalize the pipeline's form.
         pipeline_dict = pipeline.to_json_structure(canonical=True)
@@ -69,6 +72,9 @@ class D3MMtLDB:
         Attempts to save `entity` to the D3M MtL elasticsearch index identified
         by `index_name`. Returns `True` if save was successful, `False` otherwise.
         """
+        if not self.should_save:
+            return self._create_no_save_response()
+
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         params = {}
 
@@ -92,3 +98,12 @@ class D3MMtLDB:
         documents can still be saved to the DB without being an trusted submitter.
         """
         return self._submitter is not None and self._x_token is not None
+
+    def _create_no_save_response(self) -> requests.Response:
+        response = requests.Response()
+        response.status_code = 200
+        response._content = (
+            b'{ "result" : "No request was made to the D3M DB API to save a record, '
+            b'since the SAVE_TO_D3M environment variable is not set." }'
+        )
+        return response

@@ -1,24 +1,26 @@
 import logging
-from collections import defaultdict
-from .constants import (
-    models,
-    preprocessors,
-    problem_directories,
-    blacklist_non_tabular_data,
-)
-from d3m.metadata.base import Context
-from typing import List
-from d3m.metadata.pipeline import Pipeline
-from experimenter.pipeline_builder import EZPipeline
 import os
-import json
+from collections import defaultdict
+import typing as t
+
+from d3m.metadata.base import Context
+from d3m.metadata.pipeline import Pipeline
+
+from experimenter.pipeline_builder import EZPipeline
 from experimenter.databases.aml_mtl import PipelineDB
 from experimenter.experiments.metafeatures import MetafeatureExperimenter
 from experimenter.experiments.random import RandomArchitectureExperimenter
 from experimenter.experiments.straight import StraightArchitectureExperimenter
 from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
 from experimenter.experiments.stacked import StackedArchitectureExperimenter
-from experimenter import utils
+from experimenter.problem import ProblemReference
+from experimenter.constants import (
+    models,
+    preprocessors,
+    problem_directories,
+    blacklist_non_tabular_data,
+)
+from experimenter.databases.d3m_mtl import D3MMtLDB
 
 
 logger = logging.getLogger(__name__)
@@ -26,9 +28,10 @@ logger = logging.getLogger(__name__)
 
 class Experimenter:
     """
-    This class is initialized with all the paths info needed to find and create pipelines.
-    It first finds all possible problems in the datasets_dir/problem_directories/* and then
-    generates pipelines.  This class is used by the ExperimenterDriver class to run the pipelines.
+    This class is initialized with all the paths info needed to find and create
+    pipelines. It first finds all possible problems in the
+    `datasets_dir/problem_directories/*` and then generates pipelines. This class
+    is used by the `ExperimenterDriver` class to run the pipelines.
     """
 
     def __init__(
@@ -108,66 +111,44 @@ class Experimenter:
                 logger.info("Exporting pipelines to {}".format(pipeline_folder))
                 self.output_values_to_folder(pipeline_folder)
 
-    def get_possible_problems(self) -> dict:
+    def get_possible_problems(self) -> t.Dict[str, ProblemReference]:
         """
         The high level function to get all problems.  It seperates them into
         classification and regression problems and ignores the rest. This function
         also adds the problem docs and dataset docs to our database if they do not
         already exist.
         
-        :return: a dictionary containing two keys of file paths: `classification`
-            and `regression`.  Each key is a list of file paths.
+        :return: a dictionary containing two keys: `classification`
+            and `regression`.  Each key maps to a list of problems.
         """
         problems_list = {"classification": [], "regression": []}
+
         for problem_directory in self.problem_directories:
             datasets_dir = os.path.join(self.datasets_dir, problem_directory)
-            for dataset_name in os.listdir(datasets_dir):
-                problem_description_path = utils.get_problem_path(
-                    dataset_name, datasets_dir
-                )
-                try:
-                    # add to dataset collection if it hasn't been already
-                    dataset_doc = utils.get_dataset_doc(dataset_name, datasets_dir)
-                    self.mongo_database.add_to_datasets(dataset_doc)
-                except Exception as e:
-                    logger.error(f"failed to get dataset document: {e}")
 
-                problem_type = self.get_problem_type(
-                    dataset_name, [problem_description_path]
+            for dataset_name in os.listdir(datasets_dir):
+                if dataset_name in blacklist_non_tabular_data:
+                    continue
+                logger.info(f"processing problem: {datasets_dir}/{dataset_name}...")
+                problem = ProblemReference(
+                    dataset_name, problem_directory, self.datasets_dir
                 )
-                if problem_type in problems_list:
-                    problem_path = os.path.join(datasets_dir, dataset_name)
-                    problems_list[problem_type].append(problem_path)
+                if problem.problem_type in problems_list:
+                    problems_list[problem.problem_type].append(problem)
+                else:
+                    self.incorrect_problem_types[problem.name].update(
+                        problem.task_keywords
+                    )
         return problems_list
 
-    def get_problem_type(self, problem_name: str, absolute_paths: List[str]):
-        """
-        Gathers the type of the problem from the name and path
-        :param problem_name: the name of the problem to get the type of
-        :param absolute_paths: the absolute_paths containing seed, LL0, and LL1 datasets
-        """
-        if problem_name in blacklist_non_tabular_data:
-            return "skip"
-
-        # problem is tabular, continue
-        try:
-            for path in absolute_paths:
-                with open(path, "r") as f:
-                    problem_doc = json.load(f)
-                    task_keywords = problem_doc["about"]["taskKeywords"]
-                    if "classification" in task_keywords:
-                        # add the problem doc to the database if it hasn't already
-                        self.mongo_database.add_to_problems(problem_doc)
-                        return "classification"
-                    elif "regression" in task_keywords:
-                        self.mongo_database.add_to_problems(problem_doc)
-                        return "regression"
-                    else:
-                        self.incorrect_problem_types[problem_name].update(task_keywords)
-                        return False
-        except Exception as e:
-            logger.error(e)
-            return False
+    def save_all_problems_to_d3m(self) -> None:
+        d3m_db = D3MMtLDB()
+        for problem_list in self.get_possible_problems().values():
+            for problem in problem_list:
+                # Add the dataset and problem to the database if they haven't
+                # been already.
+                d3m_db.save_dataset(problem)
+                d3m_db.save_problem(problem)
 
     def output_values_to_folder(self, location: str = "default"):
         """
