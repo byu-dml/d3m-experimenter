@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProblemReference:
-    def __init__(self, name: str, directory: str, datasets_dir: str,) -> None:
+    def __init__(self, name: str, directory: str, datasets_dir: str) -> None:
         """
         :param name: The name of the directory where this problem's files
             can be found.
@@ -38,6 +38,9 @@ class ProblemReference:
     def dataset_doc_path(self) -> str:
         return os.path.join(self.path, f"{self.name}_dataset", "datasetDoc.json")
 
+    def get_dataset_id(self) -> str:
+        return json.load(open(self.dataset_doc_path))["about"]["datasetID"]
+
     def to_d3m_problem(self) -> D3MProblem:
         return D3MProblem.load(f"file://{self.problem_doc_path}")
 
@@ -46,15 +49,26 @@ class ProblemReference:
 
     def _load_and_set_attributes(self):
         """
-        Gathers the type and task keywords of the problem from its
-        name and path.
+        Gathers various attributes about the problem and its dataset
+        using its problem document and dataset document.
         """
+        # Gather data about the problem.
         with open(self.problem_doc_path, "r") as f:
             problem_doc = json.load(f)
-            self.task_keywords = problem_doc["about"]["taskKeywords"]
-            if "classification" in self.task_keywords:
-                self.problem_type = "classification"
-            elif "regression" in self.task_keywords:
-                self.problem_type = "regression"
-            else:
-                self.problem_type = None
+
+        self.task_keywords = problem_doc["about"]["taskKeywords"]
+        if "classification" in self.task_keywords:
+            self.problem_type = "classification"
+        elif "regression" in self.task_keywords:
+            self.problem_type = "regression"
+        else:
+            self.problem_type = None
+
+        self.problem_id = problem_doc["about"]["problemID"]
+
+        # Gather data about the problem's dataset.
+        with open(self.dataset_doc_path, "r") as f:
+            dataset_doc = json.load(f)
+
+        self.dataset_id = dataset_doc["about"]["datasetID"]
+        self.dataset_digest = dataset_doc["about"]["digest"]

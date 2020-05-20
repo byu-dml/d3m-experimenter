@@ -1,14 +1,17 @@
 import logging
-import os
 
 import requests
 from d3m.primitive_interfaces.base import PrimitiveBase
 from d3m.metadata.pipeline import PrimitiveStep, Pipeline
+import elasticsearch_dsl
 
-from experimenter.constants import D3M_MTL_DB_URL
+from experimenter.constants import D3M_MTL_DB_POST_URL, D3M_MTL_DB_GET_URL
 from experimenter.problem import ProblemReference
+from experimenter import config
 
 logger = logging.getLogger(__name__)
+
+elasticsearch_dsl.connections.create_connection(hosts=[D3M_MTL_DB_GET_URL], timeout=30)
 
 
 class D3MMtLDB:
@@ -17,14 +20,14 @@ class D3MMtLDB:
     """
 
     def __init__(self) -> None:
-        self._url = D3M_MTL_DB_URL
+        self._post_url = D3M_MTL_DB_POST_URL
         # This env var allows code calling this class to be run during
         # unit tests without actually saving to the production DB.
-        self.should_save = os.getenv("SAVE_TO_D3M") == "True"
+        self.should_save = config.SAVE_TO_D3M
         # Our submitter name.
-        self._submitter = os.getenv("D3M_DB_SUBMITTER")
+        self._submitter = config.D3M_DB_SUBMITTER
         # The secret verifying us as the submitter we say we are.
-        self._x_token = os.getenv("D3M_DB_TOKEN")
+        self._x_token = config.D3M_DB_TOKEN
         if self._is_identifying_as_submitter():
             logger.info(
                 f"Documents will be saved under submitter name: '{self._submitter}'"
@@ -64,6 +67,27 @@ class D3MMtLDB:
         primitive_dict = primitive.metadata.to_json_structure()
         return self._save(primitive_dict, "primitive")
 
+    def search(self, *args, **kwargs) -> elasticsearch_dsl.Search:
+        """
+        Wraps a call to `elasticsearch_dsl.Search` so it doesn't have to imported
+        along with this class. The main argument to pass to search is
+        `index` e.g. `index="pipelines"`. See the documentation:
+        https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html
+        """
+        return elasticsearch_dsl.Search(*args, **kwargs)
+
+    def has_pipeline_been_run_on_problem(
+        self, pipeline: Pipeline, problem: ProblemReference
+    ) -> bool:
+        num_pipeline_dataset_matches = (
+            self.search(index="pipeline_runs")
+            .query("match", pipeline__digest=pipeline.get_digest())
+            .query("match", datasets__id=problem.dataset_id)
+            .query("match", datasets__digest=problem.dataset_digest)
+            .count()
+        )
+        return num_pipeline_dataset_matches > 0
+
     def save_pipeline_run(self, pipeline_run: dict) -> requests.Response:
         return self._save(pipeline_run, "pipeline-run")
 
@@ -85,7 +109,10 @@ class D3MMtLDB:
             headers["x-token"] = self._x_token
 
         response = requests.post(
-            f"{self._url}{index_name}/", json=entity, headers=headers, params=params
+            f"{self._post_url}/{index_name}/",
+            json=entity,
+            headers=headers,
+            params=params,
         )
         if not response.ok:
             logger.error(f"could not save entity {entity} to the {index_name} index")
@@ -100,6 +127,10 @@ class D3MMtLDB:
         return self._submitter is not None and self._x_token is not None
 
     def _create_no_save_response(self) -> requests.Response:
+        """
+        This is a dummy response we send when the experimenter is not configured to
+        save to the D3M database.
+        """
         response = requests.Response()
         response.status_code = 200
         response._content = (

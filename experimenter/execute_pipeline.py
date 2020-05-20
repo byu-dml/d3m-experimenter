@@ -15,6 +15,7 @@ from experimenter.run_pipeline import RunPipeline
 from experimenter.databases.aml_mtl import PipelineDB
 from experimenter.databases.d3m_mtl import D3MMtLDB
 from experimenter.problem import ProblemReference
+from experimenter.config import SAVE_TO_D3M
 
 
 logger = logging.getLogger(__name__)
@@ -26,12 +27,19 @@ def execute_pipeline_on_problem(
     """
     The main function to execute a pipeline. Called in `experimenter_driver.py`.
     This function will check if the  pipeline and dataset has been executed before,
-    run the pipeline, and record the results
+    run the pipeline, and record the results.
 
     :param pipe: the pipeline object that will be executed
-    :param problem: the path to the problemDoc of the particular dataset
+    :param problem: a reference to the problem to run the pipeline on.
     :param volumes_dir: a string containing the path to the volumes directory
     """
+    # If the experimenter is configured to save documents to the D3M database,
+    # we only want to execute and save this pipeline run if it doesn't already
+    # exist in the D3M database.
+    if SAVE_TO_D3M and D3MMtLDB().has_pipeline_been_run_on_problem(pipe, problem):
+        logger.info("Pipeline has already been run on this dataset, SKIPPING.")
+        return
+
     # Attempt to run the pipeline
     logger.info("\n On problem {}".format(problem.name))
     run_pipeline = RunPipeline(volumes_dir, problem)
@@ -60,12 +68,11 @@ def execute_fit_pipeline_on_problem(
     The main function to execute a `metafeatures` pipeline.  Differs from
     `execute_pipeline_on_problem` by only handling metafeatures.
     TODO: combine this with `execute_pipeline_on_problem`.
-    Called in `experimenter_driver.py`  This function will check if the
-    pipeline and dataset has been executed before, run the pipeline, and record the
-    results.
+    Called in `experimenter_driver.py`. This function will run the pipeline,
+    and record the results.
 
     :param pipe: the pipeline object that will be executed
-    :param problem: the path to the problemDoc of the particular dataset
+    :param problem: a reference to the problem to run the pipeline on.
     :param volumes_dir: a string containing the path to the volumes directory
     """
     # Attempt to run the pipeline
