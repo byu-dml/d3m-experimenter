@@ -9,15 +9,9 @@ from bson import json_util, ObjectId
 from d3m.metadata.pipeline import Pipeline
 from dateutil.parser import parse
 from experimenter.pipeline_builder import EZPipeline
+from experimenter.config import MONGO_HOST, MONGO_PORT
 
 logger = logging.getLogger(__name__)
-
-try:
-    mongo_host = os.environ["MONGO_HOST"]
-    mongo_port = int(os.environ["MONGO_PORT"])
-except Exception as E:
-    logger.info("ERROR: environment variables not set")
-    raise E
 
 
 class PipelineDB:
@@ -30,7 +24,7 @@ class PipelineDB:
     database into the default folder as defined below.
     """
 
-    def __init__(self, mongo_host: str = mongo_host, mongo_port: int = mongo_port):
+    def __init__(self, mongo_host: str = MONGO_HOST, mongo_port: int = MONGO_PORT):
         self.mongo_host = mongo_host
         self.mongo_port = mongo_port
 

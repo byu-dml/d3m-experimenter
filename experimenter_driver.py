@@ -20,17 +20,11 @@ from experimenter.execute_pipeline import (
     primitive_list_from_pipeline_object,
     get_list_vertically,
 )
+from experimenter.config import REDIS_HOST, REDIS_PORT
 
 # disable d3m's deluge of warnings
 log_config.dictConfig({"version": 1, "disable_existing_loggers": True})
 logger = logging.getLogger(__name__)
-
-try:
-    redis_host = os.environ["REDIS_HOST"]
-    redis_port = int(os.environ["REDIS_PORT"])
-except Exception as E:
-    logger.info("Exception: environment variables not set")
-    raise E
 
 
 class ExperimenterDriver:
@@ -68,7 +62,7 @@ class ExperimenterDriver:
         if run_type == "distribute":
             logger.info("Connecting to Redis")
             try:
-                conn = redis.StrictRedis(host=redis_host, port=redis_port)
+                conn = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
                 if self.fit_only:
                     self.queue = Queue("metafeatures", connection=conn)
                 else:

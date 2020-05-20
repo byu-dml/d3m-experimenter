@@ -4,19 +4,14 @@ This file sets the computer it is run on to be a worker in "burst" mode.
 This means that it will stop being a worker when the Queue is empty.
 The job queue is default of "default" priority.
 """
-from rq import Connection, Worker
-import redis
-import os
 import sys
 
-try:
-    redis_host = os.environ["REDIS_HOST"]
-    redis_port = int(os.environ["REDIS_PORT"])
-except Exception as E:
-    print("Exception: environment variables not set")
-    raise E
+from rq import Connection, Worker
+import redis
 
-conn = redis.StrictRedis(host=redis_host, port=redis_port)
+from experimenter.config import REDIS_HOST, REDIS_PORT
+
+conn = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
 
 # Preload libraries
 from experimenter_driver import *

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import os
-from rq import Connection, Worker, get_failed_queue, Queue
-import redis
+import logging
 import re
 
-import logging
+from rq import Connection, Worker, get_failed_queue, Queue
+import redis
+
+from experimenter.config import REDIS_HOST, REDIS_PORT
 
 logger = logging.getLogger(__name__)
 
@@ -14,14 +15,7 @@ def is_phrase_in(phrase, text):
     return re.search(r"\b{}\b".format(phrase), text, re.IGNORECASE) is not None
 
 
-try:
-    redis_host = os.environ["REDIS_HOST"]
-    redis_port = int(os.environ["REDIS_PORT"])
-except Exception as E:
-    logger.info("Exception: environment variables not set")
-    raise E
-
-conn = redis.StrictRedis(host=redis_host, port=redis_port)
+conn = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
 
 # Provide queue names to listen to as arguments to this script,
 # similar to rq worker
