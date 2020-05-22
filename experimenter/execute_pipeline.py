@@ -41,12 +41,12 @@ def execute_pipeline_on_problem(
         return
 
     # Attempt to run the pipeline
-    logger.info("\n On problem {}".format(problem.name))
+    logger.info("\n Running pipeline on problem {}".format(problem.name))
     run_pipeline = RunPipeline(volumes_dir, problem)
     try:
         scores, (fit_result, produce_result) = run_pipeline.run(pipeline=pipe)
     except Exception as e:
-        logger.error("ERROR: pipeline was not successfully run due to {}".format(e))
+        logger.exception("pipeline was not successfully run")
         print_pipeline(pipe.to_json_structure())
         raise e
 
@@ -82,7 +82,7 @@ def execute_fit_pipeline_on_problem(
     try:
         results = run_pipeline.run(pipeline=pipe)
     except Exception as e:
-        logger.info("ERROR: pipeline was not successfully run due to {}".format(e))
+        logger.exception("pipeline was not successfully run")
         print_pipeline(pipe._to_json_structure())
         raise e
 
@@ -152,10 +152,10 @@ def print_pipeline(pipeline: dict, score: float = None) -> List[str]:
     :return primitive_list: a list of all the primitives used in the pipeline
     """
     primitive_list = primitive_list_from_pipeline_json(pipeline)
-    logger.info("Ran pipeline:\n")
+    logger.info("pipeline:\n")
     logger.info(get_list_vertically(primitive_list))
     if score is not None:
-        logger.info("With a {} of {}".format(score["metric"][0], score["value"][0]))
+        logger.info("with a {} of {}".format(score["metric"][0], score["value"][0]))
     return primitive_list
 
 
@@ -183,8 +183,9 @@ def primitive_list_from_pipeline_json(pipeline_json: dict):
     return primitives
 
 
-def get_list_vertically(list_to_use: list):
+def get_list_vertically(list_to_use: list, indent: bool = True):
     """
-    A helper function to join a list vertically.  Used for debugging printing.
+    A helper function to join a list vertically. Used for debugging printing.
     """
-    return "\n".join(list_to_use)
+    final_list = ["\t" + item for item in list_to_use] if indent else list_to_use
+    return "\n" + "\n".join(final_list)

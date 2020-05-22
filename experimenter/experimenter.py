@@ -46,11 +46,17 @@ class Experimenter:
         generate_problems=False,
         pipeline_folder=None,
         pipeline_gen_type: str = "straight",
+        verbose: bool = False,
         **experiment_args,
     ):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
         self.mongo_database = PipelineDB()
+
+        if verbose:
+            logging.basicConfig(level=logging.INFO)
+        else:
+            logging.basicConfig(level=logging.CRITICAL)
 
         # set up the primitives according to parameters
         self.preprocessors = (
@@ -104,7 +110,6 @@ class Experimenter:
             logger.info("There are {} pipelines".format(self.num_pipelines))
 
             if pipeline_folder is None:
-                self.mongo_database = PipelineDB()
                 logger.info("Exporting pipelines to mongodb...")
                 self.output_pipelines_to_mongodb()
             else:
