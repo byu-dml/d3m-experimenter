@@ -5,3 +5,7 @@ rq==0.13.0
 rq-dashboard
 requests
 elasticsearch-dsl
+tqdm
+# TODO: remove this once the D3M docker image updates
+# with the fixes in this release.
+byudml==0.6.8

@@ -420,14 +420,8 @@ class EZPipeline(Pipeline):
         )
 
         # imputer step
-        # TODO: Change back to BYU imputer once bug is caught
         self.add_primitive_step(
-            "d3m.primitives.data_cleaning.imputer.SKlearn",
-            value_hyperparams={
-                "return_result": "replace",
-                "use_semantic_types": True,
-                "strategy": "median",
-            },
+            "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU"
         )
 
         # encoder step

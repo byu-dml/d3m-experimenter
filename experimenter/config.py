@@ -4,6 +4,8 @@ import logging
 
 from d3m import index as d3m_index  # noqa: F401
 
+from byudml.imputer.random_sampling_imputer import RandomSamplingImputer
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,6 +24,11 @@ try:
     MONGO_PORT = int(os.environ["MONGO_PORT"])
     REDIS_HOST = os.environ["REDIS_HOST"]
     REDIS_PORT = int(os.environ["REDIS_PORT"])
-except Exception as e:
-    logger.error("ERROR: environment variables not set")
-    raise e
+except Exception:
+    logger.exception("environment variables not set")
+
+# TODO: remove this once the D3M docker image updates
+# with the fixes in the 0.6.8 byudml release.
+d3m_index.register_primitive(
+    RandomSamplingImputer.metadata.query()["python_path"], RandomSamplingImputer
+)
