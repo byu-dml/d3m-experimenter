@@ -367,7 +367,7 @@ class EZPipeline(Pipeline):
             "d3m.primitives.schema_discovery.profiler.Common",
             value_hyperparams={
                 "categorical_max_absolute_distinct_values": None,
-                "categorical_max_ratio_distinct_values": 1.0,
+                "categorical_max_ratio_distinct_values": 0.1,
             },
         )
 
