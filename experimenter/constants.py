@@ -185,6 +185,7 @@ blacklist_non_tabular_data = [
     "LL0_1046_mozilla4",
     "LL0_1471_eeg_eye_state",
     "uu3_world_development_indicators",
+    "uu3_world_development_indicators_MIN_METADATA",
     "LL0_344_mv",
     "LL0_574_house_16h",
     "LL0_296_ailerons",
