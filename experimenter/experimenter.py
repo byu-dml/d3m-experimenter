@@ -152,8 +152,11 @@ class Experimenter:
             for problem in problem_list:
                 # Add the dataset and problem to the database if they haven't
                 # been already.
-                d3m_db.save_dataset(problem)
-                d3m_db.save_problem(problem)
+                logger.info(f"saving {problem.name}...")
+                dataset_result = d3m_db.save_dataset(problem)
+                logger.info(dataset_result.json())
+                problem_result = d3m_db.save_problem(problem)
+                logger.info(problem_result.json())
 
     def output_values_to_folder(self, location: str = "default"):
         """
