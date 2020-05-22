@@ -40,7 +40,8 @@ not_working_preprocessors = [
     # "d3m.primitives.data_preprocessing.polynomial_features.SKlearn",
     # "d3m.primitives.data_transformation.ordinal_encoder.SKlearn",
     # "d3m.primitives.data_transformation.one_hot_encoder.SKlearn",
-    # "d3m.primitives.data_transformation.fast_ica.SKlearn", # Can't handle a column with all the same values
+    # Can't handle a column with all the same values
+    # "d3m.primitives.data_transformation.fast_ica.SKlearn",
 ]
 
 models = {
@@ -55,14 +56,19 @@ models = {
         "d3m.primitives.classification.linear_svc.SKlearn",
         "d3m.primitives.classification.sgd.SKlearn",
         "d3m.primitives.classification.svc.SKlearn",
-        "d3m.primitives.classification.extra_trees.SKlearn",  # randomly splits - different than random forest
-        "d3m.primitives.classification.passive_aggressive.SKlearn",  # an mlp with regularization
+        # randomly splits - different than random forest
+        "d3m.primitives.classification.extra_trees.SKlearn",
+        # an mlp with regularization
+        "d3m.primitives.classification.passive_aggressive.SKlearn",
         "d3m.primitives.classification.ada_boost.SKlearn",
         "d3m.primitives.classification.mlp.SKlearn",
         "d3m.primitives.classification.nearest_centroid.SKlearn",
-        # "d3m.primitives.classification.multinomial_naive_bayes.SKlearn", # Can't handle negative data
-        # "d3m.primitives.classification.linear_discriminant_analysis.SKlearn", # Fails when the values of X are all the same.
-        # "d3m.primitives.classification.bagging.SKlearn", # only uses decision trees, which is redudant
+        # Can't handle negative data
+        # "d3m.primitives.classification.multinomial_naive_bayes.SKlearn",
+        # Fails when the values of X are all the same.
+        # "d3m.primitives.classification.linear_discriminant_analysis.SKlearn",
+        # only uses decision trees, which is redudant
+        # "d3m.primitives.classification.bagging.SKlearn",
     ],
     "regression": [
         "d3m.primitives.regression.random_forest.SKlearn",
@@ -91,8 +97,8 @@ primitives_needing_gt_one_column = {
 }
 
 problem_directories = [
-    "seed_datasets_current",
     "training_datasets/seed_datasets_archive",
+    "seed_datasets_current",
     # "training_datasets/LL0/",
     # Contains mostly non-tabular or huge tabular datasets
     # "training_datasets/LL1/",
@@ -125,7 +131,9 @@ blacklist_non_tabular_data = [
     "LL1_OSULeaf",  # requires reading a text file from csv
     "LL1_FaceFour",  # requires reading a text file from csv
     "31_urbansound",
-    "LL1_multilearn_emotions" "124_174_cifar10",  # weird indexes  # images
+    "LL1_multilearn_emotions",  # weird indexes
+    "124_174_cifar10",  # images
+    "124_174_cifar10_MIN_METADATA",  # images
     "124_214_coil20",  # images
     "LL1_Haptics",  # multiple files
     "LL1_VID_UCF11",  # music files
@@ -146,7 +154,8 @@ blacklist_non_tabular_data = [
     "1567_poker_hand",  # too long: ERROR: BSON document too large (19826399 bytes)
     "LL0_1569_poker_hand",  # Memory error in NP dot product
     "LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon",  # too long
-    "LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction",  # GPS data in another file
+    # GPS data in another file
+    "LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction",
     "66_chlorineConcentration",
     "LL0_1485_madelon",  # too long
     "LL0_1468_cnae_9",  # also too long
@@ -189,4 +198,6 @@ blacklist_non_tabular_data = [
     "LL0_189_kin8nm",
     "LL0_572_bank8fm",
     "LL0_308_puma32h",
+    "32_fma",  # audio data
+    "32_fma_MIN_METADATA",  # audio data
 ]
