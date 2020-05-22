@@ -10,6 +10,7 @@ import sys
 from d3m.metadata.pipeline import Pipeline
 import redis
 from rq import Queue
+from tqdm import tqdm
 
 from experimenter.experimenter import Experimenter
 from experimenter.databases.aml_mtl import PipelineDB
@@ -22,8 +23,6 @@ from experimenter.execute_pipeline import (
 )
 from experimenter.config import REDIS_HOST, REDIS_PORT
 
-# disable d3m's deluge of warnings
-log_config.dictConfig({"version": 1, "disable_existing_loggers": True})
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +40,7 @@ class ExperimenterDriver:
         run_type: str = "all",
         pipeline_folder=None,
         run_custom_fit=False,
-        **unused_args
+        **unused_args,
     ):
         self.datasets_dir = datasets_dir
         self.volumes_dir = volumes_dir
@@ -130,7 +129,7 @@ class ExperimenterDriver:
                     self.volumes_dir,
                     generate_pipelines=False,
                     generate_problems=True,
-                    **cli_args
+                    **cli_args,
                 )
                 problems = experimenter.problems
         # run type is pipelines from mongodb or "all"
@@ -141,7 +140,7 @@ class ExperimenterDriver:
                 self.volumes_dir,
                 generate_problems=True,
                 generate_pipelines=False,
-                **cli_args
+                **cli_args,
             )
             problems: dict = experimenter.problems
             if self.fit_only:
@@ -157,18 +156,9 @@ class ExperimenterDriver:
         # Run classification and regression
         for type_name, pipeline_list in pipes.items():
             if type_name in ["classification", "regression"]:
-                logger.info(
-                    "\n Starting to execute ####{}#### problems".format(type_name)
-                )
-                for index, problem in enumerate(problems[type_name]):
-                    sys.stdout.write("\r")
-                    percent = 100 / len(problems[type_name])
-                    sys.stdout.write("[%-20s] %d%%" % ("=" * index, percent * index))
-                    sys.stdout.flush()
+                logger.info(f"Starting to execute {type_name} problems...")
+                for index, problem in enumerate(tqdm(problems[type_name])):
                     for pipe in pipeline_list:
-                        # TODO: `continue` if a pipeline run document for this pipeline
-                        # and problem already exists in the D3M MtL DB.
-                        # Issue: https://github.com/byu-dml/d3m-experimenter/issues/87
                         try:
                             # if we are trying to distribute, add to the RQ
                             if self.run_type == "distribute":
@@ -193,10 +183,9 @@ class ExperimenterDriver:
                                     pipe, problem, self.volumes_dir
                                 )
 
-                        except Exception as e:
-                            logger.info("Pipeline execution failed. See {}".format(e))
-                            # pipeline didn't work.  Try the next one
-                            raise e
+                        except Exception:
+                            logger.exception("Pipeline execution failed, details:")
+                            # pipeline didn't work. Try the next one
 
         pretty_print_json(
             experimenter.incorrect_problem_types
@@ -235,9 +224,14 @@ def main(**cli_args):
     datasets_dir = "/datasets"
     volumes_dir = "/volumes"
     run_type = cli_args["run_type"]
+    reset = cli_args["reset"]
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
+        if reset:
+            # Clear out all the old pipelines to run before new ones are added and run.
+            PipelineDB().remove_all_pipelines_mongo()
+
         if run_type == "all":
             # Generate all possible problems and get pipelines - use default directory,
             # classifiers, and preprocessors
@@ -246,7 +240,7 @@ def main(**cli_args):
                 volumes_dir,
                 generate_pipelines=True,
                 generate_problems=True,
-                **cli_args
+                **cli_args,
             )
 
         elif run_type == "generate":
@@ -309,6 +303,15 @@ def get_cli_args(raw_args: List[str] = None):
         action="store_true",
         help="Whether to print for debugging or not",
         default=False,
+    )
+    parser.add_argument(
+        "--reset",
+        "-rs",
+        action="store_true",
+        help=(
+            "Whether to remove all the pipelines currently in the 'pipelines_to_run' "
+            "collection in the local mongo database."
+        ),
     )
     parser.add_argument(
         "--n-preprocessors",

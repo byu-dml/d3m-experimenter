@@ -186,6 +186,9 @@ class PipelineDB:
         )
         return True
 
+    def remove_all_pipelines_mongo(self) -> None:
+        self.db.pipelines_to_run.remove({})
+
     def _get_location_of_dataset(self, doc: dict) -> tuple((str, str)):
         """
         Checks a dataset document to find whether it is "seed", "LL0", or "LL1".
