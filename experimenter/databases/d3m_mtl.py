@@ -1,4 +1,5 @@
 import logging
+import json
 
 import requests
 from d3m.primitive_interfaces.base import PrimitiveBase
@@ -115,7 +116,9 @@ class D3MMtLDB:
             params=params,
         )
         if not response.ok:
-            logger.error(f"could not save entity {entity} to the {index_name} index")
+            logger.error(
+                f"could not save entity {self._get_partial_json(entity)} to the {index_name} index"
+            )
             logger.error(response.json())
         return response
 
@@ -138,3 +141,10 @@ class D3MMtLDB:
             b'since the SAVE_TO_D3M environment variable is not set." }'
         )
         return response
+
+    def _get_partial_json(self, data, length: int = 200) -> str:
+        """
+        Returns a string representation of `data`, truncated to
+        the first `length` characters. Useful for printing.
+        """
+        return json.dumps(data)[:length] + "..."
