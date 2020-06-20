@@ -5,6 +5,8 @@ import logging
 from d3m.metadata.problem import Problem as D3MProblem
 from d3m.container import Dataset
 
+from experimenter.constants import PROBLEM_BLACKLIST
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +39,15 @@ class ProblemReference:
     @property
     def dataset_doc_path(self) -> str:
         return os.path.join(self.path, f"{self.name}_dataset", "datasetDoc.json")
+
+    @property
+    def is_blacklisted(self) -> bool:
+        """
+        `True` if this problem is blacklisted i.e. if we don't want
+        to run any pipelines on it because its too big or of the wrong format.
+        """
+        normalized_name = self.name.replace("_MIN_METADATA", "")
+        return normalized_name in PROBLEM_BLACKLIST
 
     def get_dataset_id(self) -> str:
         return json.load(open(self.dataset_doc_path))["about"]["datasetID"]

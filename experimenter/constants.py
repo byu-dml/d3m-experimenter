@@ -99,7 +99,7 @@ primitives_needing_gt_one_column = {
 problem_directories = [
     "training_datasets/seed_datasets_archive",
     "seed_datasets_current",
-    # "training_datasets/LL0/",
+    "training_datasets/LL0/",
     # Contains mostly non-tabular or huge tabular datasets
     # "training_datasets/LL1/",
 ]
@@ -122,7 +122,7 @@ EXTRA_HYPEREPARAMETERS = {
     ],
 }
 
-blacklist_non_tabular_data = [
+PROBLEM_BLACKLIST = {
     "LL1_ArrowHead",  # time series data
     "LL1_TXT_CLS_3746_newsgroup",  # requires reading a text file from csv
     "uu_101_object_categories",  # requires reading an image file from csv
@@ -133,7 +133,7 @@ blacklist_non_tabular_data = [
     "31_urbansound",
     "LL1_multilearn_emotions",  # weird indexes
     "124_174_cifar10",  # images
-    "124_174_cifar10_MIN_METADATA",  # images
+    "LL1_FISH",  # images
     "124_214_coil20",  # images
     "LL1_Haptics",  # multiple files
     "LL1_VID_UCF11",  # music files
@@ -156,6 +156,8 @@ blacklist_non_tabular_data = [
     "LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon",  # too long
     # GPS data in another file
     "LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction",
+    # Large, takes a long time: ~150k rows.
+    "SEMI_1217_click_prediction_small",
     "66_chlorineConcentration",
     "LL0_1485_madelon",  # too long
     "LL0_1468_cnae_9",  # also too long
@@ -185,7 +187,6 @@ blacklist_non_tabular_data = [
     "LL0_1046_mozilla4",
     "LL0_1471_eeg_eye_state",
     "uu3_world_development_indicators",
-    "uu3_world_development_indicators_MIN_METADATA",
     "LL0_344_mv",
     "LL0_574_house_16h",
     "LL0_296_ailerons",
@@ -194,11 +195,12 @@ blacklist_non_tabular_data = [
     "uu2_gp_hyperparameter_estimation_v2",  # has extra data
     "uu2_gp_hyperparameter_estimation",  # has extra data
     "57_hypothyroid",  # always NAN's out
+    "32_fma",  # audio data
     "LL0_315_us_crime",  # the next are due to timeouts
     "LL0_688_visualizing_soil",
     "LL0_189_kin8nm",
     "LL0_572_bank8fm",
     "LL0_308_puma32h",
-    "32_fma",  # audio data
-    "32_fma_MIN_METADATA",  # audio data
-]
+    "SEMI_1040_sylva_prior",
+    "LL1_h1b_visa_apps_7480",
+}

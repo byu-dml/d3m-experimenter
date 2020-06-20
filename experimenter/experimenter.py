@@ -14,12 +14,7 @@ from experimenter.experiments.straight import StraightArchitectureExperimenter
 from experimenter.experiments.ensemble import EnsembleArchitectureExperimenter
 from experimenter.experiments.stacked import StackedArchitectureExperimenter
 from experimenter.problem import ProblemReference
-from experimenter.constants import (
-    models,
-    preprocessors,
-    problem_directories,
-    blacklist_non_tabular_data,
-)
+from experimenter.constants import models, preprocessors, problem_directories
 from experimenter.databases.d3m_mtl import D3MMtLDB
 
 
@@ -132,12 +127,12 @@ class Experimenter:
             datasets_dir = os.path.join(self.datasets_dir, problem_directory)
 
             for dataset_name in os.listdir(datasets_dir):
-                if dataset_name in blacklist_non_tabular_data:
-                    continue
                 logger.info(f"processing problem: {datasets_dir}/{dataset_name}...")
                 problem = ProblemReference(
                     dataset_name, problem_directory, self.datasets_dir
                 )
+                if problem.is_blacklisted:
+                    continue
                 if problem.problem_type in problems_list:
                     problems_list[problem.problem_type].append(problem)
                 else:
