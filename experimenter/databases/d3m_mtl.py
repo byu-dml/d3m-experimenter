@@ -4,15 +4,14 @@ import json
 import requests
 from d3m.primitive_interfaces.base import PrimitiveBase
 from d3m.metadata.pipeline import PrimitiveStep, Pipeline
-import elasticsearch_dsl
+from elasticsearch_dsl import Search
+from elasticsearch import Elasticsearch
 
 from experimenter.constants import D3M_MTL_DB_POST_URL, D3M_MTL_DB_GET_URL
 from experimenter.problem import ProblemReference
 from experimenter import config
 
 logger = logging.getLogger(__name__)
-
-elasticsearch_dsl.connections.create_connection(hosts=[D3M_MTL_DB_GET_URL], timeout=30)
 
 
 class D3MMtLDB:
@@ -25,6 +24,12 @@ class D3MMtLDB:
         # This env var allows code calling this class to be run during
         # unit tests without actually saving to the production DB.
         self.should_save = config.SAVE_TO_D3M
+        # A reference to a low-level elasticsearch client. This can be
+        # used to query the D3M DB, or this classe's `search` method
+        # can be used, and is preferred, since its API is more straightforward.
+        # This low-level client is the only way to accomplish
+        # certain things though.
+        self.es = Elasticsearch(hosts=[D3M_MTL_DB_GET_URL], timeout=30)
         # Our submitter name.
         self._submitter = config.D3M_DB_SUBMITTER
         # The secret verifying us as the submitter we say we are.
@@ -68,14 +73,14 @@ class D3MMtLDB:
         primitive_dict = primitive.metadata.to_json_structure()
         return self._save(primitive_dict, "primitive")
 
-    def search(self, *args, **kwargs) -> elasticsearch_dsl.Search:
+    def search(self, *args, **kwargs) -> Search:
         """
         Wraps a call to `elasticsearch_dsl.Search` so it doesn't have to imported
         along with this class. The main argument to pass to search is
         `index` e.g. `index="pipelines"`. See the documentation:
         https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html
         """
-        return elasticsearch_dsl.Search(*args, **kwargs)
+        return Search(using=self.es, *args, **kwargs)
 
     def has_pipeline_been_run_on_problem(
         self, pipeline: Pipeline, problem: ProblemReference
@@ -117,7 +122,8 @@ class D3MMtLDB:
         )
         if not response.ok:
             logger.error(
-                f"could not save entity {self._get_partial_json(entity)} to the {index_name} index"
+                f"could not save entity {self._get_partial_json(entity)} "
+                f"to the {index_name} index"
             )
             logger.error(response.json())
         return response
