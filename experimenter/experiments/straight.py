@@ -15,7 +15,7 @@ class StraightArchitectureExperimenter(Experiment):
     """
 
     def generate_pipelines(
-        self, *preprocessors: List[str], models: Dict[str, str], **unused_args
+        self, *, preprocessors: List[str], models: Dict[str, str], **unused_args
     ) -> Dict[str, List[Pipeline]]:
         """
         A high level function to create numerous pipelines for a list of preprocessor and model
