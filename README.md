@@ -127,7 +127,7 @@ To create jobs on the task queue:
 python3 experimenter_driver.py --run-type distribute
 ```
 
-This pulls all the pipelines out of the database and adds them to the RQ queue as jobs to be executed by workers.
+This pulls all the pipelines out of the database and adds them to the RQ queue as jobs to be executed by workers. To generate pipelines and put them in the database use a `--run-type` of `generate` or `all` (see above).
 
 #### Running Jobs
 
