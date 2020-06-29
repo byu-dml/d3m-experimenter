@@ -2,6 +2,6 @@
 echo "Starting"
 sudo apt-get install docker -y
 sudo apt-get install docker-compose -y
-sudo docker-compose up -d
+sudo docker-compose up -d --build
 sudo docker exec -it experimenter bash
 echo "Done creating enviroment"
