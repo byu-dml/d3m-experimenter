@@ -123,7 +123,7 @@ class D3MMtLDB:
         if not response.ok:
             logger.error(
                 f"could not save entity {self._get_partial_json(entity)} "
-                f"to the {index_name} index"
+                f"to the {index_name} index (HTTP code {response.status_code})"
             )
             logger.error(response.json())
         return response
