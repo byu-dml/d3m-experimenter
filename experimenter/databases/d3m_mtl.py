@@ -125,7 +125,7 @@ class D3MMtLDB:
                 f"could not save entity {self._get_partial_json(entity)} "
                 f"to the {index_name} index (HTTP code {response.status_code})"
             )
-            logger.error(response.json())
+            logger.error(response.text)
         return response
 
     def _is_identifying_as_submitter(self) -> bool:
