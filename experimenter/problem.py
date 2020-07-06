@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProblemReference:
-    subsets = {"ALL", "TRAIN", "TEST", "SCORE"}
+    valid_subsets = {"ALL", "TRAIN", "TEST", "SCORE"}
 
     def __init__(
         self, name: str, directory: str, datasets_dir: str, subset: str = "ALL"
@@ -32,7 +32,7 @@ class ProblemReference:
         # The path to the root directory of the problem and dataset.
         self.path = os.path.join(datasets_dir, directory, self.name)
 
-        assert subset in self.subsets
+        assert subset in self.valid_subsets
         self.subset = subset
 
         self._load_problem_docs()
@@ -46,7 +46,7 @@ class ProblemReference:
         user_subset = self.subset
 
         self._problem_docs = {}
-        for subset in self.subsets:
+        for subset in self.valid_subsets:
             self.subset = subset
             if os.path.isfile(self.problem_doc_path):
                 self._problem_docs[self.subset] = json.load(open(self.problem_doc_path))
@@ -57,12 +57,12 @@ class ProblemReference:
     def problem_dir(self) -> str:
         if self.subset == "ALL":
             return os.path.join(self.path, f"{self.name}_problem")
-        elif self.subset in self.subsets:
+        elif self.subset in self.valid_subsets:
             return os.path.join(self.path, self.subset, f"problem_{self.subset}")
         else:
             raise ValueError(
                 f"Unsupported value for self.subset '{self.subset}'. "
-                f"Valid options are {self.subsets}"
+                f"Valid options are {self.valid_subsets}"
             )
 
     @property
@@ -105,7 +105,7 @@ class ProblemReference:
         user_subset = self.subset
 
         self._dataset_docs = {}
-        for subset in self.subsets:
+        for subset in self.valid_subsets:
             self.subset = subset
             if os.path.isfile(self.dataset_doc_path):
                 self._dataset_docs[self.subset] = json.load(open(self.dataset_doc_path))
@@ -116,12 +116,12 @@ class ProblemReference:
     def dataset_dir(self) -> str:
         if self.subset == "ALL":
             return os.path.join(self.path, f"{self.name}_dataset")
-        elif self.subset in self.subsets:
+        elif self.subset in self.valid_subsets:
             return os.path.join(self.path, self.subset, f"dataset_{self.subset}")
         else:
             raise ValueError(
                 f"Unsupported value for self.subset '{self.subset}'. "
-                f"Valid options are {self.subsets}"
+                f"Valid options are {self.valid_subsets}"
             )
 
     @property
