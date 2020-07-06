@@ -38,6 +38,15 @@ class MetafeatureExperimenter(Experiment):
             "d3m.primitives.data_transformation.dataset_to_dataframe.Common", "inputs.0"
         )
 
+        # column_profiler step (determine semantic types)
+        pipeline_description.add_primitive_step(
+            "d3m.primitives.schema_discovery.profiler.Common",
+            value_hyperparams={
+                "categorical_max_absolute_distinct_values": None,
+                "categorical_max_ratio_distinct_values": 0.1,
+            },
+        )
+
         # column_parser step
         pipeline_description.add_primitive_step(
             "d3m.primitives.data_transformation.column_parser.Common"
