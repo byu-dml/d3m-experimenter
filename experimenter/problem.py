@@ -157,3 +157,21 @@ class ProblemReference:
         """
         normalized_name = self.name.replace("_MIN_METADATA", "")
         return normalized_name in PROBLEM_BLACKLIST
+
+    def has_subset(self, subset: str) -> bool:
+        assert subset in self.valid_subsets
+
+        # Temporarily switch the subset to check things.
+        user_subset = self.subset
+        self.subset = subset
+
+        if os.path.isfile(self.dataset_doc_path) and os.path.isfile(
+            self.problem_doc_path
+        ):
+            has_subset = True
+        else:
+            has_subset = False
+
+        # Now switch the subset back.
+        self.subset = user_subset
+        return has_subset
