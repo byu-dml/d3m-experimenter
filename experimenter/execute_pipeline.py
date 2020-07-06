@@ -61,13 +61,13 @@ def execute_pipeline_on_problem(
     )
 
 
-def execute_fit_pipeline_on_problem(
+def execute_metafeatures_pipeline_on_problem(
     pipe: Pipeline, problem: ProblemReference, volumes_dir: str
 ):
     """
     The main function to execute a `metafeatures` pipeline.  Differs from
-    `execute_pipeline_on_problem` by only handling metafeatures.
-    TODO: combine this with `execute_pipeline_on_problem`.
+    `execute_pipeline_on_problem` by only handling metafeatures, and by
+    computing them on every subset of the problem e.g. TRAIN, TEST, SCORE, etc.
     Called in `experimenter_driver.py`. This function will run the pipeline,
     and record the results.
 
@@ -75,20 +75,26 @@ def execute_fit_pipeline_on_problem(
     :param problem: a reference to the problem to run the pipeline on.
     :param volumes_dir: a string containing the path to the volumes directory
     """
-    # Attempt to run the pipeline
-    logger.info("\n On problem {}".format(problem.name))
     mongo_db = PipelineDB()
-    run_pipeline = RunFitPipeline(volumes_dir, problem)
-    try:
-        results = run_pipeline.run(pipeline=pipe)
-    except Exception as e:
-        logger.exception("pipeline was not successfully run")
-        print_pipeline(pipe._to_json_structure())
-        raise e
 
-    logger.info(results)
-    fit_result = results
-    mongo_db.add_to_metafeatures(fit_result._to_json_structure())
+    for subset in problem.valid_subsets:
+        if problem.has_subset(subset):
+            problem.subset = subset
+            logger.info(
+                f"computing metafeatures for problem {problem.name} ({problem.subset} subset)..."
+            )
+            # Compute and store the metafeatures for this subset of the problem.
+            run_pipeline = RunFitPipeline(volumes_dir, problem)
+            try:
+                results = run_pipeline.run(pipeline=pipe)
+            except Exception as e:
+                logger.exception("pipeline was not successfully run")
+                print_pipeline(pipe._to_json_structure())
+                raise e
+
+            logger.info(results)
+            fit_result = results
+            mongo_db.add_to_metafeatures(fit_result._to_json_structure())
 
 
 def handle_successful_pipeline_run(

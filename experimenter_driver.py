@@ -17,7 +17,7 @@ from experimenter.databases.aml_mtl import PipelineDB
 from experimenter.experimenter import pretty_print_json
 from experimenter.execute_pipeline import (
     execute_pipeline_on_problem,
-    execute_fit_pipeline_on_problem,
+    execute_metafeatures_pipeline_on_problem,
     primitive_list_from_pipeline_object,
     get_list_vertically,
 )
@@ -172,16 +172,21 @@ class ExperimenterDriver:
                                     )
                                 else:
                                     self.queue.enqueue(
-                                        execute_fit_pipeline_on_problem,
+                                        execute_metafeatures_pipeline_on_problem,
                                         pipe,
                                         problem,
                                         self.volumes_dir,
                                         timeout=60 * 60,
                                     )
                             else:
-                                execute_pipeline_on_problem(
-                                    pipe, problem, self.volumes_dir
-                                )
+                                if not self.fit_only:
+                                    execute_pipeline_on_problem(
+                                        pipe, problem, self.volumes_dir
+                                    )
+                                else:
+                                    execute_metafeatures_pipeline_on_problem(
+                                        pipe, problem, self.volumes_dir
+                                    )
 
                         except Exception:
                             logger.exception("Pipeline execution failed, details:")
