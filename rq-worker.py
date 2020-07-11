@@ -8,6 +8,7 @@ import sys
 
 from rq import Connection, Worker
 import redis
+import logging
 
 from experimenter.config import REDIS_HOST, REDIS_PORT
 
@@ -15,6 +16,8 @@ conn = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
 
 # Preload libraries
 from experimenter_driver import *
+
+logging.basicConfig(level=logging.INFO)
 
 # Provide queue names to listen to as arguments to this script,
 # similar to rq worker
