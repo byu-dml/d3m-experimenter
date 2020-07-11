@@ -192,6 +192,9 @@ PROBLEM_BLACKLIST = {
     "LL0_296_ailerons",
     "LL0_216_elevators",
     "LL0_201_pol",
+    "uu3_world_development_indicators_raw",
+    "kaggle_music_hackathon",
+    "SEMI_155_pokerhand",
     "uu2_gp_hyperparameter_estimation_v2",  # has extra data
     "uu2_gp_hyperparameter_estimation",  # has extra data
     "57_hypothyroid",  # always NAN's out
