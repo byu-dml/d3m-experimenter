@@ -94,6 +94,18 @@ class D3MMtLDB:
         )
         return num_pipeline_dataset_matches > 0
 
+    def does_pipeline_exist_in_db(self, pipeline: Pipeline) -> bool:
+        """
+        Returns `True` if `pipeline` exists in the DB.
+        """
+        num_pipeline_matches = (
+            self.search(index="pipelines")
+            .query("match", digest=pipeline.get_digest())
+            .query("match", id=pipeline.id)
+            .count()
+        )
+        return num_pipeline_matches > 0
+
     def save_pipeline_run(self, pipeline_run: dict) -> requests.Response:
         return self._save(pipeline_run, "pipeline-run")
 

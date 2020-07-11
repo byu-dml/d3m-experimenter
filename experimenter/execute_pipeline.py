@@ -115,12 +115,13 @@ def handle_successful_pipeline_run(
     print_pipeline(pipeline.to_json_structure(), score)
     d3m_db = D3MMtLDB()
 
-    pipeline_save_response = d3m_db.save_pipeline(pipeline, save_primitives=True)
-    if pipeline_save_response.ok:
-        logger.info(
-            f"pipeline {pipeline.get_digest()} "
-            f"saved successfully, response: {pipeline_save_response.json()}"
-        )
+    if not d3m_db.does_pipeline_exist_in_db(pipeline):
+        pipeline_save_response = d3m_db.save_pipeline(pipeline, save_primitives=True)
+        if pipeline_save_response.ok:
+            logger.info(
+                f"pipeline {pipeline.get_digest()} "
+                f"saved successfully, response: {pipeline_save_response.json()}"
+            )
 
     pipeline_run_save_response = d3m_db.save_pipeline_run(pipeline_run)
     if pipeline_run_save_response.ok:
