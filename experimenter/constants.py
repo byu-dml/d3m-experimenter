@@ -130,6 +130,7 @@ PROBLEM_BLACKLIST = {
     "uu10_posts_3",  # missing DataSplits file
     "LL1_OSULeaf",  # requires reading a text file from csv
     "LL1_FaceFour",  # requires reading a text file from csv
+    "LL1_Adiac",  # requires reading a text file from csv
     "31_urbansound",
     "LL1_multilearn_emotions",  # weird indexes
     "124_174_cifar10",  # images
