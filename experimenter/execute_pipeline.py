@@ -16,13 +16,17 @@ from experimenter.databases.aml_mtl import PipelineDB
 from experimenter.databases.d3m_mtl import D3MMtLDB
 from experimenter.problem import ProblemReference
 from experimenter.config import SAVE_TO_D3M
+from experimenter.constants import METRICS_BY_PROBLEM_TYPE
 
 
 logger = logging.getLogger(__name__)
 
 
 def execute_pipeline_on_problem(
-    pipe: Pipeline, problem: ProblemReference, volumes_dir: str
+    pipe: Pipeline,
+    problem: ProblemReference,
+    volumes_dir: str,
+    all_metrics: bool = False,
 ):
     """
     The main function to execute a pipeline. Called in `experimenter_driver.py`.
@@ -32,7 +36,17 @@ def execute_pipeline_on_problem(
     :param pipe: the pipeline object that will be executed
     :param problem: a reference to the problem to run the pipeline on.
     :param volumes_dir: a string containing the path to the volumes directory
+    :param all_metrics: if `True`, the pipeline will be scored against all metrics
+        registered for `problem`'s problem type. If `False`, it will only be scored
+        against the metrics listed in `problem`'s description.
     """
+    # Validate args
+    if all_metrics and problem.problem_type not in METRICS_BY_PROBLEM_TYPE:
+        raise ValueError(
+            f"cannot compute all metrics for problem {problem.name}, "
+            "it does not have a supported problem type."
+        )
+
     # If the experimenter is configured to save documents to the D3M database,
     # we only want to execute and save this pipeline run if it doesn't already
     # exist in the D3M database.
@@ -40,11 +54,17 @@ def execute_pipeline_on_problem(
         logger.info("Pipeline has already been run on this dataset, SKIPPING.")
         return
 
+    metric_names = (
+        METRICS_BY_PROBLEM_TYPE[problem.problem_type] if all_metrics else None
+    )
+
     # Attempt to run the pipeline
     logger.info("\n Running pipeline on problem {}".format(problem.name))
     run_pipeline = RunPipeline(volumes_dir, problem)
     try:
-        scores, (fit_result, produce_result) = run_pipeline.run(pipeline=pipe)
+        scores, (fit_result, produce_result) = run_pipeline.run(
+            pipeline=pipe, metric_names=metric_names
+        )
     except Exception as e:
         logger.exception("pipeline was not successfully run")
         print_pipeline(pipe.to_json_structure())

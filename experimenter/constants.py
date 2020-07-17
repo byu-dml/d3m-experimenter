@@ -104,6 +104,17 @@ problem_directories = [
     # "training_datasets/LL1/",
 ]
 
+# For possible values inspect `d3m.metadata.problem.PerformanceMetric`
+METRICS_BY_PROBLEM_TYPE = {
+    "classification": ["ACCURACY", "F1_MICRO", "F1_MACRO", "HAMMING_LOSS"],
+    "regression": [
+        "MEAN_SQUARED_ERROR",
+        "ROOT_MEAN_SQUARED_ERROR",
+        "MEAN_ABSOLUTE_ERROR",
+        "R_SQUARED",
+    ],
+}
+
 # This is the full list of families:
 # https://metadata.datadrivendiscovery.org/schemas/v0/definitions.json#/definitions/primitive_family
 PRIMITIVE_FAMILIES = {

@@ -8,6 +8,7 @@ from d3m.metadata.pipeline_run import RuntimeEnvironment
 from d3m.container.dataset import ComputeDigest
 from d3m.runtime import (
     get_metrics_from_problem_description,
+    get_metrics_from_list,
     evaluate,
     get_pipeline,
     get_dataset,
@@ -49,7 +50,7 @@ class RunPipeline:
             "context": metadata_base.Context.PRODUCTION,
         }
 
-    def run(self, pipeline: Pipeline) -> list:
+    def run(self, pipeline: Pipeline, metric_names: list = None) -> list:
         """
         This function is what actually executes the pipeline, splits it, and returns
         the final predictions and scores. Note that this function is EXTREMELY
@@ -59,6 +60,10 @@ class RunPipeline:
         
         :param pipeline: the pipeline object to be run OR the path to the pipeline file
             to be used
+        :param metric_names: if provided, the pipeline will be scored against this custom
+            list of metric names. See `d3m.metadata.problem.PerformanceMetric`
+            for a list of possible values. If not provided, the metrics listed in the
+            problem description will be used.
         :returns results_list: a list containing, in order, the scores from the pipeline
             predictions, the fit pipeline_run and the produce pipeline_run.
         """
@@ -124,7 +129,10 @@ class RunPipeline:
             list(split_file.loc[split_file["type"] == "TEST"]["d3mIndex"])
         )
 
-        metrics = get_metrics_from_problem_description(problem_description)
+        if metric_names is None:
+            metrics = get_metrics_from_problem_description(problem_description)
+        else:
+            metrics = get_metrics_from_list(metric_names)
 
         all_scores, all_results = evaluate(
             pipeline,

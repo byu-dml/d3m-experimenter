@@ -168,6 +168,7 @@ class ExperimenterDriver:
                                         pipe,
                                         problem,
                                         self.volumes_dir,
+                                        True,
                                         timeout=60 * 12,
                                     )
                                 else:
@@ -181,7 +182,7 @@ class ExperimenterDriver:
                             else:
                                 if not self.fit_only:
                                     execute_pipeline_on_problem(
-                                        pipe, problem, self.volumes_dir
+                                        pipe, problem, self.volumes_dir, True
                                     )
                                 else:
                                     execute_metafeatures_pipeline_on_problem(
