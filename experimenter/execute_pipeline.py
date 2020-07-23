@@ -26,7 +26,7 @@ def execute_pipeline_on_problem(
     pipe: Pipeline,
     problem: ProblemReference,
     volumes_dir: str,
-    all_metrics: bool = False,
+    all_metrics: bool = True,
 ):
     """
     The main function to execute a pipeline. Called in `experimenter_driver.py`.
