@@ -169,7 +169,7 @@ class ExperimenterDriver:
                                         problem,
                                         self.volumes_dir,
                                         True,
-                                        timeout=60 * 12,
+                                        job_timeout=60 * 12,
                                     )
                                 else:
                                     self.queue.enqueue(
@@ -177,7 +177,7 @@ class ExperimenterDriver:
                                         pipe,
                                         problem,
                                         self.volumes_dir,
-                                        timeout=60 * 60,
+                                        job_timeout=60 * 60,
                                     )
                             else:
                                 if not self.fit_only:
