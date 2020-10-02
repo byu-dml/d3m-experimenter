@@ -31,7 +31,6 @@ class ProblemReference:
         self.name = name
         # The path to the root directory of the problem and dataset.
         self.path = os.path.join(datasets_dir, directory, self.name)
-
         assert subset in self.valid_subsets
         self.subset = subset
 
@@ -44,7 +43,6 @@ class ProblemReference:
         # We'll temporarilly change `self.subset` in order to load
         # all the problem docs.
         user_subset = self.subset
-
         self._problem_docs = {}
         for subset in self.valid_subsets:
             self.subset = subset

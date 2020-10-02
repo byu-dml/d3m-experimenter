@@ -9,8 +9,8 @@ services:
     - .env
     entrypoint: /bin/bash
     volumes:
-      - ${DATASETS}:/datasets
-      - ${EXPERIMENTER}:/d3m-experimenter
+      - ${DATASETS}:/datasets:z
+      - ${EXPERIMENTER}:/d3m-experimenter:z
 
 networks:
   host:
