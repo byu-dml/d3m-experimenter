@@ -60,6 +60,9 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
    with tqdm(descrip, total=num_queries) as progress:
       progress.set_description(desc=descrip)
       for hit in search.scan():
+         if check_for_pipeline_runs(hit.id) <= 0:
+            continue
+
          locs = [i for i, step in enumerate(hit.steps) if keyword in step['primitive']['python_path']]
          if limit_indexes == 'last':
             locs = locs[-1]
@@ -75,12 +78,12 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
    return results
 
 
-def find_pipeline_runs(pipeline_id: str):
+def check_for_pipeline_runs(pipeline_id: str):
    search = Search(using=CONNECTION, index='pipeline_runs') \
       .query('match', pipeline__id=pipeline_id) \
-      .query('match', run__phase='PRODUCE')
-   print(search.count())
-   with tqdm(f'Scanning pipeline runs for {pipeline_id}', total=search.count()) as progress:
-      for hit in search.scan():
-         print(hit)
+      .query('match', run__phase='PRODUCE') \
+      .query('match', status__state='SUCCESS')
+
+   return search.count()
+
 
