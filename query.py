@@ -40,6 +40,10 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
    A list of tuples where each tuple represents a matching pipeline and
    the index(es) of the desired primitives in the given pipeline's steps.
    '''
+
+   # TODO check that the pipelines have pipeline runs
+   #      check that the pipelines we return have run successfully
+
    if limit_indexes not in { 'first', 'last', False }:
       raise ValueError(f'Invalid value "{limit_indexes}" for arg limit_indexes')
    
@@ -69,3 +73,14 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
             break
 
    return results
+
+
+def find_pipeline_runs(pipeline_id: str):
+   search = Search(using=CONNECTION, index='pipeline_runs') \
+      .query('match', pipeline__id=pipeline_id) \
+      .query('match', run__phase='PRODUCE')
+   print(search.count())
+   with tqdm(f'Scanning pipeline runs for {pipeline_id}', total=search.count()) as progress:
+      for hit in search.scan():
+         print(hit)
+
