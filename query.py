@@ -96,7 +96,6 @@ def get_datasets(pipeline_id: str):
       .query('match', status__state='SUCCESS')
    
    datasets = {}
-   print(search.count())
    for hit in search.scan():
       datasets.update({dataset['digest']: dataset['id'] for dataset in hit.datasets})
 
