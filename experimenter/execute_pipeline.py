@@ -27,6 +27,7 @@ def execute_pipeline_on_problem(
     problem: ProblemReference,
     volumes_dir: str,
     all_metrics: bool = True,
+    random_seed: int = None
 ):
     """
     The main function to execute a pipeline. Called in `experimenter_driver.py`.
@@ -60,7 +61,7 @@ def execute_pipeline_on_problem(
 
     # Attempt to run the pipeline
     logger.info("\n Running pipeline on problem {}".format(problem.name))
-    run_pipeline = RunPipeline(volumes_dir, problem)
+    run_pipeline = RunPipeline(volumes_dir, problem, random_seed=random_seed)
     try:
         scores, (fit_result, produce_result) = run_pipeline.run(
             pipeline=pipe, metric_names=metric_names

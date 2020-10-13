@@ -33,7 +33,7 @@ class RunPipeline:
 
     def __init__(
         self, volumes_dir: str, problem: ProblemReference, output_path: str = None,
-    ):
+    random_seed: int = None):
         self.volumes_dir = volumes_dir
         self.data_pipeline_path = (
             "./experimenter/pipelines/fixed-split-tabular-split.yml"
@@ -69,8 +69,11 @@ class RunPipeline:
         """
 
         arguments = self.run_args
-
-        runtime_environment = RuntimeEnvironment()
+        #use the random seed if passed to run
+        if (self.random_seed is not None):
+            runtime_environment = RuntimeEnvironment(random_seed=random_seed)
+        else:
+            runtime_environment = RuntimeEnvironment()
 
         dataset_resolver = get_dataset
 

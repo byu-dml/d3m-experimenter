@@ -15,7 +15,7 @@ def main(**cli_args):
     primitive_insert = dict(cli_args['primitive_insert'])
     #get the new pipeline with the swapping
     new_pipeline = swap(swap_loc, pipeline, primitive_insert)
-    pipeline = json.dumps(pipeline)
+    pipeline = json.dumps(pipeline, indent=4)
     run_pipeline(pipeline, **cli_args)
         
 
@@ -27,7 +27,7 @@ def run_pipeline(new_pipeline, **cli_args):
     datasets_dir = cli_args['datasets_dir']
     #get problem reference
     problem = ProblemReference(dataset_name, problem_directory, datasets_dir)
-    #===================Problems fail on various steps - Even before the swap - maybe the execute function is weird?
+    #run the pipeline
     execute_pipeline_on_problem(new_pipeline, problem=problem, volumes_dir='/volumes', all_metrics=True)
 
 def swap(swap_loc, pipeline, primitive_insert):
@@ -51,7 +51,7 @@ def get_cli_args(raw_args=None):
     parser.add_argument('--num_to_query',
                         '-q',
                         type=int,
-                        help=("How many pipelines to return"
+                        help=("How many pipelines to return from query"
                         ),
                         default=1
     )
@@ -79,7 +79,7 @@ def get_cli_args(raw_args=None):
     parser.add_argument('--dataset_name',
                         '-d',
                         help=("The problem to run on the pipeline"),
-                        default='38_sick_MIN_METADATA'
+                        default='185_baseball_MIN_METADATA'
     )
     args = parser.parse_args(raw_args)
     return args
