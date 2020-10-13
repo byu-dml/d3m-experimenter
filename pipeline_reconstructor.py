@@ -8,6 +8,7 @@ import copy
 
 #===================================================
 #TODO
+#change to use a new pipeline ID as well as a different creation and schema instead of the originals
 #update the outputs for the entire pipeline (pipeline['outputs'])
 #make sure no preceding inputs point towards the one that is being removed (can they be added that way?)
 #===================================================

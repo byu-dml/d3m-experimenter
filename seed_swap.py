@@ -13,14 +13,26 @@ logger = logging.getLogger(__name__)
 
 def main(**cli_args):
     #create the function in the query file that returns the seeds that have already been run on and the pipeline to run on
-    seed_runs, pipeline = get_pipeline_seed(pipeline_id)
+    
+    
+    
+    #this part of the code that depends more on the input
+    #seed_runs, pipeline = get_pipeline_seed(pipeline_id)
+    seed_runs = [3]
+    query_results = find_pipelines('profiler',
+                                   limit_indexes='first',
+                                   limit_results=1)
+    pipeline, swap_loc = query_results[0]
+    
+    
+    
     pipeline = json.dumps(pipeline, indent=4)
     #now run the pipelines with the new seeds
     for seed in cli_args['seeds']:
-        if (seed is in seed_runs):
+        if (seed in seed_runs):
             logger.info("Seed {} already has a run on the pipeline".format(seed))
         else:
-            run_pipeline_seed(pipeline, seed, cli_args)
+            run_pipeline_seed(pipeline, seed, **cli_args)
 
 def run_pipeline_seed(pipeline, seed, **cli_args):
     pipeline = Pipeline.from_json(string_or_file=pipeline)
@@ -31,7 +43,7 @@ def run_pipeline_seed(pipeline, seed, **cli_args):
     #get problem reference
     problem = ProblemReference(dataset_name, problem_directory, datasets_dir)
     #run the pipeline
-    execute_pipeline_on_problem(new_pipeline, problem=problem, volumes_dir='/volumes', all_metrics=True, random_seed=seed)
+    execute_pipeline_on_problem(pipeline, problem=problem, volumes_dir='/volumes', all_metrics=True, random_seed=seed)
 
 
 def get_cli_args(raw_args=None):
