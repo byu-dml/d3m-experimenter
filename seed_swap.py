@@ -13,15 +13,14 @@ logger = logging.getLogger(__name__)
 
 def main(**cli_args):
     #create the function in the query file that returns the seeds that have already been run on and the pipeline to run on
-    #seed_runs, pipeline = get_pipeline_seed()
+    seed_runs, pipeline = get_pipeline_seed(pipeline_id)
+    pipeline = json.dumps(pipeline, indent=4)
     #now run the pipelines with the new seeds
     for seed in cli_args['seeds']:
         if (seed is in seed_runs):
             logger.info("Seed {} already has a run on the pipeline".format(seed))
         else:
             run_pipeline_seed(pipeline, seed, cli_args)
-
-
 
 def run_pipeline_seed(pipeline, seed, **cli_args):
     pipeline = Pipeline.from_json(string_or_file=pipeline)

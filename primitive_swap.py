@@ -16,9 +16,8 @@ def main(**cli_args):
     #get the new pipeline with the swapping
     new_pipeline = swap(swap_loc, pipeline, primitive_insert)
     pipeline = json.dumps(pipeline, indent=4)
-    run_pipeline(pipeline, **cli_args)
-        
-
+    run_pipeline(new_pipeline, **cli_args)
+    
 def run_pipeline(new_pipeline, **cli_args):
     new_pipeline = Pipeline.from_json(string_or_file=new_pipeline)
     #create ExperimenterDriver instance to be used for running the pipeline
@@ -59,11 +58,11 @@ def get_cli_args(raw_args=None):
                         '-i',
                         help=("The pipeline path to insert"),
                         default={
-				"id": "b2612849-39e4-33ce-bfda-24f3e2cb1e93",
-				"version": "1.5.3",
-				"python_path": "d3m.primitives.schema_discovery.profiler.DSBOX",
-				"name": "DSBox Profiler",
-				"digest": "31e667d0aff9b3fe5974ccefefea80d503e5a47a0d41a9789ece8e12daf24916"
+				"id": "e193afa1-b45e-4d29-918f-5bb1fa3b88a7",
+				"version": "0.2.0",
+				"python_path": "d3m.primitives.schema_discovery.profiler.Common",
+				"name": "Determine missing semantic types for columns automatically",
+				"digest": "b18b86cf0eb6144760f85880f386fa5a9ab55485f8196e68a4a280b03f48ee0c"
 			}
     )
     parser.add_argument('--problem_dir',

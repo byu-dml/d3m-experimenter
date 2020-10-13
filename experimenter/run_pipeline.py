@@ -49,6 +49,7 @@ class RunPipeline:
             "inputs": [problem.dataset_doc_path],
             "context": metadata_base.Context.PRODUCTION,
         }
+        self.random_seed = random_seed
 
     def run(self, pipeline: Pipeline, metric_names: list = None) -> list:
         """
@@ -70,10 +71,10 @@ class RunPipeline:
 
         arguments = self.run_args
         #use the random seed if passed to run
-        if (self.random_seed is not None):
-            runtime_environment = RuntimeEnvironment(random_seed=random_seed)
-        else:
+        if (self.random_seed is None):
             runtime_environment = RuntimeEnvironment()
+        else:
+            runtime_environment = RuntimeEnvironment(random_seed=random_seed)
 
         dataset_resolver = get_dataset
 

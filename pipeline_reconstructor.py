@@ -4,6 +4,7 @@ import numpy as np
 import re
 import networkx as nx
 import matplotlib.pyplot as plt
+import copy
 
 #===================================================
 #TODO
@@ -72,7 +73,7 @@ class PipelineReconstructor():
         pipeline_dict = json.loads(data)
         return pipeline_dict
         
-    def add_attributes(self, loc, prim_edit, hyperparams=None):
+    def add_attributes(self, loc, prim_edit, hyperparams=None, copy_params=True):
         """Add attributes to the new primitive according the original ones attributes
         """    
         prim_dict = dict()
@@ -85,10 +86,13 @@ class PipelineReconstructor():
                 prim_dict = prim_dict
             else:
                 prim_dict[key] = value
-        if (hyperparams is not None):
-            prim_dict['hyperparams'] = hyperparams
-        if (hyperparams is None):
+        #hyperparameter options
+        if (hyperparams is None and copy_params is True):
+            prim_dict['hyperparams'] = prim_dict['hyperparams']
+        elif (hyperparams is None and copy_params is False):
             prim_dict.pop('hyperparams',None)
+        else:
+            prim_dict['hyperparams'] = hyperparams
         return prim_dict
     
     def replace_at_loc(self, loc, prim_edit, hyperparams=None, draw_new=False):
@@ -99,7 +103,7 @@ class PipelineReconstructor():
         #create the new primitive dictionary    
         prim_dict = self.add_attributes(loc, prim_edit, hyperparams)
         #now do the swapping, outputs and inputs should remain the same as what pipeline was declared
-        new_pipeline =  self.pipeline.copy()
+        new_pipeline =  copy.deepcopy(self.pipeline)
         new_pipeline['steps'][loc] = prim_dict
         if (draw_new is True):
             new_linked_dict = self.construct_linked_dictionary(new_pipeline, draw=True)
