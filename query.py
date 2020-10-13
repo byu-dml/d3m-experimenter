@@ -38,6 +38,7 @@ def find_pipelines(primitive_id: str, limit_indexes=False, limit_results=None):
       2. the index(es) of the desired primitives in the given pipeline's steps
       3. a dictionary containing the datasets used in pipeline runs where the key
          is the dataset digest and the value is the dataset id (human-readable string).
+      4. the random seeds used in pipeline runs.
    '''
 
    if limit_indexes not in { 'first', 'last', False }:
@@ -61,6 +62,7 @@ def find_pipelines(primitive_id: str, limit_indexes=False, limit_results=None):
             continue
 
          datasets = get_datasets(hit.id)
+         used_random_seeds = get_used_random_seeds(hit.id)
 
          locs = [i for i, step in enumerate(hit.steps) if primitive_id == step.primitive.id]
          if limit_indexes == 'last':
@@ -68,7 +70,7 @@ def find_pipelines(primitive_id: str, limit_indexes=False, limit_results=None):
          elif limit_indexes == 'first':
             locs = locs[0]
          
-         results.append((hit.to_dict(), locs, datasets))
+         results.append((hit.to_dict(), locs, datasets, used_random_seeds))
          progress.update(1)
 
          if len(results) == limit_results:
@@ -78,6 +80,8 @@ def find_pipelines(primitive_id: str, limit_indexes=False, limit_results=None):
 
 
 def check_for_pipeline_runs(pipeline_id: str):
+   '''Returns the number of successful pipeline runs that a pipeline has.
+   '''
    search = Search(using=CONNECTION, index='pipeline_runs') \
       .query('match', pipeline__id=pipeline_id) \
       .query('match', run__phase='PRODUCE') \
@@ -86,7 +90,45 @@ def check_for_pipeline_runs(pipeline_id: str):
    return search.count()
 
 
+def get_used_random_seeds(pipeline_id: str):
+   '''Gets a set of random seeds used in a pipeline's successful
+   pipeline runs.
+
+   Arguments
+   ---------
+   pipeline_id : str
+      The pipeline's unique id.
+
+   Returns
+   -------
+   A set containing the random seeds that have already been used for
+   pipeline runs on this pipeline.
+   '''
+   search = Search(using=CONNECTION, index='pipeline_runs') \
+      .query('match', pipeline__id=pipeline_id) \
+      .query('match', run__phase='PRODUCE') \
+      .query('match', status__state='SUCCESS')
+   
+   random_seeds = set()
+   for hit in search.scan():
+      random_seeds.add(hit.random_seed)
+   return random_seeds
+
+
 def get_datasets(pipeline_id: str):
+   '''Gets all datasets that have been used in pipeline runs with a given pipeline.
+
+   Arguments
+   ---------
+   pipeline_id : str
+      A pipeline's unique id.
+   
+   Returns
+   -------
+   A dictionary containing the datasets used in the pipeline's successful pipeline
+   runs. Each key in the dictionary is the dataset's unique digest, and the value is
+   the dataset's human-readable id string.
+   '''
    search = Search(using=CONNECTION, index='pipeline_runs') \
       .query('match', pipeline__id=pipeline_id) \
       .query('match', run__phase='PRODUCE') \
@@ -100,6 +142,8 @@ def get_datasets(pipeline_id: str):
 
 
 def get_primitive_python_path(primitive_id: str):
+   '''Gets a primitive's python path based on its unique id.
+   '''
    search = Search(using=CONNECTION, index='primitives') \
       .query('match', id=primitive_id)
    
@@ -107,6 +151,8 @@ def get_primitive_python_path(primitive_id: str):
 
 
 def get_primitive_id(primitive_python_path: str):
+   '''Gets a primitive's unique id based on its python path.
+   '''
    search = Search(using=CONNECTION, index='primitives') \
       .query('match', python_path=primitive_python_path)
    
@@ -114,8 +160,21 @@ def get_primitive_id(primitive_python_path: str):
 
 
 def get_primitive(primitive_id: str):
+   '''Get a primitive in dictionary form.
+
+   **Warning, this function will be deprecated. Use d3m's get_primitive_by_id()
+   to add a primitive to a pipeline instead.**
+
+   Arguments
+   ---------
+   primitive_id : str
+      A primitive's unique id.
+   
+   Returns
+   -------
+   A dictionary of the primitive.
+   '''
    search = Search(using=CONNECTION, index='primitives') \
       .query('match', id=primitive_id)
    
    return next(iter(search)).to_dict()
-

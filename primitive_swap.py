@@ -10,7 +10,7 @@ def main(**cli_args):
     query_results = find_pipelines(cli_args['primitive_id'],
                                    limit_indexes='first',
                                    limit_results=cli_args['num_to_query'])
-    pipeline, swap_loc, datasets_used = query_results[0]
+    pipeline, swap_loc, datasets_used, used_random_seeds = query_results[0]
     #get the primitive to insert
     primitive_insert = get_primitive(cli_args['primitive_insert'])
     #get the new pipeline with the swapping
