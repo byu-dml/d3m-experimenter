@@ -6,13 +6,13 @@ HOST = 'https://metalearning.datadrivendiscovery.org/es'
 CONNECTION = Elasticsearch(hosts=[HOST], timeout=300)
 
 def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
-   '''Queries the metalearning database for pipelines using the specified primitive
+   '''Queries the metalearning database for pipelines using the specified primitive.
 
    Queries the metalearning database using the Elasticsearch endpoint documented
    on D3M's website (see https://metalearning.datadrivendiscovery.org for more
    info). Finds all pipelines containing a certain primitive as specified by the
    keyword argument. Also determines the index(es) of that primitive in each
-   matching pipeline.
+   matching pipeline and gets the datasets that were used in pipeline runs.
    
    Arguments
    ---------
@@ -37,12 +37,12 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
    
    Returns
    -------
-   A list of tuples where each tuple represents a matching pipeline and
-   the index(es) of the desired primitives in the given pipeline's steps.
+   A list of tuples where each tuple contains (in this order):
+      1. a matching pipeline
+      2. the index(es) of the desired primitives in the given pipeline's steps
+      3. a dictionary containing the datasets used in pipeline runs where the key
+         is the dataset digest and the value is the dataset id (human-readable string).
    '''
-
-   # TODO check that the pipelines have pipeline runs
-   #      check that the pipelines we return have run successfully
 
    if limit_indexes not in { 'first', 'last', False }:
       raise ValueError(f'Invalid value "{limit_indexes}" for arg limit_indexes')
@@ -63,13 +63,15 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
          if check_for_pipeline_runs(hit.id) <= 0:
             continue
 
+         datasets = get_datasets(hit.id)
+
          locs = [i for i, step in enumerate(hit.steps) if keyword in step['primitive']['python_path']]
          if limit_indexes == 'last':
             locs = locs[-1]
          elif limit_indexes == 'first':
             locs = locs[0]
          
-         results.append((hit.to_dict(), locs))
+         results.append((hit.to_dict(), locs, datasets))
          progress.update(1)
 
          if len(results) == limit_results:
@@ -87,3 +89,15 @@ def check_for_pipeline_runs(pipeline_id: str):
    return search.count()
 
 
+def get_datasets(pipeline_id: str):
+   search = Search(using=CONNECTION, index='pipeline_runs') \
+      .query('match', pipeline__id=pipeline_id) \
+      .query('match', run__phase='PRODUCE') \
+      .query('match', status__state='SUCCESS')
+   
+   datasets = {}
+   print(search.count())
+   for hit in search.scan():
+      datasets.update({dataset['digest']: dataset['id'] for dataset in hit.datasets})
+
+   return datasets
