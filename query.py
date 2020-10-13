@@ -5,7 +5,7 @@ from tqdm import tqdm
 HOST = 'https://metalearning.datadrivendiscovery.org/es'
 CONNECTION = Elasticsearch(hosts=[HOST], timeout=300)
 
-def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
+def find_pipelines(primitive_id: str, limit_indexes=False, limit_results=None):
    '''Queries the metalearning database for pipelines using the specified primitive.
 
    Queries the metalearning database using the Elasticsearch endpoint documented
@@ -16,24 +16,20 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
    
    Arguments
    ---------
-   keyword : str
-      A substring of a primitive's python path. If the pipeline has any
-      primitive containing the keyword somewhere in the python path, that pipeline
-      is a "hit". For example, if you want to find pipelines that contain the
-      Common Profiler, set to 'profiler.Common'. To find pipelines that use any
-      classification primitive, set to 'classification'.
+   primitive_id : str
+      A primitive's unique id.
    limit_indexes : 'first', 'last', or False (default)
-      Limits which index of the primitive
-      is returned for each pipeline match. Use 'first' to get the index of the
-      first matching primitive specified by the keyword arg. Use 'last' to get
-      the index of the last match. Use False (default) to get a list of all
-      indexes for each pipeline specifying where the primitive is.
+      Limits which index of the primitive is returned for each pipeline match.
+      Use 'first' to get the index of the first matching primitive specified by
+      the keyword arg. Use 'last' to get the index of the last match. Use False
+      (default) to get a list of all indexes for each pipeline specifying where
+      the primitive is.
    limit_results : int or None (default)
-      Specifies the max number of results that
-      should be returned from a query. If 'None' then all matching queries will be
-      returned. Note that if a number is specified, the same pipelines may or may
-      not be returned when identical queries are issued due to the nondeterministic
-      nature of the Elasticsearch API (it favors speed over ordered data).
+      Specifies the max number of results that should be returned from a query.
+      If 'None' then all matching queries will be returned. Note that if a number
+      is specified, the same pipelines may or may not be returned when identical
+      queries are issued due to the nondeterministic nature of the Elasticsearch
+      API (it favors speed over ordered data).
    
    Returns
    -------
@@ -50,12 +46,13 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
    if limit_results is not None and type(limit_results) is not int:
       raise ValueError(f'limit_results must be set to None or a positive integer')
    
-   wildcard_query = Q('wildcard', steps__primitive__python_path='*'+keyword+'*')
-   nested_query = Q('nested', path='steps', query=wildcard_query)
+   match_query = Q('match', steps__primitive__id=primitive_id)
+   nested_query = Q('nested', path='steps', query=match_query)
    search = Search(using=CONNECTION, index='pipelines').query(nested_query)
 
    results = []
-   descrip = f'Scanning {limit_results if limit_results else "all"} pipelines containing "{keyword}"'
+   primitive_descrip = '...' + '.'.join(get_primitive_python_path(primitive_id).split('.')[-3:])
+   descrip = f'Scanning {limit_results if limit_results else "all"} pipelines containing "{primitive_descrip}"'
    num_queries = limit_results if limit_results else search.count()
    with tqdm(descrip, total=num_queries) as progress:
       progress.set_description(desc=descrip)
@@ -65,7 +62,7 @@ def find_pipelines(keyword: str, limit_indexes=False, limit_results=None):
 
          datasets = get_datasets(hit.id)
 
-         locs = [i for i, step in enumerate(hit.steps) if keyword in step['primitive']['python_path']]
+         locs = [i for i, step in enumerate(hit.steps) if primitive_id == step.primitive.id]
          if limit_indexes == 'last':
             locs = locs[-1]
          elif limit_indexes == 'first':
@@ -114,4 +111,11 @@ def get_primitive_id(primitive_python_path: str):
       .query('match', python_path=primitive_python_path)
    
    return next(iter(search)).id
+
+
+def get_primitive(primitive_id: str):
+   search = Search(using=CONNECTION, index='primitives') \
+      .query('match', id=primitive_id)
+   
+   return next(iter(search)).to_dict()
 
