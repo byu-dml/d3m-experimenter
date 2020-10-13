@@ -100,3 +100,18 @@ def get_datasets(pipeline_id: str):
       datasets.update({dataset['digest']: dataset['id'] for dataset in hit.datasets})
 
    return datasets
+
+
+def get_primitive_python_path(primitive_id: str):
+   search = Search(using=CONNECTION, index='primitives') \
+      .query('match', id=primitive_id)
+   
+   return next(iter(search)).python_path
+
+
+def get_primitive_id(primitive_python_path: str):
+   search = Search(using=CONNECTION, index='primitives') \
+      .query('match', python_path=primitive_python_path)
+   
+   return next(iter(search)).id
+
