@@ -74,6 +74,7 @@ def get_cli_args(raw_args=None):
                         help=("The primitive to insert"),
                         default='e193afa1-b45e-4d29-918f-5bb1fa3b88a7'
     )
+
     parser.add_argument('--problem_dir',
                         '-p',
                         help=("The problem to run on the pipeline"),
@@ -89,6 +90,7 @@ def get_cli_args(raw_args=None):
                         help=("The problem to run on the pipeline"),
                         default='185_baseball_MIN_METADATA'
     )
+
     parser.add_argument('--hyper_data',
                         '-z',
                         type=list,

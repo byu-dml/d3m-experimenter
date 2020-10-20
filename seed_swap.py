@@ -1,7 +1,7 @@
 from pipeline_reconstructor import PipelineReconstructor
 import argparse
 import json
-from query import find_pipelines
+from query import find_pipelines, get_pipeline
 from experimenter.execute_pipeline import execute_pipeline_on_problem
 from experimenter.problem import ProblemReference
 from d3m.metadata.pipeline import Pipeline
@@ -14,12 +14,9 @@ from random import randint
 logger = logging.getLogger(__name__)
 
 def main(**cli_args):
-    #create the function in the query file that returns the seeds that have already been run on and the pipeline to run on
-    query_results = find_pipelines('e193afa1-b45e-4d29-918f-5bb1fa3b88a7',
-                                   limit_indexes='first',
-                                   limit_results=1)
     #get the relevant info from the query                               
-    pipeline, swap_loc, datasets_used, used_random_seeds = query_results[0]
+    pipeline, datasets_used, used_random_seeds = get_pipeline("f5478b6c-daad-4693-93c3-f073bae78ddf")
+    #now check if there are no used random seeds
     pipeline = json.dumps(pipeline, indent=4)
     #now run the pipelines with new generated seeds
     num_run = 0
@@ -28,7 +25,6 @@ def main(**cli_args):
     #run pipelines until the correct number has been run
     while (num_run <= cli_args['num_new_seeds']):
         seed_num = randint(1,10000)
-        print(seed_num)
         if (seed_num in used_random_seeds):
             num_run = num_run
         else:
@@ -51,6 +47,11 @@ def get_cli_args(raw_args=None):
     #get the argument parser
     parser = argparse.ArgumentParser(
         formatter_class = argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('--pipeline_id',
+                        '-x',
+                        help=("pipeline to test"),
+                        default=''
     )
     parser.add_argument('--problem_dir',
                         '-p',
