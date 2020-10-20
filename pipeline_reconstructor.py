@@ -5,9 +5,13 @@ import re
 import networkx as nx
 import matplotlib.pyplot as plt
 import copy
+from d3m import index
+from d3m.metadata.base import ArgumentType
+from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 
 #===================================================
 #TODO
+#hyperparameter changes
 #change to use a new pipeline ID as well as a different creation and schema instead of the originals
 #update the outputs for the entire pipeline (pipeline['outputs'])
 #make sure no preceding inputs point towards the one that is being removed (can they be added that way?)
@@ -73,87 +77,62 @@ class PipelineReconstructor():
         #now convert to dictionary
         pipeline_dict = json.loads(data)
         return pipeline_dict
-        
-    def add_attributes(self, loc, prim_edit, hyperparams=None, copy_params=True):
-        """Add attributes to the new primitive according the original ones attributes
-        """    
-        prim_dict = dict()
-        prim_dict['type'] = "PRIMITIVE"
-        prim_dict['primitive'] = prim_edit
-        for key, value in self.pipeline["steps"][loc].items():
-            if (key == 'type'):
-                prim_dict = prim_dict
-            elif (key == 'primitive'):
-                prim_dict = prim_dict
-            else:
-                prim_dict[key] = value
-        #hyperparameter options
-        if (hyperparams is None and copy_params is True):
-            prim_dict['hyperparams'] = prim_dict['hyperparams']
-        elif (hyperparams is None and copy_params is False):
-            prim_dict.pop('hyperparams',None)
-        else:
-            prim_dict['hyperparams'] = hyperparams
-        return prim_dict
     
+    def update_steps(self, key, pipe_copy, python_path, loc, new_pipeline_description, hyperparams):
+        step_list = list()
+        for it, i in enumerate(pipe_copy['steps']):
+            if (it == loc):
+                step = PrimitiveStep(primitive=index.get_primitive(python_path))
+            else:
+                step = PrimitiveStep(primitive=index.get_primitive(pipe_copy['steps'][it]['primitive']['python_path']))
+            for key, value in pipe_copy['steps'][it].items():
+                if (key == 'arguments'):
+                    for k, v in pipe_copy['steps'][it][key].items():
+                        step.add_argument(name=k, argument_type=ArgumentType.CONTAINER, data_reference=pipe_copy['steps'][it][key][k]['data'])
+                if (key == 'outputs'):
+                    for iterA, j in enumerate(pipe_copy['steps'][it][key]):
+                        step.add_output(pipe_copy['steps'][it][key][iterA]['id'])                 
+                if (key == 'hyperparams'):
+                    if (it == loc):
+                        if (hyperparams is not None):
+                            for param in hyperparams:
+                                step.add_hyperparameter(name=param['name'], data=param['data'], argument_type=ArgumentType.VALUE)
+                    else:
+                        for name, dictionary in pipe_copy['steps'][it][key].items():
+                            step.add_hyperparameter(name=name, data=pipe_copy['steps'][it][key][name]['data'],  argument_type=ArgumentType.VALUE)
+            step_list.append(step)
+        return step_list
+                
     def replace_at_loc(self, loc, prim_edit, hyperparams=None, draw_new=False):
         """swap out the primitive step with another at a certain location
         """
+        python_path = prim_edit['python_path']
         if (loc > self.get_num_steps()):
             raise ValueError("Location to add pipeline is outside number of steps") 
-        #create the new primitive dictionary    
-        prim_dict = self.add_attributes(loc, prim_edit, hyperparams)
-        #now do the swapping, outputs and inputs should remain the same as what pipeline was declared
-        new_pipeline =  copy.deepcopy(self.pipeline)
-        new_pipeline['steps'][loc] = prim_dict
+        pipe_copy = copy.deepcopy(self.pipeline)    
+        #create the new pipeline dictionary 
+        new_pipeline_description = Pipeline()
+        #now use the same inputs and outputs in the higher level of the new_pipeline
+        for keys, values in pipe_copy.items():
+            if (keys == 'inputs'):
+                for it, i in enumerate(pipe_copy['inputs']):
+                    new_pipeline_description.add_input(name=pipe_copy['inputs'][it]['name'])                       
+            if (keys == 'steps'):
+                step_list = self.update_steps(keys, pipe_copy, python_path, loc, new_pipeline_description, hyperparams)
+                for step in step_list:
+                    new_pipeline_description.add_step(step)
+        for it, i in enumerate(pipe_copy['outputs']):
+            new_pipeline_description.add_output(name=pipe_copy['outputs'][it]['name'], data_reference=pipe_copy['outputs'][it]['data'])
+        #validation by changing to json
+        new_pipeline = new_pipeline_description.to_json(indent=4)
+        #draw the new linked list if desired from the given pipeline
         if (draw_new is True):
             new_linked_dict = self.construct_linked_dictionary(new_pipeline, draw=True)
                 
         #return the new json
-        return json.dumps(new_pipeline)
+        return new_pipeline
         
-    def add_at_loc(self, loc, prim_edit, hyperparams=None, draw_new=False):
-        """This method only works in the linear case, because we linearly push everything back
-           when we get the input primitive and location to push at
-        """ 
-        #create the new primitive dictionary
-        prim_dict = self.add_attributes(loc, prim_edit, hyperparams=None)    
-        new_pipeline = self.pipeline.copy()    
-        #insert the pipeline at the new place   
-        new_pipeline['steps'] = new_pipeline['steps'].insert(loc, prim_dict)
-        #now loop through the original steps and update the inputs accordingly
-        for key, value in self.pipeline_dict.items():
-            for k, v in self.pipeline_dict[key].items():
-                if (k == 'pipe_in'):
-                    if (loc == 0):
-                        print("trouble!")
-                else:
-                    for link in v:
-                        ###################NOT CORRECT!!!!!!!!!###############################
-                        if (link > loc and k >= loc):
-                            new_piplines['steps'][link]['arguments'][key]['data']= 'steps.{}.produce'.format(k+1)
-                        
-            
-        #return the new json
-        return json.dumps(new_pipeline)
-        
-    def remove_at_loc(self, loc, prim_edit):
-        """This method works in the linear case, because removing an attribute will cause all after
-           location to shift backwards
-        """
-        #this will require more work, such as checking outputs and inputs, to make sure it works
-        del new_pipeline['steps'][loc]
-        #update the inputs from the remaining steps to work with the removal
-        for i in range(loc, self.get_num_steps()):
-            step_string = self.pipeline['steps'][i]['arguments']['inputs']['data']
-            step_num = int(step_string[6])
-            print(step_num)
-            #now change the origin location inputs if it was affected by the shift
-            if (step_num <= loc):
-                new_pipeline['steps'][i]['arguments']['inputs']['data'] = "steps.{}.produce".format(step_num-1)
-        return json.dumps(new_pipeline)
-        
-    
+    #def add_at_loc(self, loc, prim_edit, hyperparams=None, draw_new=False):
+    #def remove_at_loc(self, loc, prim_edit):
     #def edit_hyper_params(self,):
-    
     #def gen_possible_paths(self,):
