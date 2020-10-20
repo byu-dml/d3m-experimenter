@@ -79,6 +79,21 @@ def find_pipelines(primitive_id: str, limit_indexes=False, limit_results=None):
    return results
 
 
+def pipeline_generator(pipeline_id: str=None):
+   pipeline_search = Search(using=CONNECTION, index='pipelines')
+   if pipeline_id:
+      pipeline_search = pipeline_search.query('match', id=pipeline_id)
+   for pipeline in pipeline_search.scan():
+      pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \
+         .query('match', pipeline__id=pipeline.id) \
+         .query('match', run__phase='PRODUCE') \
+         .query('match', status__state='SUCCESS')
+      for pipeline_run in pipeline_run_search.scan():
+         for dataset in pipeline_run.datasets:
+            yield pipeline.to_dict(), dataset.id, pipeline_run.problem.id
+            # should each dataset be yielded? Or a set of all datasets used for that pipeline?
+
+
 def get_pipeline(pipeline_id: str):
    '''Returns a pipeline and the datasets and random seeds used in its pipeline runs.
    '''
