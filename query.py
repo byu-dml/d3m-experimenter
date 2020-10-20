@@ -79,6 +79,16 @@ def find_pipelines(primitive_id: str, limit_indexes=False, limit_results=None):
    return results
 
 
+def get_pipeline(pipeline_id: str):
+   '''Returns a pipeline and the datasets and random seeds used in its pipeline runs.
+   '''
+   search = Search(using=CONNECTION, index='pipelines').query('match', id=pipeline_id)
+   if search.count() <= 0:
+      return None, None, None
+   hit = next(iter(search))
+   return hit.to_dict(), get_datasets(hit.id), get_used_random_seeds(hit.id)
+
+
 def check_for_pipeline_runs(pipeline_id: str):
    '''Returns the number of successful pipeline runs that a pipeline has.
    '''
