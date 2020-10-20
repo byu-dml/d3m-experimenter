@@ -7,32 +7,33 @@ from experimenter.problem import ProblemReference
 from d3m.metadata.pipeline import Pipeline
 import logging
 import logging.config as log_config
+from random import seed
+from random import randint
 
 
 logger = logging.getLogger(__name__)
 
 def main(**cli_args):
     #create the function in the query file that returns the seeds that have already been run on and the pipeline to run on
-    
-    
-    
-    #this part of the code that depends more on the input
-    #seed_runs, pipeline = get_pipeline_seed(pipeline_id)
-    seed_runs = [3]
-    query_results = find_pipelines('profiler',
+    query_results = find_pipelines('e193afa1-b45e-4d29-918f-5bb1fa3b88a7',
                                    limit_indexes='first',
                                    limit_results=1)
-    pipeline, swap_loc = query_results[0]
-    
-    
-    
+    #get the relevant info from the query                               
+    pipeline, swap_loc, datasets_used, used_random_seeds = query_results[0]
     pipeline = json.dumps(pipeline, indent=4)
-    #now run the pipelines with the new seeds
-    for seed in cli_args['seeds']:
-        if (seed in seed_runs):
-            logger.info("Seed {} already has a run on the pipeline".format(seed))
+    #now run the pipelines with new generated seeds
+    num_run = 0
+    #start the random seed
+    seed(cli_args['random_seed'])
+    #run pipelines until the correct number has been run
+    while (num_run <= cli_args['num_new_seeds']):
+        seed_num = randint(1,10000)
+        print(seed_num)
+        if (seed_num in used_random_seeds):
+            num_run = num_run
         else:
-            run_pipeline_seed(pipeline, seed, **cli_args)
+            num_run += 1
+            run_pipeline_seed(pipeline, seed_num, **cli_args)
 
 def run_pipeline_seed(pipeline, seed, **cli_args):
     pipeline = Pipeline.from_json(string_or_file=pipeline)
@@ -66,11 +67,17 @@ def get_cli_args(raw_args=None):
                         help=("The problem to run on the pipeline"),
                         default='185_baseball_MIN_METADATA'
     )
-    parser.add_argument('--seeds',
+    parser.add_argument('--num_new_seeds',
                         '-n',
-                        help=("The new seeds to test on"),
-                        type=list,
-                        default=[1,2,3,4,5]
+                        help=("The number of new seeds to test on"),
+                        type=int,
+                        default=5
+    )
+    parser.add_argument('--random_seed',
+                        '-s',
+                        help=("The random seed to generate from"),
+                        type=int,
+                        default=21
     )
     args = parser.parse_args(raw_args)
     return args

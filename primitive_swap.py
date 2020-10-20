@@ -1,21 +1,21 @@
 from pipeline_reconstructor import PipelineReconstructor
 import argparse
 import json
-from query import find_pipelines
+from query import find_pipelines, get_primitive
 from experimenter.execute_pipeline import execute_pipeline_on_problem
 from experimenter.problem import ProblemReference
 from d3m.metadata.pipeline import Pipeline
 import numpy as np
 
 def main(**cli_args):
-    query_results = find_pipelines(cli_args['primitive_type'],
+    query_results = find_pipelines(cli_args['primitive_id'],
                                    limit_indexes='first',
                                    limit_results=cli_args['num_to_query'])
-    pipeline, swap_loc = query_results[0]
-    #get the primitive to insert
-    primitive_insert = dict(cli_args['primitive_insert'])
+    pipeline, swap_loc, datasets_used, used_random_seeds = query_results[0]
     #build the hyperparamters as a list of dictionaries
     hyperparams = build_hyperparams(**cli_args)
+    #get the primitive to insert
+    primitive_insert = get_primitive(cli_args['primitive_insert'])
     #get the new pipeline with the swapping
     new_pipeline = swap(swap_loc, pipeline, primitive_insert, hyperparams)
     pipeline = json.dumps(pipeline, indent=4)
@@ -25,7 +25,6 @@ def build_hyperparams(**cli_args):
     #build hyperparams if passed as argument
     hyper_names = cli_args['hyper_names']
     hyper_data = cli_args['hyper_data']
-    hyper_types = cli_args['hyper_types']
     if (len(hyper_names) != 0):
         hyperparams = list()
         for it, i in enumerate(hyper_names):
@@ -59,31 +58,21 @@ def get_cli_args(raw_args=None):
     parser = argparse.ArgumentParser(
         formatter_class = argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('--primitive_type',
+    parser.add_argument('--primitive_id',
                         '-t',
-                        help=(
-                        "What primitive type to match in the database query"
-                        ),
-                        choices=["profiler","classifier"],
-                        default="profiler"
+                        help=("What primitive to match in the database query"),
+                        default='e193afa1-b45e-4d29-918f-5bb1fa3b88a7'
     )
     parser.add_argument('--num_to_query',
                         '-q',
                         type=int,
-                        help=("How many pipelines to return from query"
-                        ),
+                        help=("How many pipelines to return from query"),
                         default=1
     )
     parser.add_argument('--primitive_insert',
                         '-i',
-                        help=("The pipeline path to insert"),
-                        default={
-				"id": "e193afa1-b45e-4d29-918f-5bb1fa3b88a7",
-				"version": "0.2.0",
-				"python_path": "d3m.primitives.schema_discovery.profiler.Common",
-				"name": "Determine missing semantic types for columns automatically",
-				"digest": "b18b86cf0eb6144760f85880f386fa5a9ab55485f8196e68a4a280b03f48ee0c"
-			}
+                        help=("The primitive to insert"),
+                        default='e193afa1-b45e-4d29-918f-5bb1fa3b88a7'
     )
     parser.add_argument('--problem_dir',
                         '-p',

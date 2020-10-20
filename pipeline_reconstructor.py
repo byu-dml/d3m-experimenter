@@ -9,15 +9,6 @@ from d3m import index
 from d3m.metadata.base import ArgumentType
 from d3m.metadata.pipeline import Pipeline, PrimitiveStep
 
-#===================================================
-#TODO
-#hyperparameter changes
-#change to use a new pipeline ID as well as a different creation and schema instead of the originals
-#update the outputs for the entire pipeline (pipeline['outputs'])
-#make sure no preceding inputs point towards the one that is being removed (can they be added that way?)
-#===================================================
-
-
 class PipelineReconstructor():
     """ Class for editing given pipeline at initialization, will include methods
         that can swap, add, and remove primitives, as well as edit hyperparameters 
@@ -80,6 +71,7 @@ class PipelineReconstructor():
     
     def update_steps(self, key, pipe_copy, python_path, loc, new_pipeline_description, hyperparams):
         step_list = list()
+        #add steps to the new pipeline including the substition step
         for it, i in enumerate(pipe_copy['steps']):
             if (it == loc):
                 step = PrimitiveStep(primitive=index.get_primitive(python_path))
