@@ -55,6 +55,14 @@ def get_problem_path(problem_id: str, datasets_dir: str=None) -> str:
     return problems[problem_id]
 
 
+def get_problem_parent_dir(problem_id: str):
+    dir_name = problem_id
+    if any([x in problem_id for x in {'_problem', '_solution', '_dataset'}]):
+        dir_name = '_'.join(problem_id.split('_')[:-1])
+    path_chunks = get_problem_path(problem_id).split('/')
+    return '/'.join(path_chunks[:path_chunks.index(dir_name)+1])
+
+
 def get_problem(problem_path: str, *, parse: bool = True) -> dict:
     """
     Gets problem doc from a path and parses it using d3m

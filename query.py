@@ -1,6 +1,8 @@
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
 from tqdm import tqdm
+from experimenter.problem import ProblemReference
+from experimenter.utils import get_problem_parent_dir
 
 HOST = 'https://metalearning.datadrivendiscovery.org/es'
 CONNECTION = Elasticsearch(hosts=[HOST], timeout=300)
@@ -88,10 +90,22 @@ def pipeline_generator(pipeline_id: str=None):
          .query('match', pipeline__id=pipeline.id) \
          .query('match', run__phase='PRODUCE') \
          .query('match', status__state='SUCCESS')
+      if pipeline_run_search.count() != 1:
+         continue
+      random_seeds = set()
+      problem_ids = set()
       for pipeline_run in pipeline_run_search.scan():
-         for dataset in pipeline_run.datasets:
-            yield pipeline.to_dict(), dataset.id, pipeline_run.problem.id
-            # should each dataset be yielded? Or a set of all datasets used for that pipeline?
+         random_seeds.add(pipeline_run.random_seed)
+         problem_ids.add(pipeline_run.problem.id)
+      for problem_id in problem_ids:
+         yield pipeline.to_dict(), build_problem_reference(problem_id), random_seeds
+
+
+def build_problem_reference(problem_id: str):
+   parent_dir = get_problem_parent_dir(problem_id)
+   dir_id = parent_dir.split('/')[-1]
+   enclosing_dir = '/'.join(parent_dir.split('/')[:-1])
+   return ProblemReference(dir_id, '', enclosing_dir)
 
 
 def get_pipeline(pipeline_id: str):
