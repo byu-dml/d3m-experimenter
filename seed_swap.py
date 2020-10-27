@@ -29,12 +29,12 @@ def main(**cli_args):
             num_run = num_run
         else:
             num_run += 1
-            run_pipeline_seed(pipeline, seed_num, **cli_args)
+            run_pipeline_seed(pipeline, problem, seed_num)
 
-def run_pipeline_seed(pipeline, problem, seed, **cli_args):
-    pipeline = Pipeline.from_json(string_or_file=pipeline)
+def run_pipeline_seed(pipeline, problem, seed):
+    pipeline = Pipeline.from_json_structure(pipeline)
     #run the pipeline
-    execute_pipeline_on_problem(pipeline, problem=problem, volumes_dir='/volumes', all_metrics=True, random_seed=seed)
+    execute_pipeline_on_problem(pipeline, problem=problem, volumes_dir='/volumes', all_metrics=False, random_seed=seed)
 
 
 def get_cli_args(raw_args=None):
