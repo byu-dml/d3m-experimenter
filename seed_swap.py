@@ -14,7 +14,6 @@ from tqdm import tqdm
 import redis
 
 logger = logging.getLogger(__name__)
-
 def main(**cli_args):
     #call the generator
     gen_pipelines = pipeline_generator()

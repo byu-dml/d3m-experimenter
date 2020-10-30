@@ -20,7 +20,7 @@ from experimenter.constants import METRICS_BY_PROBLEM_TYPE
 
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(20)
 
 def execute_pipeline_on_problem(
     pipe: Pipeline,
@@ -129,11 +129,12 @@ def handle_successful_pipeline_run(
     :param pipeline: the pipeline that was run
     :param score: the results from the execution of the pipeline
     """
-    if score["value"][0] == 0:
-        # F-SCORE was calculated wrong - quit and don't keep this run
-        return
+    #if score["value"][0] == 0:
+    #    # F-SCORE was calculated wrong - quit and don't keep this run
+    #    return
 
     print_pipeline(pipeline.to_json_structure(), score)
+    logger.warning("Succesfully printed pipeline")
     d3m_db = D3MMtLDB()
 
     if not d3m_db.does_pipeline_exist_in_db(pipeline):
@@ -180,10 +181,10 @@ def print_pipeline(pipeline: dict, score: float = None) -> List[str]:
     :return primitive_list: a list of all the primitives used in the pipeline
     """
     primitive_list = primitive_list_from_pipeline_json(pipeline)
-    logger.info("pipeline:\n")
-    logger.info(get_list_vertically(primitive_list))
+    logger.warning("pipeline:\n")
+    logger.warning(get_list_vertically(primitive_list))
     if score is not None:
-        logger.info("with a {} of {}".format(score["metric"][0], score["value"][0]))
+        logger.warning("with a {} of {}".format(score["metric"][0], score["value"][0]))
     return primitive_list
 
 

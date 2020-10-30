@@ -152,6 +152,7 @@ class RunPipeline:
             )
         #for seed change
         else:
+            logger.warning('Random Seed: {}'.format(self.random_seed))
             all_scores, all_results = evaluate(
                 pipeline,
                 inputs,
@@ -163,7 +164,9 @@ class RunPipeline:
                 context=context,
                 volumes_dir=self.volumes_dir,
                 runtime_environment=runtime_environment,
-                random_seed=self.random_seed
+                random_seed=self.random_seed,
+                scoring_random_seed=self.random_seed, 
+                data_random_seed=self.random_seed
             )
         
 
