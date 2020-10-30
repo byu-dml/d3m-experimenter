@@ -87,13 +87,14 @@ def get_cli_args(raw_args=None):
     parser.add_argument('--num_pipelines',
                         '-p',
                         help=("The number of pipelines to run before termination"),
+                        type=int,
                         default=1
     )
     parser.add_argument('--queue', 
                          '-q',
                          help=("Queue the pipeline or run it on personal machine"),
                          type=str,
-                         default='distribute'
+                         default='simple'
     )
     args = parser.parse_args(raw_args)
     return args
