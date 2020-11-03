@@ -1,25 +1,25 @@
 from experimenter.pipeline_reconstructor import PipelineReconstructor
 import argparse
 import json
-from experimenter.query import find_pipelines, get_primitive
+from experimenter.query import pipeline_with_primitive_generator
 from experimenter.execute_pipeline import execute_pipeline_on_problem
 from experimenter.problem import ProblemReference
 from d3m.metadata.pipeline import Pipeline
+from d3m.index import get_primitive_by_id
 import numpy as np
 
 def main(**cli_args):
-    query_results = find_pipelines(cli_args['primitive_id'],
-                                   limit_indexes='first',
-                                   limit_results=cli_args['num_to_query'])
-    pipeline, swap_loc, datasets_used, used_random_seeds = query_results[0]
-    #build the hyperparamters as a list of dictionaries
-    hyperparams = build_hyperparams(**cli_args)
-    #get the primitive to insert
-    primitive_insert = get_primitive(cli_args['primitive_insert'])
-    #get the new pipeline with the swapping
-    new_pipeline = swap(swap_loc, pipeline, primitive_insert, hyperparams)
-    pipeline = json.dumps(pipeline, indent=4)
-    run_pipeline(new_pipeline, **cli_args)
+    query_results = pipeline_with_primitive_generator(cli_args['primitive_id'], limit_indexes='first')
+    # pipeline, swap_loc, datasets_used, used_random_seeds = query_results[0]
+    for pipeline, problem, swap_loc, random_seeds in pipeline_with_primitive_generator(cli_args['primitive_id'], limit_indexes='first'):
+        #build the hyperparamters as a list of dictionaries
+        hyperparams = build_hyperparams(**cli_args)
+        #get the primitive to insert
+        primitive_insert = get_primitive_by_id(cli_args['primitive_insert'])
+        #get the new pipeline with the swapping
+        new_pipeline = swap(swap_loc, pipeline, primitive_insert, hyperparams)
+        pipeline = json.dumps(pipeline, indent=4)
+        execute_pipeline_on_problem(Pipeline.from_json_structure(new_pipeline), problem=problem, volumes_dir='/volumes', all_metrics=True)
     
 def build_hyperparams(**cli_args):
     #build hyperparams if passed as argument
