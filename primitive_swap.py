@@ -1,7 +1,7 @@
-from pipeline_reconstructor import PipelineReconstructor
+from experimenter.pipeline_reconstructor import PipelineReconstructor
 import argparse
 import json
-from query import find_pipelines, get_primitive
+from experimenter.query import find_pipelines, get_primitive
 from experimenter.execute_pipeline import execute_pipeline_on_problem
 from experimenter.problem import ProblemReference
 from d3m.metadata.pipeline import Pipeline

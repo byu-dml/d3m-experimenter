@@ -1,7 +1,7 @@
-from pipeline_reconstructor import PipelineReconstructor
+from experimenter.pipeline_reconstructor import PipelineReconstructor
 import argparse
 import json
-from query import pipeline_generator
+from experimenter.query import pipeline_generator
 from experimenter.execute_pipeline import execute_pipeline_on_problem
 from experimenter.problem import ProblemReference
 from d3m.metadata.pipeline import Pipeline
@@ -14,6 +14,7 @@ from tqdm import tqdm
 import redis
 
 logger = logging.getLogger(__name__)
+
 def main(**cli_args):
     #call the generator
     gen_pipelines = pipeline_generator()

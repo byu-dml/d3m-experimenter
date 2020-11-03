@@ -74,7 +74,7 @@ def execute_pipeline_on_problem(
     score = scores[0]
     # put in the fit pipeline run
     handle_successful_pipeline_run(
-        fit_result.pipeline_run.to_json_structure(), pipe, score
+        fit_result.pipeline_run.to_json_structure(), pipe, score, problem
     )
     # put in the produce pipeline run
     handle_successful_pipeline_run(
@@ -119,7 +119,7 @@ def execute_metafeatures_pipeline_on_problem(
 
 
 def handle_successful_pipeline_run(
-    pipeline_run: dict, pipeline: Pipeline, score: float
+    pipeline_run: dict, pipeline: Pipeline, score: float, problem=None
 ):
     """
     Called after a successful pipeline run.  It will output the results to the console
@@ -129,14 +129,15 @@ def handle_successful_pipeline_run(
     :param pipeline: the pipeline that was run
     :param score: the results from the execution of the pipeline
     """
-    #if score["value"][0] == 0:
-    #    # F-SCORE was calculated wrong - quit and don't keep this run
-    #    return
-
     print_pipeline(pipeline.to_json_structure(), score)
-    logger.warning("Succesfully printed pipeline")
+    logger.info("Succesfully printed pipeline")
     d3m_db = D3MMtLDB()
-
+    #save the dataset and problem based on problem reference
+    #=====TODO - add checking to make sure that the problem and dataset are not already in the database=====
+    if (problem is not None):
+        d3m_db.save_problem(problem)
+        d3m_db.save_dataset(problem)
+    
     if not d3m_db.does_pipeline_exist_in_db(pipeline):
         pipeline_save_response = d3m_db.save_pipeline(pipeline, save_primitives=True)
         if pipeline_save_response.ok:
@@ -181,10 +182,10 @@ def print_pipeline(pipeline: dict, score: float = None) -> List[str]:
     :return primitive_list: a list of all the primitives used in the pipeline
     """
     primitive_list = primitive_list_from_pipeline_json(pipeline)
-    logger.warning("pipeline:\n")
-    logger.warning(get_list_vertically(primitive_list))
+    logger.info("pipeline:\n")
+    logger.info(get_list_vertically(primitive_list))
     if score is not None:
-        logger.warning("with a {} of {}".format(score["metric"][0], score["value"][0]))
+        logger.info("with a {} of {}".format(score["metric"][0], score["value"][0]))
     return primitive_list
 
 

@@ -33,7 +33,7 @@ class RunPipeline:
 
     def __init__(
         self, volumes_dir: str, problem: ProblemReference, output_path: str = None,
-    random_seed: int = None):
+    random_seed: int = 0):
         self.volumes_dir = volumes_dir
         self.data_pipeline_path = (
             "./experimenter/pipelines/fixed-split-tabular-split.yml"
@@ -137,38 +137,21 @@ class RunPipeline:
             metrics = get_metrics_from_problem_description(problem_description)
         else:
             metrics = get_metrics_from_list(metric_names)
-        if (self.random_seed is None):
-            all_scores, all_results = evaluate(
-                pipeline,
-                inputs,
-                data_pipeline=data_pipeline,
-                scoring_pipeline=scoring_pipeline,
-                problem_description=problem_description,
-                data_params=data_params,
-                metrics=metrics,
-                context=context,
-                volumes_dir=self.volumes_dir,
-                runtime_environment=runtime_environment,
-            )
-        #for seed change
-        else:
-            logger.warning('Random Seed: {}'.format(self.random_seed))
-            all_scores, all_results = evaluate(
-                pipeline,
-                inputs,
-                data_pipeline=data_pipeline,
-                scoring_pipeline=scoring_pipeline,
-                problem_description=problem_description,
-                data_params=data_params,
-                metrics=metrics,
-                context=context,
-                volumes_dir=self.volumes_dir,
-                runtime_environment=runtime_environment,
-                random_seed=self.random_seed,
-                scoring_random_seed=self.random_seed, 
-                data_random_seed=self.random_seed
-            )
-        
+        logger.info('Random Seed: {}'.format(self.random_seed))
+        all_scores, all_results = evaluate(
+            pipeline,
+            inputs,
+            data_pipeline=data_pipeline,
+            scoring_pipeline=scoring_pipeline,
+            problem_description=problem_description,
+            data_params=data_params,
+            metrics=metrics,
+            context=context,
+            volumes_dir=self.volumes_dir,
+            runtime_environment=runtime_environment,
+            random_seed=self.random_seed
+        )
+   
 
         all_results.check_success()
 
