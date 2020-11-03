@@ -4,12 +4,20 @@ import os
 import functools
 from typing import Callable, Any
 
+from experimenter.problem import ProblemReference
 from d3m.metadata import problem as problem_module
 from d3m.utils import get_datasets_and_problems
 
 
 DEFAULT_DATASET_DIR = "/datasets/training_datasets/LL0"
 datasets, problems = None, None
+
+
+def load_datasets_and_problems(datasets_dir: str=None):
+    global datasets, problems
+    if datasets_dir is None:
+        datasets_dir = os.getenv('DATASETS', DEFAULT_DATASET_DIR)
+    datasets, problems = get_datasets_and_problems(datasets_dir)
 
 
 def get_dataset_doc_path(dataset_id: str, datasets_dir: str=None) -> str:
@@ -19,11 +27,9 @@ def get_dataset_doc_path(dataset_id: str, datasets_dir: str=None) -> str:
     :param datasets_dir: the main directory holding all the datasets
     :return the path of the dataset doc
     """
-    global datasets, problems
+    global datasets
     if datasets is None:
-        if datasets_dir is None:
-            datasets_dir = os.getenv('DATASETS', DEFAULT_DATASET_DIR)
-        datasets, problems = get_datasets_and_problems(datasets_dir)
+        load_datasets_and_problems(datasets_dir)
     return datasets[dataset_id]
 
 
@@ -47,11 +53,9 @@ def get_problem_path(problem_id: str, datasets_dir: str=None) -> str:
     :param datasets_dir: the main directory holding all the datasets
     :return the path of the problem doc
     """
-    global datasets, problems
+    global problems
     if problems is None:
-        if datasets_dir is None:
-            datasets_dir = os.getenv('DATASETS', DEFAULT_DATASET_DIR)
-        datasets, problems = get_datasets_and_problems(datasets_dir)
+        load_datasets_and_problems(datasets_dir)
     return problems[problem_id]
 
 
@@ -76,6 +80,27 @@ def get_problem(problem_path: str, *, parse: bool = True) -> dict:
         with open(problem_path, "r") as f:
             problem_description = json.load(f)
     return problem_description
+
+
+def build_problem_reference(problem_id: str):
+   parent_dir = get_problem_parent_dir(problem_id)
+   dir_id = parent_dir.split('/')[-1]
+   enclosing_dir = '/'.join(parent_dir.split('/')[:-1])
+   return ProblemReference(dir_id, '', enclosing_dir)
+
+
+def dataset_id_exists(dataset_id: str):
+    global datasets
+    if datasets is None:
+        load_datasets_and_problems()
+    return dataset_id in datasets
+
+
+def problem_id_exists(problem_id: str):
+    global problems
+    if problems is None:
+        load_datasets_and_problems()
+    return problem_id in problems
 
 
 def get_default_args(f):
