@@ -24,7 +24,7 @@ def main(**cli_args):
         #get the relevant info from the query                               
         pipeline, problem, used_random_seeds = next(gen_pipelines)
         #now run the pipelines with new generated seeds
-        num_run = 0
+        num_run = 1
         #start the random state
         seed(cli_args['random_state'])
         #run pipelines until the correct number has been run

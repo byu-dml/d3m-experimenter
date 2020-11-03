@@ -17,10 +17,10 @@ from experimenter.databases.d3m_mtl import D3MMtLDB
 from experimenter.problem import ProblemReference
 from experimenter.config import SAVE_TO_D3M
 from experimenter.constants import METRICS_BY_PROBLEM_TYPE
-
-
+import yaml
+logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(20)
+logger.setLevel(logging.ERROR)
 
 def execute_pipeline_on_problem(
     pipe: Pipeline,
@@ -51,9 +51,9 @@ def execute_pipeline_on_problem(
     # If the experimenter is configured to save documents to the D3M database,
     # we only want to execute and save this pipeline run if it doesn't already
     # exist in the D3M database.
-    if SAVE_TO_D3M and D3MMtLDB().has_pipeline_been_run_on_problem(pipe, problem):
-        logger.info("Pipeline has already been run on this dataset, SKIPPING.")
-        return
+    #if SAVE_TO_D3M and D3MMtLDB().has_pipeline_been_run_on_problem(pipe, problem):
+    #    logger.info("Pipeline has already been run on this dataset, SKIPPING.")
+    #    return
 
     metric_names = (
         METRICS_BY_PROBLEM_TYPE[problem.problem_type] if all_metrics else None
@@ -133,11 +133,9 @@ def handle_successful_pipeline_run(
     logger.info("Succesfully printed pipeline")
     d3m_db = D3MMtLDB()
     #save the dataset and problem based on problem reference
-    #=====TODO - add checking to make sure that the problem and dataset are not already in the database=====
     if (problem is not None):
-        d3m_db.save_problem(problem)
-        d3m_db.save_dataset(problem)
-    
+        problem_response = d3m_db.save_problem(problem)
+        dataset_response = d3m_db.save_dataset(problem)
     if not d3m_db.does_pipeline_exist_in_db(pipeline):
         pipeline_save_response = d3m_db.save_pipeline(pipeline, save_primitives=True)
         if pipeline_save_response.ok:
@@ -145,8 +143,11 @@ def handle_successful_pipeline_run(
                 f"pipeline {pipeline.get_digest()} "
                 f"saved successfully, response: {pipeline_save_response.json()}"
             )
-
+    #preparation_ref = pipeline_run.get("run", {}).get("data_preparation",{}).get("pipeline")
+    #scoring_ref = pipeline_run.get("run", {}).get("scoring", {}).get("pipeline")    
+    #add the data prep pipeline
     pipeline_run_save_response = d3m_db.save_pipeline_run(pipeline_run)
+    logger.info(pipeline_run_save_response)
     if pipeline_run_save_response.ok:
         logger.info(
             f"pipeline run {pipeline_run['id']} "
