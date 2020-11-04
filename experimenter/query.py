@@ -55,6 +55,18 @@ def pipeline_with_primitive_generator(primitive_id: str, limit_indexes=False):
       for problem_id in problem_ids:
          yield pipeline.to_dict(), build_problem_reference(problem_id), locs, random_seeds
 
+def test_pipeline(pipeline_id: str):
+   pipeline_search = pipeline_search.query('match', id=pipeline_id)
+   for pipeline in pipeline_search.scan():
+       problems_ids, random_seeds = set(), set()
+       pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \
+      .query('match', pipeline__id=pipeline_id) \
+      .query('match', run__phase='PRODUCE') \
+      .query('match', status__state='SUCCESS')
+      for pipeline_run in pipeline_run_search.scan():
+          random_seeds.add(pipeline_run.random_seed)
+          problem_ids.add(pipeline_run.problem.id)
+      return pipeline.to_dict(), build_problem_reference(problem_id), random_seeds
 
 def pipeline_generator(pipeline_id: str=None):
    pipeline_search = Search(using=CONNECTION, index='pipelines')

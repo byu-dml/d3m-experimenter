@@ -47,9 +47,9 @@ def run_on_seeds(pipeline, problem, used_seeds, **cli_args):
             run_single_seed(pipeline, problem, seed_num, queue)
                 
 def test_run(**cli_args):
-    pipeline, problem, used_random_seeds = next(pipeline_generator(cli_args['test_id']))
+    pipeline, problem, used_random_seeds = test_pipeline(cli_args['test_id']))
     run_on_seeds(pipeline, problem, used_random_seeds, **cli_args)
-    pipeline, problem, new_seeds = next(pipeline_generator(cli_args['test_id']))
+    pipeline, problem, new_seeds = test_pipeline(cli_args['test_id'])
     successful = False
     if (new_seeds != used_random_seeds):
         successful = True
