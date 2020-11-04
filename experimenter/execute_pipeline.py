@@ -68,7 +68,6 @@ def execute_pipeline_on_problem(
         )
     except Exception as e:
         logger.exception("pipeline was not successfully run")
-        print_pipeline(pipe.to_json_structure())
         raise e
 
     score = scores[0]

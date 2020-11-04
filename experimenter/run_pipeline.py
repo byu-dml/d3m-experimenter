@@ -151,8 +151,6 @@ class RunPipeline:
             runtime_environment=runtime_environment,
             random_seed=self.random_seed
         )
-   
-
         all_results.check_success()
 
         return all_scores, all_results

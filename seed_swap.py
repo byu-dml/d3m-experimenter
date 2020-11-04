@@ -23,6 +23,7 @@ def main(**cli_args):
     for i in range(cli_args['num_pipelines']):
         #get the relevant info from the query                               
         pipeline, problem, used_random_seeds = next(gen_pipelines)
+        pipeline, problem, used_random_seeds = next(gen_pipelines)
         #now run the pipelines with new generated seeds
         num_run = 1
         #start the random state
