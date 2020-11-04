@@ -17,27 +17,45 @@ logger = logging.getLogger(__name__)
 
 def main(**cli_args):
     #call the generator
+    if (cli_args['num_pipelines'] == 0):
+        #run a test for functionality in development stage
+        succesful, old_seed_list, new_seed_list = test_run(**cli_args)
+        logger.warning("Old seed list: {}, New seed list: {}, test succesful: {}".format(old_seed_list, new_seed_list, successful))
+        return
+        
     gen_pipelines = pipeline_generator()
     #get the queue argument
-    queue = cli_args['queue']
     for i in range(cli_args['num_pipelines']):
         #get the relevant info from the query                               
         pipeline, problem, used_random_seeds = next(gen_pipelines)
-        pipeline, problem, used_random_seeds = next(gen_pipelines)
         #now run the pipelines with new generated seeds
-        num_run = 1
-        #start the random state
-        seed(cli_args['random_state'])
-        #run pipelines until the correct number has been run
-        while (num_run <= cli_args['num_new_seeds']):
-            seed_num = randint(1,10000)
-            if (seed_num in used_random_seeds):
-                num_run = num_run
-            else:
-                num_run += 1
-                run_pipeline_seed(pipeline, problem, seed_num, queue)
+        run_on_seeds(pipeline, problem, used_random_seeds, **cli_args)
+ 
+def run_on_seeds(pipeline, problem, used_seeds, **cli_args):
+    #start the counter
+    num_run = 1
+    #start the random state
+    seed(cli_args['random_state'])
+    queue = cli_args['queue']
+    #run pipelines until the correct number has been run
+    while (num_run <= cli_args['num_new_seeds']):
+        seed_num = randint(1,10000)
+        if (seed_num in used_seeds):
+            num_run = num_run
+        else:
+            num_run += 1
+            run_single_seed(pipeline, problem, seed_num, queue)
+                
+def test_run(**cli_args):
+    pipeline, problem, used_random_seeds = next(pipeline_generator(cli_args['test_id']))
+    run_on_seeds(pipeline, problem, used_random_seeds, **cli_args)
+    pipeline, problem, new_seeds = next(pipeline_generator(cli_args['test_id']))
+    successful = False
+    if (new_seeds != used_random_seeds):
+        successful = True
+    return successful, used_random_seeds, new_seeds
 
-def run_pipeline_seed(pipeline, problem, seed, queue):
+def run_single_seed(pipeline, problem, seed, queue):
     pipeline = Pipeline.from_json_structure(pipeline)
     if (queue == 'distribute'):
         #add the pipeline to the queue
@@ -96,6 +114,12 @@ def get_cli_args(raw_args=None):
                          help=("Queue the pipeline or run it on personal machine"),
                          type=str,
                          default='simple'
+    )
+    parser.add_argument('--test_id',
+                        '-i',
+                        help=("Id for the unit test"),
+                        type=str,
+                        defualt="a9355dba-156a-445b-99a1-4874eb17331e"
     )
     args = parser.parse_args(raw_args)
     return args
