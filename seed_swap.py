@@ -1,7 +1,7 @@
 from experimenter.pipeline_reconstructor import PipelineReconstructor
 import argparse
 import json
-from experimenter.query import pipeline_generator
+from experimenter.query import pipeline_generator, test_pipeline
 from experimenter.execute_pipeline import execute_pipeline_on_problem
 from experimenter.problem import ProblemReference
 from d3m.metadata.pipeline import Pipeline
@@ -47,7 +47,7 @@ def run_on_seeds(pipeline, problem, used_seeds, **cli_args):
             run_single_seed(pipeline, problem, seed_num, queue)
                 
 def test_run(**cli_args):
-    pipeline, problem, used_random_seeds = test_pipeline(cli_args['test_id']))
+    pipeline, problem, used_random_seeds = test_pipeline(cli_args['test_id'])
     run_on_seeds(pipeline, problem, used_random_seeds, **cli_args)
     pipeline, problem, new_seeds = test_pipeline(cli_args['test_id'])
     successful = False
@@ -119,7 +119,7 @@ def get_cli_args(raw_args=None):
                         '-i',
                         help=("Id for the unit test"),
                         type=str,
-                        defualt="a9355dba-156a-445b-99a1-4874eb17331e"
+                        default="fb9b30a2-8191-5140-878d-64481a5110c1"
     )
     args = parser.parse_args(raw_args)
     return args
