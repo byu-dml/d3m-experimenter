@@ -19,8 +19,8 @@ def main(**cli_args):
     #call the generator
     if (cli_args['num_pipelines'] == 0):
         #run a test for functionality in development stage
-        succesful, old_seed_list, new_seed_list = test_run(**cli_args)
-        logger.warning("Old seed list: {}, New seed list: {}, test succesful: {}".format(old_seed_list, new_seed_list, successful))
+        successful, old_seed_list, new_seed_list = test_run(**cli_args)
+        logger.warning("Old seed list: {}, New seed list: {}, test successful: {}".format(old_seed_list, new_seed_list, successful))
         return
         
     gen_pipelines = pipeline_generator()
@@ -119,7 +119,7 @@ def get_cli_args(raw_args=None):
                         '-i',
                         help=("Id for the unit test"),
                         type=str,
-                        default="fb9b30a2-8191-5140-878d-64481a5110c1"
+                        default='0457d59b-e0a0-4f00-8b63-1e4685c76997'
     )
     args = parser.parse_args(raw_args)
     return args

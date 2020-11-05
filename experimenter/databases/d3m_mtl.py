@@ -125,7 +125,7 @@ class D3MMtLDB:
             # with this entity.
             params["submitter"] = self._submitter
             headers["x-token"] = self._x_token
-        logger.warning("index name: {}".format(index_name))
+        logger.debug("index name: {}".format(index_name))
         response = requests.post(
             f"{self._post_url}/{index_name}/",
             json=entity,

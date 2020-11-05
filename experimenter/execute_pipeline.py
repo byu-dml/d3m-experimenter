@@ -48,13 +48,6 @@ def execute_pipeline_on_problem(
             "it does not have a supported problem type."
         )
 
-    # If the experimenter is configured to save documents to the D3M database,
-    # we only want to execute and save this pipeline run if it doesn't already
-    # exist in the D3M database.
-    #if SAVE_TO_D3M and D3MMtLDB().has_pipeline_been_run_on_problem(pipe, problem):
-    #    logger.info("Pipeline has already been run on this dataset, SKIPPING.")
-    #    return
-
     metric_names = (
         METRICS_BY_PROBLEM_TYPE[problem.problem_type] if all_metrics else None
     )
@@ -142,8 +135,6 @@ def handle_successful_pipeline_run(
                 f"pipeline {pipeline.get_digest()} "
                 f"saved successfully, response: {pipeline_save_response.json()}"
             )
-    #preparation_ref = pipeline_run.get("run", {}).get("data_preparation",{}).get("pipeline")
-    #scoring_ref = pipeline_run.get("run", {}).get("scoring", {}).get("pipeline")    
     #add the data prep pipeline
     pipeline_run_save_response = d3m_db.save_pipeline_run(pipeline_run)
     logger.info(pipeline_run_save_response)
