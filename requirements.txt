@@ -2,11 +2,11 @@ pymongo==3.9.0
 numpy==1.17.3
 scikit-learn[alldeps]==0.21.3
 rq==0.13.0
+d3m
 rq-dashboard
 requests
 elasticsearch-dsl
 elasticsearch
 tqdm
-# TODO: remove this once the D3M docker image updates
-# with the fixes in this release.
-byudml==0.6.8
+byudml
+ipywidgets

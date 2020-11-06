@@ -92,3 +92,10 @@ def scan_pipeline_runs(pipeline_id):
       random_seeds.add(pipeline_run.random_seed)
       problem_ids.add(pipeline_run.problem.id)
    return problem_ids, random_seeds
+
+def query_generator(index: str, id: str=None):
+   search = Search(using=CONNECTION, index=index)
+   if id:
+      search = search.query('match', id=id)
+   for hit in search.scan():
+      yield hit
