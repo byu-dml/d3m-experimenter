@@ -69,23 +69,23 @@ def test_pipeline(pipeline_id: str):
             problem_ids.add(pipeline_run.problem.id)
     return pipeline.to_dict(), build_problem_reference(problem_ids.pop()), random_seeds
 
-def pipeline_generator(pipeline_id: str=None):
+def pipeline_generator(pipeline_id: str=None, limit=1):
    pipeline_search = Search(using=CONNECTION, index='pipelines')
    if pipeline_id:
       pipeline_search = pipeline_search.query('match', id=pipeline_id)
    for pipeline in pipeline_search.scan():
-      problem_ids, random_seeds = scan_pipeline_runs(pipeline.id)
+      problem_ids, random_seeds = scan_pipeline_runs(pipeline.id, limit=limit)
       for problem_id in problem_ids:
          yield pipeline.to_dict(), build_problem_reference(problem_id), random_seeds
 
-def scan_pipeline_runs(pipeline_id):
+def scan_pipeline_runs(pipeline_id, limit=None):
    problem_ids, random_seeds = set(), set()
 
    pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \
       .query('match', pipeline__id=pipeline_id) \
       .query('match', run__phase='PRODUCE') \
       .query('match', status__state='SUCCESS')
-   if pipeline_run_search.count() != 1:
+   if pipeline_run_search.count() <= 0 or (limit and pipeline_run_search.count() > limit):
       return problem_ids, random_seeds
 
    for pipeline_run in pipeline_run_search.scan():
