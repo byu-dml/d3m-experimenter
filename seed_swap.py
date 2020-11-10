@@ -17,29 +17,24 @@ logger = logging.getLogger(__name__)
 
 def main(**cli_args):
     """The main function for handling python3 seed_swap.py terminal call. This method will
-    take a few parameters passed through the terminal and pass parameters to run_seed_swap_on_piplines().
+    take a few parameters passed through the terminal and pass parameters to run_seed_swap_on_pipelines().
     In the case of using this script's functionality elsewhere, run_seed_swap_on_pipelines() can be used.
     """
     #run on single pipeline from id
+    pipeline_id = None
     if (cli_args['num_pipelines'] == 0):
-        #run a test for functionality in development stage
-        run_from_pipeline_id(
-             cli_args['test_id'],
-             cli_args['num_seeds'],
-             cli_args['random_state'],
-             cli_args['queue'],
-        )
-        return
-        
+        pipeline_id = cli_args['test_id']
     #call the function for running the seed swapper on generated pipelines
     run_seed_swap_on_pipelines(
          cli_args['num_seeds'], 
          cli_args['num_pipelines'], 
          cli_args['random_state'], 
-         cli_args['queue']
+         cli_args['queue'],
+         pipeline_id,
+         cli_args['submitter']
     )
         
-def run_seed_swap_on_pipelines(num_seeds:int=10, num_pipelines:int=None, random_state:int=0, queue:str='distribute'):
+def run_seed_swap_on_pipelines(num_seeds:int=10, num_pipelines:int=None, random_state:int=0, queue:str='distribute', pipeline_id:str=None, submitter:str=None):
     """Calls the generator and runs the returned pipelines until the number of seeds that
         a certain pipeline has been run on matches the num_seeds parameter
         Parameters:
@@ -50,16 +45,23 @@ def run_seed_swap_on_pipelines(num_seeds:int=10, num_pipelines:int=None, random_
     """
     #start the counter
     pipelines_run = 0
+    #initialize limit and pipeline id
+    limit = num_seeds-1
+    pipe_id=pipeline_id
+    #check if run on given pipeline
+    if (num_pipelines == 0):
+        limit=None
+        submitter=None
     #loop through the pipeline generator - this is where we would pass num_seeds to the pipeline generator
-    for pipeline, problem, used_seeds in pipeline_generator(limit=num_seeds-1):
-        run_on_seeds(pipeline, problem, num_seeds, used_seeds, random_state, queue)
+    for pipeline, problem, used_seeds in pipeline_generator(limit=limit, pipeline_id=pipe_id, submitter=submitter):
+        run_on_seeds(pipeline, problem, num_seeds, used_seeds, random_state, queue, pipeline_id)
         #stop the loop if num_pipelines is defined and the corresponding number has been reached
         if num_pipelines is not None:
             pipelines_run += 1
             if pipelines_run >= num_pipelines:
                 break
  
-def run_on_seeds(pipeline, problem, num_seeds:int=10, used_seeds:list=(), random_state:int=0, queue:str='distribute'):
+def run_on_seeds(pipeline, problem, num_seeds:int=10, used_seeds:list=(), random_state:int=0, queue:str='distribute', pipeline_id:str=None):
     """Runs multiple seeds on the same pipeline and problem
        Parameters:
            pipeline - a pipeline in json-like format
@@ -81,35 +83,10 @@ def run_on_seeds(pipeline, problem, num_seeds:int=10, used_seeds:list=(), random
         #run on seed and update the number of pipeline seeds
         num_run += 1
         run_single_seed(pipeline, problem, seed_num, queue)
-                
-def run_from_pipeline_id(pipeline_id: str, num_seeds:int=10, random_state:int=0, queue:str='test'):
-    """This function is used to run on a single pipeline given a pipeline id
-       Parameters:
-           pipeline_id - the pipeline id to get from the database
-           num_seeds - the end goal for the number of seeds a pipeline has been run on 
-           random_state - state from which to generate random seeds
-           queue - variable for mode of running
-    """
-    #set the logging if we are in test mode
+    #if in test mode, re-query and display necessary statements of assurance
     if (queue == 'test'):
-        logging.basicConfig()
-        logger.setLevel(logging.DEBUG)
-    #get the neccessary info by querying database    
-    pipeline, problem, used_random_seeds = test_pipeline(pipeline_id)
-    #run the pipeline until it reaches num_seeds number of seed runs
-    run_on_seeds(pipeline, problem, num_seeds, used_random_seeds, random_state, queue)
-    #if we are in test mode, run the relevant test
-    if (queue == 'test'):
-        #re query to compare stats
-        pipeline, problem, new_seeds = test_pipeline(pipeline_id)
-        successful = False
-        #test if the test was successful
-        if (len(new_seeds) >= num_seeds):
-            successful = True
-    logger.info("Length old seed list: {}, Length new seed list: {}, test successful: {}"
-         .format(len(used_random_seeds), len(new_seeds), successful))
-
-
+        run_test(used_seeds, pipeline_id)
+        
 def run_single_seed(pipeline, problem, seed, queue):
     """Runs a single seed on a pipeline and problem
        Parameters:
@@ -130,6 +107,26 @@ def run_single_seed(pipeline, problem, seed, queue):
             all_metrics=False,
             random_seed=seed
         )
+        
+def run_test(used_seeds, pipeline_id):
+    """If queue type is test, then make sure that the seed swap worked, by requeueing and
+       comparing seeds
+       Parameters:
+           pipeline_id - the new seeds
+           used_seeds - the previous seeds already used on the pipeline_id
+    """
+    #set logging to debug level
+    logging.basicConfig()
+    logger.setLevel(logging.DEBUG)
+    #requery
+    for pipeline, problem, used_seeds in pipeline_generator(limit=None, pipeline_id=pipeline_id, submitter=None):
+        successful = False
+        #check if the test was successful
+        if (len(new_seeds) >= num_seeds):
+            successful = True
+        logger.info("Length old seed list: {}, Length new seed list: {}, test successful: {}"
+         .format(len(used_random_seeds), len(new_seeds), successful))
+        break
 
 def add_to_queue(pipeline, problem, seed, all_metrics):
     queue = connect_to_queue()
@@ -186,6 +183,12 @@ def get_cli_args(raw_args=None):
                         help=("Id for the unit test"),
                         type=str,
                         default='0457d59b-e0a0-4f00-8b63-1e4685c76997'
+    )
+    parser.add_argument('--submitter',
+                        '-i',
+                        help=("the submitter to query for when searching pipeline runs"),
+                        type=str,
+                        default=None
     )
     args = parser.parse_args(raw_args)
     return args
