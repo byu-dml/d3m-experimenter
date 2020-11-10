@@ -1,7 +1,7 @@
 from experimenter.pipeline_reconstructor import PipelineReconstructor
 import argparse
 import json
-from experimenter.query import pipeline_generator, test_pipeline
+from experimenter.query import pipeline_generator
 from experimenter.execute_pipeline import execute_pipeline_on_problem
 from experimenter.problem import ProblemReference
 from d3m.metadata.pipeline import Pipeline
@@ -119,13 +119,13 @@ def run_test(used_seeds, pipeline_id):
     logging.basicConfig()
     logger.setLevel(logging.DEBUG)
     #requery
-    for pipeline, problem, used_seeds in pipeline_generator(limit=None, pipeline_id=pipeline_id, submitter=None):
+    for pipeline, problem, new_seeds in pipeline_generator(limit=None, pipeline_id=pipeline_id, submitter=None):
         successful = False
         #check if the test was successful
-        if (len(new_seeds) >= num_seeds):
+        if (len(new_seeds) >= len(used_seeds)):
             successful = True
         logger.info("Length old seed list: {}, Length new seed list: {}, test successful: {}"
-         .format(len(used_random_seeds), len(new_seeds), successful))
+         .format(len(used_seeds), len(new_seeds), successful))
         break
 
 def add_to_queue(pipeline, problem, seed, all_metrics):
@@ -185,7 +185,7 @@ def get_cli_args(raw_args=None):
                         default='0457d59b-e0a0-4f00-8b63-1e4685c76997'
     )
     parser.add_argument('--submitter',
-                        '-i',
+                        '-b',
                         help=("the submitter to query for when searching pipeline runs"),
                         type=str,
                         default=None
