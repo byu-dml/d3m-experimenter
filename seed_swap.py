@@ -16,53 +16,117 @@ import redis
 logger = logging.getLogger(__name__)
 
 def main(**cli_args):
-    #call the generator
+    """The main function for handling python3 seed_swap.py terminal call. This method will
+    take a few parameters passed through the terminal and pass parameters to run_seed_swap_on_piplines().
+    In the case of using this script's functionality elsewhere, run_seed_swap_on_pipelines() can be used.
+    """
+    #run on single pipeline from id
     if (cli_args['num_pipelines'] == 0):
         #run a test for functionality in development stage
-        successful, old_seed_list, new_seed_list = test_run(**cli_args)
-        logger.warning("Old seed list: {}, New seed list: {}, test successful: {}".format(old_seed_list, new_seed_list, successful))
+        run_from_pipeline_id(
+             cli_args['test_id'],
+             cli_args['num_seeds'],
+             cli_args['random_state'],
+             cli_args['queue']
         return
         
-    gen_pipelines = pipeline_generator()
-    #get the queue argument
-    for i in range(cli_args['num_pipelines']):
-        #get the relevant info from the query                               
-        pipeline, problem, used_random_seeds = next(gen_pipelines)
-        #now run the pipelines with new generated seeds
-        run_on_seeds(pipeline, problem, used_random_seeds, **cli_args)
+    #call the function for running the seed swapper on generated pipelines
+    run_seed_swap_on_pipelines(
+         cli_args['num_seeds'], 
+         cli_args['num_pipelines'], 
+         cli_args['random_state'], 
+         cli_args['queue']
+    )
+        
+def run_seed_swap_on_pipelines(num_seeds:int=10, num_pipelines:int=None, random_state:int=0, queue:str='distribute'):
+     """Calls the generator and runs the returned pipelines until the number of seeds that
+        a certain pipeline has been run on matches the num_seeds parameter
+        Parameters:
+            num_seeds - the end goal for the number of seeds a pipeline has been run on
+            num_pipelines - the number of pipelines to get from the generator
+            random_state - the state from which to generate the new random seeds
+            queue - indicates whether or not to queue the pipelines or just run them
+     """
+    #loop through the pipeline generator - this is where we would pass num_seeds to the pipeline generator
+    for pipeline, problem, used_seeds in pipeline_generator(limit=num_seeds-1):
+        run_on_seeds(pipeline, problem, num_seeds, used_seeds, random_state, queue)
+        #stop the loop if num_pipelines is defined and the corresponding number has been reached
+        if num_pipelines is not None:
+            pipelines_run += 1
+            if pipelines_run >= num_pipelines:
+                break
  
-def run_on_seeds(pipeline, problem, used_seeds, **cli_args):
+def run_on_seeds(pipeline, problem, num_seeds:int=10, used_seeds:list=(), random_state:int=0, queue:str='distribute'):
+    """Runs multiple seeds on the same pipeline and problem
+       Parameters:
+           pipeline - a pipeline in json-like format
+           problem - an instance of ProblemReference in the experimenter
+           used_seeds - list of seeds that have already been used on pipeline run
+           random_state - the state from which to generate the new random seeds
+           queue - indicates whether or not to queue the pipelines or just run on them
+    """
     #start the counter
-    num_run = 1
+    num_run = len(used_seeds)
     #start the random state
-    seed(cli_args['random_state'])
-    queue = cli_args['queue']
+    seed(random_state)
     #run pipelines until the correct number has been run
-    while (num_run <= cli_args['num_new_seeds']):
+    while (num_run <= num_seeds):
         seed_num = randint(1,10000)
+        #if seed is used move on without doing anything
         if (seed_num in used_seeds):
-            num_run = num_run
-        else:
-            num_run += 1
-            run_single_seed(pipeline, problem, seed_num, queue)
+            continue
+        #run on seed and update the number of pipeline seeds
+        num_run += 1
+        run_single_seed(pipeline, problem, seed_num, queue)
                 
-def test_run(**cli_args):
-    pipeline, problem, used_random_seeds = test_pipeline(cli_args['test_id'])
-    run_on_seeds(pipeline, problem, used_random_seeds, **cli_args)
-    pipeline, problem, new_seeds = test_pipeline(cli_args['test_id'])
-    successful = False
-    if (new_seeds != used_random_seeds):
-        successful = True
-    return successful, used_random_seeds, new_seeds
+def run_from_pipeline_id(pipeline_id: str, num_seeds:int=10, random_state:int=0, queue:str='test'):
+    """This function is used to run on a single pipeline given a pipeline id
+       Parameters:
+           pipeline_id - the pipeline id to get from the database
+           num_seeds - the end goal for the number of seeds a pipeline has been run on 
+           random_state - state from which to generate random seeds
+           queue - variable for mode of running
+    """
+    #set the logging if we are in test mode
+    if (queue == 'test'):
+        logging.basicConfig()
+        logger.setLevel(logging.DEBUG)
+    #get the neccessary info by querying database    
+    pipeline, problem, used_random_seeds = test_pipeline(pipeline_id)
+    #run the pipeline until it reaches num_seeds number of seed runs
+    run_on_seeds(pipeline, problem, num_seeds, used_random_seeds, random_state, queue)
+    #if we are in test mode, run the relevant test
+    if (queue == 'test'):
+        #re query to compare stats
+        pipeline, problem, new_seeds = test_pipeline(pipeline_id)
+        successful = False
+        #test if the test was successful
+        if (len(new_seeds) >= num_seeds):
+            successful = True
+    logger.info("Length old seed list: {}, Length new seed list: {}, test successful: {}"
+         .format(len(used_random_seeds), len(new_seeds), successful))
+
 
 def run_single_seed(pipeline, problem, seed, queue):
+    """Runs a single seed on a pipeline and problem
+       Parameters:
+           pipeline - a pipeline in json-like format
+           problem - an instance of ProblemReference in the experimenter
+           queue - indicates whether or not to queue the pipelines or just run them
+    """
     pipeline = Pipeline.from_json_structure(pipeline)
     if (queue == 'distribute'):
         #add the pipeline to the queue
         add_to_queue(pipeline, problem, seed, all_metrics=False)
     else:
         #run the pipeline
-        execute_pipeline_on_problem(pipeline, problem=problem, volumes_dir='/volumes', all_metrics=False, random_seed=seed)
+        execute_pipeline_on_problem(
+            pipeline,
+            problem=problem,
+            volumes_dir='/volumes',
+            all_metrics=False,
+            random_seed=seed
+        )
 
 def add_to_queue(pipeline, problem, seed, all_metrics):
     queue = connect_to_queue()
@@ -85,15 +149,14 @@ def connect_to_queue():
         raise ConnectionRefusedError
     return queue
 
-
 def get_cli_args(raw_args=None):
     #get the argument parser
     parser = argparse.ArgumentParser(
         formatter_class = argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('--num_new_seeds',
+    parser.add_argument('--num_seeds',
                         '-n',
-                        help=("The number of new seeds to test on"),
+                        help=("The number of seeds indicating how many seeds each pipeline should have"),
                         type=int,
                         default=5
     )

@@ -18,9 +18,8 @@ from experimenter.problem import ProblemReference
 from experimenter.config import SAVE_TO_D3M
 from experimenter.constants import METRICS_BY_PROBLEM_TYPE
 import yaml
-logging.basicConfig()
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 def execute_pipeline_on_problem(
     pipe: Pipeline,
