@@ -27,7 +27,8 @@ def main(**cli_args):
              cli_args['test_id'],
              cli_args['num_seeds'],
              cli_args['random_state'],
-             cli_args['queue']
+             cli_args['queue'],
+        )
         return
         
     #call the function for running the seed swapper on generated pipelines
@@ -39,14 +40,16 @@ def main(**cli_args):
     )
         
 def run_seed_swap_on_pipelines(num_seeds:int=10, num_pipelines:int=None, random_state:int=0, queue:str='distribute'):
-     """Calls the generator and runs the returned pipelines until the number of seeds that
+    """Calls the generator and runs the returned pipelines until the number of seeds that
         a certain pipeline has been run on matches the num_seeds parameter
         Parameters:
             num_seeds - the end goal for the number of seeds a pipeline has been run on
             num_pipelines - the number of pipelines to get from the generator
             random_state - the state from which to generate the new random seeds
             queue - indicates whether or not to queue the pipelines or just run them
-     """
+    """
+    #start the counter
+    pipelines_run = 0
     #loop through the pipeline generator - this is where we would pass num_seeds to the pipeline generator
     for pipeline, problem, used_seeds in pipeline_generator(limit=num_seeds-1):
         run_on_seeds(pipeline, problem, num_seeds, used_seeds, random_state, queue)
@@ -66,7 +69,7 @@ def run_on_seeds(pipeline, problem, num_seeds:int=10, used_seeds:list=(), random
            queue - indicates whether or not to queue the pipelines or just run on them
     """
     #start the counter
-    num_run = len(used_seeds)
+    num_run = len(used_seeds)+1
     #start the random state
     seed(random_state)
     #run pipelines until the correct number has been run
