@@ -9,7 +9,6 @@ import logging
 from typing import List
 
 from d3m.metadata.pipeline import Pipeline
-
 from experimenter.run_fit_pipeline import RunFitPipeline
 from experimenter.run_pipeline import RunPipeline
 from experimenter.databases.aml_mtl import PipelineDB
@@ -134,26 +133,6 @@ def handle_successful_pipeline_run(
                 f"pipeline {pipeline.get_digest()} "
                 f"saved successfully, response: {pipeline_save_response.json()}"
             )
-    #add the data prep pipeline and scoring pipeline
-    if ('scoring' in list(pipeline_run['run'].keys())):
-        scoring_pipeline = pipeline_run['run']['scoring']['pipeline']
-        save_primitives=False
-        logger.warning(list(scoring_pipeline.keys()))
-        if ('steps' in list(scoring_pipeline.keys())):
-            save_primitives=True
-        scoring_pipeline = Pipeline.from_json_structure(scoring_pipeline)    
-        scoring_save_response = d3m_db.save_pipeline(scoring_pipeline, 
-            save_primitives=save_primitives)
-    if ('data_preparation' in list(pipeline_run['run'].keys())):
-        data_prep_pipeline = pipeline_run['run']['data_preparation']['pipeline']
-        logger.warning(data_prep_pipeline)
-        #save_primitives=False
-        logger.warning(list(data_prep_pipeline.keys()))
-        #if ('steps' in list(data_prep_pipeline.keys())):
-        #    save_primitives=True
-        #data_prep_pipeline = Pipeline.from_json_structure(data_prep_pipeline)
-        #data_prep_save_response = d3m_db.save_pipeline(data_prep_pipeline, 
-        #    save_primitives=save_primitives)
     pipeline_run_save_response = d3m_db.save_pipeline_run(pipeline_run)
     logger.info(pipeline_run_save_response)
     if pipeline_run_save_response.ok:
