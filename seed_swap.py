@@ -126,6 +126,7 @@ def run_test(used_seeds, pipeline_id):
             successful = True
         logger.info("Length old seed list: {}, Length new seed list: {}, test successful: {}"
          .format(len(used_seeds), len(new_seeds), successful))
+        logger.info("Pipeline id: {}".format(pipeline['id']))
         break
 
 def add_to_queue(pipeline, problem, seed, all_metrics):
