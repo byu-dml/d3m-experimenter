@@ -12,6 +12,7 @@ from random import randint
 from rq import Queue
 from tqdm import tqdm
 import redis
+from experimenter.config import REDIS_HOST, REDIS_PORT
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +145,7 @@ def add_to_queue(pipeline, problem, seed, all_metrics):
 def connect_to_queue():
     logger.info("Connecting to Redis")
     try: 
-        conn = reds.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
+        conn = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
         queue = Queue(connection=conn)
     except Exception:
         raise ConnectionRefusedError
@@ -171,7 +172,7 @@ def get_cli_args(raw_args=None):
                         '-p',
                         help=("The number of pipelines to run before termination"),
                         type=int,
-                        default=1
+                        default=None
     )
     parser.add_argument('--queue', 
                          '-q',
