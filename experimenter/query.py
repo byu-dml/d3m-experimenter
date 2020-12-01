@@ -55,28 +55,32 @@ def pipeline_with_primitive_generator(primitive_id: str, limit_indexes=False):
       for problem_id in problem_ids:
          yield pipeline.to_dict(), build_problem_reference(problem_id), locs, random_seeds
 
-def pipeline_generator(pipeline_id: str=None, limit=1, submitter='byu'):
+def pipeline_generator(pipeline_id: str=None, limit=None, submitter='byu'):
    pipeline_search = Search(using=CONNECTION, index='pipelines')
    if pipeline_id:
       pipeline_search = pipeline_search.query('match', id=pipeline_id)
+   if submitter:
+      pipeline_search = pipeline_search.query('match', _submitter=submitter)
+   
    for pipeline in pipeline_search.scan():
-      problem_ids, random_seeds = scan_pipeline_runs(pipeline.id, limit=limit, submitter=submitter)
-      for problem_id in problem_ids:
+      results = scan_pipeline_runs(pipeline.id, submitter)
+      for (problem_id, dataset_id), random_seeds in results.items():
+         if limit and len(random_seeds) > limit:
+            continue
          yield pipeline.to_dict(), build_problem_reference(problem_id), random_seeds
 
-def scan_pipeline_runs(pipeline_id, limit=None, submitter=None):
-   problem_ids, random_seeds = set(), set()
-
+def scan_pipeline_runs(pipeline_id, submitter=None):
    pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \
       .query('match', pipeline__id=pipeline_id) \
       .query('match', run__phase='PRODUCE') \
       .query('match', status__state='SUCCESS')
    if submitter:
       pipeline_run_search = pipeline_run_search.query('match', _submitter=submitter)
-   if pipeline_run_search.count() <= 0 or (limit and pipeline_run_search.count() > limit):
-      return problem_ids, random_seeds
 
+   results = dict()
    for pipeline_run in pipeline_run_search.scan():
-      random_seeds.add(pipeline_run.random_seed)
-      problem_ids.add(pipeline_run.problem.id)
-   return problem_ids, random_seeds
+      for dataset in pipeline_run.datasets:
+         dataset_prob_tuple = (pipeline_run.problem.id, dataset.id)
+         results[dataset_prob_tuple] = results.get(dataset_prob_tuple, set())
+         results[dataset_prob_tuple].add(pipeline_run.random_seed)
+   return results
