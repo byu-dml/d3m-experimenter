@@ -10,9 +10,9 @@ from experimenter import exceptions
 DEFAULT_HOST_PORT = 6379
 DEFAULT_HOST_DATA_PATH = os.path.join(os.path.expanduser('~'), '.experimenter_cache')
 
-REDIS_DOCKER_IMAGE_NAME = 'redis:latest'
-REDIS_DOCKER_PORT = 6379
-REDIS_DOCKER_DATA_PATH = '/data'
+_REDIS_DOCKER_IMAGE_NAME = 'redis:latest'
+_REDIS_DOCKER_PORT = 6379
+_REDIS_DOCKER_DATA_PATH = '/data'
 
 
 def start_job_queue(port: int, data_path: str) -> None:
@@ -28,14 +28,14 @@ def stop_job_queue() -> None:
 def start_redis_server(port: int, data_path: str) -> None:
     docker_client = docker.from_env()
 
-    redis_container = get_docker_container(docker_client, REDIS_DOCKER_IMAGE_NAME)
+    redis_container = get_docker_container(docker_client, _REDIS_DOCKER_IMAGE_NAME)
     if redis_container:
         if redis_container.status != 'running':
             redis_container.start()
     else:
         redis_container = docker_client.containers.run(
-            REDIS_DOCKER_IMAGE_NAME, ports={REDIS_DOCKER_PORT:port},
-            volumes={data_path: {'bind': REDIS_DOCKER_DATA_PATH, 'mode': 'rw'}},
+            _REDIS_DOCKER_IMAGE_NAME, ports={_REDIS_DOCKER_PORT:port},
+            volumes={data_path: {'bind': _REDIS_DOCKER_DATA_PATH, 'mode': 'rw'}},
             detach=True, auto_remove=True,
         )
 
@@ -54,7 +54,7 @@ def start_redis_server(port: int, data_path: str) -> None:
 
 def stop_redis_server() -> None:
     docker_client = docker.from_env()
-    redis_container = get_docker_container(docker_client, REDIS_DOCKER_IMAGE_NAME)
+    redis_container = get_docker_container(docker_client, _REDIS_DOCKER_IMAGE_NAME)
     if redis_container:
         redis_container.stop()
 
