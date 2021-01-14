@@ -8,7 +8,7 @@ from experimenter import exceptions
 
 
 DEFAULT_HOST_PORT = 6379
-DEFAULT_HOST_DATA_PATH = os.path.join(os.path.expanduser('~'), '.d3m_experimenter_cache')
+DEFAULT_HOST_DATA_PATH = os.path.join(os.path.expanduser('~'), '.experimenter_cache')
 
 REDIS_DOCKER_IMAGE_NAME = 'redis:latest'
 REDIS_DOCKER_PORT = 6379
@@ -17,10 +17,12 @@ REDIS_DOCKER_DATA_PATH = '/data'
 
 def start_job_queue(port: int, data_path: str) -> None:
     start_redis_server(port, data_path)
+    print('Job queue successfully started')
 
 
 def stop_job_queue() -> None:
     stop_redis_server()
+    print('Job queue successfully stopped')
 
 
 def start_redis_server(port: int, data_path: str) -> None:
@@ -48,8 +50,6 @@ def start_redis_server(port: int, data_path: str) -> None:
         redis.StrictRedis(host='localhost', port=port, health_check_interval=1).ping()
     except redis.exceptions.RedisError as e:
         raise exceptions.ServerError('Failed to start server, try again') from e
-
-    print('Job queue successfully started')
 
 
 def stop_redis_server() -> None:

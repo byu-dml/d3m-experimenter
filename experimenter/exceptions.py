@@ -1,6 +1,10 @@
-class D3MExperimenterError(Exception):
+class ExperimenterError(Exception):
     pass
 
 
-class ServerError(D3MExperimenterError):
+class ServerError(ExperimenterError):
+    pass
+
+
+class InvalidStateError(ExperimenterError):
     pass
