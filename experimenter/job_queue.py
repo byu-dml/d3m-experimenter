@@ -1,8 +1,14 @@
+import os.path
 import time
 
 import docker
 import redis
 
+from experimenter import exceptions
+
+
+DEFAULT_HOST_PORT = 6379
+DEFAULT_HOST_DATA_PATH = os.path.join(os.path.expanduser('~'), '.d3m_experimenter_cache')
 
 REDIS_DOCKER_IMAGE_NAME = 'redis:latest'
 REDIS_DOCKER_PORT = 6379
@@ -38,7 +44,12 @@ def start_redis_server(port: int, data_path: str) -> None:
         time.sleep(sleep_time)
         elapsed_time += sleep_time
 
-    redis.StrictRedis(host='localhost', port=port).ping()
+    try:
+        redis.StrictRedis(host='localhost', port=port, health_check_interval=1).ping()
+    except redis.exceptions.RedisError as e:
+        raise exceptions.ServerError('Failed to start server, try again') from e
+
+    print('Job queue successfully started')
 
 
 def stop_redis_server() -> None:

@@ -22,8 +22,8 @@ def configure_job_queue_parser(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest='job_queue_command')
 
     start_parser = subparsers.add_parser('start')
-    start_parser.add_argument('--port', type=int, default=6379, action='store')
-    start_parser.add_argument('--data-path', type=str, default='/d3m_experimenter_cache')
+    start_parser.add_argument('--port', type=int, default=job_queue.DEFAULT_HOST_PORT, action='store')
+    start_parser.add_argument('--data-path', type=str, default=job_queue.DEFAULT_HOST_DATA_PATH)
 
     stop_parser = subparsers.add_parser('stop')
 
