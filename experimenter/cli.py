@@ -86,11 +86,11 @@ def configure_generator_parser(parser: argparse.ArgumentParser) -> None:
     )
     configure_search_parser(search_subparser)
 
-    edit_subparser = subparsers.add_parser(
+    modify_subparser = subparsers.add_parser(
         'modify',
         description='modifies existing pipelines in the metalearning database',
     )
-    configure_edit_parser(edit_subparser)
+    configure_modify_parser(modify_subparser)
 
     update_subparser = subparsers.add_parser(
         'update',
@@ -121,7 +121,7 @@ def search_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParse
     raise exceptions.NotImplementedError()
 
 
-def configure_edit_parser(parser: argparse.ArgumentParser) -> None:
+def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
     pass
 
 
