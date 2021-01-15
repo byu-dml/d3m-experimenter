@@ -1,7 +1,7 @@
 import argparse
 import typing
 
-from experimenter import job_queue
+from experimenter import queue
 
 
 def main(argv: typing.Sequence) -> None:
@@ -15,17 +15,18 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest='experimenter_command')
     subparsers.required = True
 
-    job_queue_parser = subparsers.add_parser('job-queue')
-    configure_job_queue_parser(job_queue_parser)
+    queue_parser = subparsers.add_parser('queue')
+    configure_queue_parser(queue_parser)
 
 
-def configure_job_queue_parser(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest='job_queue_command')
+
+def configure_queue_parser(parser: argparse.ArgumentParser) -> None:
+    subparsers = parser.add_subparsers(dest='queue_command')
     subparsers.required = True
 
     start_parser = subparsers.add_parser('start')
-    start_parser.add_argument('--port', type=int, default=job_queue.DEFAULT_HOST_PORT, action='store')
-    start_parser.add_argument('--data-path', type=str, default=job_queue.DEFAULT_HOST_DATA_PATH)
+    start_parser.add_argument('--port', type=int, default=queue.DEFAULT_HOST_PORT, action='store')
+    start_parser.add_argument('--data-path', type=str, default=queue.DEFAULT_HOST_DATA_PATH)
 
     stop_parser = subparsers.add_parser('stop')
 
@@ -34,18 +35,18 @@ def handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> N
     experimenter_command = arguments.experimenter_command
     subparser = parser._subparsers._group_actions[0].choices[experimenter_command]  # type: ignore
 
-    if experimenter_command == 'job-queue':
-        job_queue_handler(arguments, subparser)
+    if experimenter_command == 'queue':
+        queue_handler(arguments, subparser)
     else:
         raise exceptions.InvalidStateError('Unknown experimenter command: {}'.format(experimenter_command))
 
 
-def job_queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
-    job_queue_command = arguments.job_queue_command
+def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    queue_command = arguments.queue_command
 
-    if job_queue_command == 'start':
-        job_queue.start_job_queue(arguments.port, arguments.data_path)
-    elif job_queue_command == 'stop':
-        job_queue.stop_job_queue()
+    if queue_command == 'start':
+        queue.start_queue(arguments.port, arguments.data_path)
+    elif queue_command == 'stop':
+        queue.stop_queue()
     else:
-        raise exceptions.InvalidStateError('Unknown job-queue command: {}'.format(job_queue_command))
+        raise exceptions.InvalidStateError('Unknown queue command: {}'.format(queue_command))

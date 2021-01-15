@@ -15,14 +15,14 @@ _REDIS_DOCKER_PORT = 6379
 _REDIS_DOCKER_DATA_PATH = '/data'
 
 
-def start_job_queue(port: int, data_path: str) -> None:
+def start_queue(port: int, data_path: str) -> None:
     start_redis_server(port, data_path)
-    print('Job queue successfully started')
+    print('queue successfully started')
 
 
-def stop_job_queue() -> None:
+def stop_queue() -> None:
     stop_redis_server()
-    print('Job queue successfully stopped')
+    print('queue successfully stopped')
 
 
 def start_redis_server(port: int, data_path: str) -> None:
