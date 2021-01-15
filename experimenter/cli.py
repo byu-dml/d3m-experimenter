@@ -141,8 +141,15 @@ def update_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParse
 
 
 def configure_worker_parser(parser: argparse.ArgumentParser) -> None:
-    pass
+    parser.add_argument('-q', '--queue-host', type=str, default='localhost', action='store', help='job queue host name')
+    parser.add_argument('-p', '--queue-port', type=int, default=queue.DEFAULT_HOST_PORT, action='store', help='job queue host port')
+    parser.add_argument('-w', '--workers', type=int, default=1, action='store', help='the number of workers to start')
+    parser.add_argument('-j', '--max-jobs', type=int, default=None, action='store', help='maximum number of jobs to execute')
 
 
 def worker_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
-    raise exceptions.NotImplementedError()
+    if arguments.workers < 1:
+        raise exceptions.InvalidArgumentValueError('the number of workers must be at least 1')
+
+    for _ in range(arguments.workers):
+        queue.start_worker(arguments.queue_host, arguments.queue_port, arguments.max_jobs)

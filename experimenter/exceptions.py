@@ -12,3 +12,7 @@ class InvalidStateError(ExperimenterError):
 
 class NotImplementedError(ExperimenterError):
     pass
+
+
+class InvalidArgumentValueError(ExperimenterError):
+    pass

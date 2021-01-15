@@ -1,4 +1,5 @@
 import os.path
+import subprocess
 import time
 import typing
 
@@ -11,6 +12,7 @@ from experimenter import exceptions
 
 DEFAULT_HOST_PORT = 6379
 DEFAULT_HOST_DATA_PATH = os.path.join(os.path.expanduser('~'), '.experimenter_cache')
+DEFAULT_QUEUE = 'default'
 
 _REDIS_DOCKER_IMAGE_NAME = 'redis:latest'
 _REDIS_DOCKER_PORT = 6379
@@ -94,3 +96,13 @@ def enqueue_jobs(jobs: typing.Union[typing.Generator, typing.Iterator, typing.Se
 
     for job in jobs:
         queue.enqueue(**job, job_timeout=job_timeout)
+
+
+def start_worker(queue_host: str, queue_port: int, max_jobs: int = None):
+    args = [
+        'rq', 'worker', DEFAULT_QUEUE, '--burst', '--url', 'redis://{}:{}'.format(queue_host, queue_port),
+    ]
+    if max_jobs is not None:
+        args += ['--max-jobs', str(max_jobs)]
+    with open(os.devnull) as devnull:
+        subprocess.Popen(args, stdout=devnull, stderr=devnull)
