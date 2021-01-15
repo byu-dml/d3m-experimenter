@@ -1,8 +1,10 @@
 import os.path
 import time
+import typing
 
 import docker
 import redis
+import rq
 
 from experimenter import exceptions
 
@@ -73,3 +75,22 @@ def get_docker_container(docker_client, image_name) -> docker.models.containers.
         if container.attrs['Config']['Image'] == image_name:
             return container
     return None
+
+
+def make_job(f, *args, **kwargs):
+    return {'f':f, 'args': args, 'kwargs': kwargs}
+
+
+def enqueue_jobs(jobs: typing.Union[typing.Generator, typing.Iterator, typing.Sequence], queue_host: str, queue_port: int, job_timeout: int = None):
+    """
+    Connects to the job queue and enqueues all `jobs`.
+
+    jobs: the jobs to push onto the queue
+        Each job must be formatted as a dict with the keys `'f'`, `'args'` (optional), and `'kwargs'` optional.
+    queue_host: the queue
+    """
+    connection = redis.StrictRedis(host=queue_host, port=queue_port)
+    queue = rq.Queue(connection=connection)
+
+    for job in jobs:
+        queue.enqueue(**job, job_timeout=job_timeout)
