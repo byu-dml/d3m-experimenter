@@ -8,3 +8,7 @@ class ServerError(ExperimenterError):
 
 class InvalidStateError(ExperimenterError):
     pass
+
+
+class NotImplementedError(ExperimenterError):
+    pass
