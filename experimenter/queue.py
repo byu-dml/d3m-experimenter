@@ -15,14 +15,23 @@ _REDIS_DOCKER_PORT = 6379
 _REDIS_DOCKER_DATA_PATH = '/data'
 
 
-def start_queue(port: int, data_path: str) -> None:
+def start(port: int, data_path: str) -> None:
     start_redis_server(port, data_path)
     print('queue successfully started')
 
 
-def stop_queue() -> None:
+def stop() -> None:
     stop_redis_server()
     print('queue successfully stopped')
+
+
+def status() -> None:
+    docker_client = docker.from_env()
+    redis_container = get_docker_container(docker_client, _REDIS_DOCKER_IMAGE_NAME)
+    if redis_container is not None and redis_container.status == 'running':
+        print('queue is running on port(s): {}'.format(redis_container.ports))
+    else:
+        print('queue is stopped')
 
 
 def start_redis_server(port: int, data_path: str) -> None:
