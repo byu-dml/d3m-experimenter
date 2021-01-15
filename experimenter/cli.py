@@ -53,8 +53,8 @@ def configure_queue_parser(parser: argparse.ArgumentParser) -> None:
     subparsers.required = True  # type: ignore
 
     start_parser = subparsers.add_parser('start')
-    start_parser.add_argument('--port', type=int, default=queue.DEFAULT_HOST_PORT, action='store')
-    start_parser.add_argument('--data-path', type=str, default=queue.DEFAULT_HOST_DATA_PATH)
+    start_parser.add_argument('-p', '--port', type=int, default=queue.DEFAULT_HOST_PORT, action='store')
+    start_parser.add_argument('-d', '--data-path', type=str, default=queue.DEFAULT_HOST_DATA_PATH)
 
     stop_parser = subparsers.add_parser('stop')
 
@@ -77,7 +77,7 @@ def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser
 def configure_generator_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument('-q', '--queue-host', type=str, default='localhost', action='store', help='job queue host name')
     parser.add_argument('-p', '--queue-port', type=int, default=queue.DEFAULT_HOST_PORT, action='store', help='job queue host port')
-    parser.add_argument('-n', '--n-max-jobs', type=int, default=None, action='store', help='maximum number of jobs generated')
+    parser.add_argument('-j', '--max-jobs', type=int, default=None, action='store', help='maximum number of jobs generated')
     parser.add_argument('-t', '--job-timeout', type=int, default=None, action='store', help='maximum runtime for a single job in seconds')
 
     subparsers = parser.add_subparsers(dest='generator_command')
