@@ -27,6 +27,12 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     )
     configure_generator_parser(generator_parser)
 
+    worker_parser = subparsers.add_parser(
+        'worker',
+        description='creates a worker to run jobs on pushed onto the queue by a generator',
+    )
+    configure_worker_parser(worker_parser)
+
 
 def handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     experimenter_command = arguments.experimenter_command
@@ -36,6 +42,8 @@ def handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> N
         queue_handler(arguments, subparser)
     elif experimenter_command == 'generator':
         generator_handler(arguments, subparser)
+    elif experimenter_command == 'worker':
+        worker_handler(arguments, subparser)
     else:
         raise exceptions.InvalidStateError('Unknown experimenter command: {}'.format(experimenter_command))
 
@@ -126,4 +134,12 @@ def configure_update_parser(parser: argparse.ArgumentParser) -> None:
 
 
 def update_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    raise exceptions.NotImplementedError()
+
+
+def configure_worker_parser(parser: argparse.ArgumentParser) -> None:
+    pass
+
+
+def worker_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     raise exceptions.NotImplementedError()
