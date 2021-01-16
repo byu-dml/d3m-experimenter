@@ -1,21 +1,17 @@
 from setuptools import setup, find_packages
 
-with open("requirements.txt", "r") as f:
-    install_requires = list()
-    for line in f:
-        re = line.strip()
-        if re:
-            install_requires.append(re)
 
 setup(
-    name="d3m_experimenter",
-    version="1.0",
-    description="Package for building and running D3M experiments",
-    author="BYU DML",
-    # Just one author of many
-    author_email="evanpeterson17@gmail.com",
-    url="https://github.com/byu-dml/d3m-experimenter",
-    packages=find_packages(include=["experimenter", "experimenter.*"]),
-    python_requires=">=3.6",
-    install_requires=install_requires,
+    name='d3m-experimenter',
+    version='0.1.0',
+    description='An extension of the D3M machine learning framework for populating the metalearning database.',
+    author='Brandon Schoenfeld, Evan Peterson, Orion Weller',
+    url='https://github.com/byu-dml/d3m-experimenter',
+    packages=find_packages(include=['experimenter']),
+    python_requires='>=3.6,<4.0',
+    install_requires=[
+        'docker>=4.4.0<4.5.0',
+        'redis>=3.5.0<3.6.0',
+        'rq>=1.7.0<1.8.0',
+    ],
 )
