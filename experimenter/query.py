@@ -66,7 +66,7 @@ def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu')
       for (problem_id, dataset_id), random_seeds in results.items():
          if limit and len(random_seeds) > limit:
             continue
-         yield pipeline.to_dict(), build_problem_reference(problem_id), random_seeds
+         yield {'pipeline': pipeline.to_dict(), 'problem_ref': build_problem_reference(problem_id), 'tested_seeds': random_seeds}
 
 def scan_pipeline_runs(pipeline_id, submitter=None):
    pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \

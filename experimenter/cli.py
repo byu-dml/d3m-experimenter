@@ -125,11 +125,56 @@ def search_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParse
 
 
 def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
-    pass
+    #create the subparsers for the different types of modifications
+    
+    #seed swapper functionality
+    subparser = parser.add_subparsers(dest='modify_type')
+    subparsers.required = True
+    swap_seed_subparser = subparsers.add_parser(
+         'random-seed',
+         description='Uses database data to search pipelines and run functional pipelines on different random seeds',
+     )
+    #subparser arguments
+    swap_seed_subparser.add_argument(
+         '--pipeline_id',
+         description='The pipeline id to search for in the query, if none, searches all pipelines',
+         default=None,
+         type=str)
+    swap_seed_subparser.add_argument(
+         '--submitter',
+         help='The pipeline submitter to add to the query',
+         default=None,
+         type=str)
+    swap_seed_subparser.add_argument(
+         '--seed_limit',
+         help='The amount of random seeds that each ran pipeline will have at the end of the test',
+         default=2,
+         type=int)
+         
+    #Primitive swapper functionality
+    primitive_swap_subparser = subparsers.add_parser(
+        'primitive-swap',
+        description='Searches database for pipeline runs containing a primitive a swaps out primitive for a different given primitive')
+    #subparser arguments
+    primitive_swap_subparser.add_argument(
+         '--primitive_id',
+         help='The id of the primitive to swap out',
+         default=None,
+         type=str)
+    primitive_swap_subparser.add_argument(
+         '--limit_indeces',
+         help='Details for primitive swapping',
+         default=None)
 
 
 def modify_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
-    raise exceptions.NotImplementedError()
+    modify_type = arguments.modify_type
+    modify_type_parser = parser._subparsers._group_actions[0].choices[modify_type]
+    modify_arguments = modify_type_parser.parse_args(argv[1:])
+    modify_generator = ModifyGenerator(modify_type, modify_arguments, arguments.max-jobs)
+    #now run the enqueuer part
+    enqueuer = queue.JobEnqueuer(arguments)
+    enqueuer.enqueue(modify_generator)
 
 
 def configure_update_parser(parser: argparse.ArgumentParser) -> None:
