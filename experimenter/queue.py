@@ -7,7 +7,7 @@ import docker
 import redis
 import rq
 
-from experimenter import exceptions
+from experimenter import exceptions, utils
 
 
 DEFAULT_HOST_PORT = 6379
@@ -52,17 +52,25 @@ def start_redis_server(port: int, data_path: str) -> None:
             detach=True, auto_remove=True,
         )
 
-    timeout = 10
-    sleep_time = 1
-    elapsed_time = 0
-    while docker_client.containers.get(redis_container.id).status != 'running' and elapsed_time < timeout:
-        time.sleep(sleep_time)
-        elapsed_time += sleep_time
+    error = exceptions.ServerError('Failed to start server, try again')
 
+    utils.wait(
+        lambda: docker_client.containers.get(redis_container.id).status == 'running',
+        timeout=10, interval=1, error=error
+    )
+
+    utils.wait(
+        lambda: check_redis_connection(port=port) is None, timeout=10, interval=1, error=error
+    )
+
+
+def check_redis_connection(host='localhost', port=DEFAULT_HOST_PORT) -> typing.Optional[Exception]:
+    error = None
     try:
-        redis.StrictRedis(host='localhost', port=port, health_check_interval=1).ping()
+        redis.StrictRedis(host=host, port=port, health_check_interval=1).ping()
     except redis.exceptions.RedisError as e:
-        raise exceptions.ServerError('Failed to start server, try again') from e
+        error = e
+    return error
 
 
 def stop_redis_server() -> None:
@@ -70,6 +78,7 @@ def stop_redis_server() -> None:
     redis_container = get_docker_container(docker_client, _REDIS_DOCKER_IMAGE_NAME)
     if redis_container:
         redis_container.stop()
+    # TODO: check that the redis container actually stopped
 
 
 def get_docker_container(docker_client, image_name) -> docker.models.containers.Container:

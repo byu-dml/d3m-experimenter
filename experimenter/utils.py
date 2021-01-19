@@ -1,8 +1,9 @@
+import functools
 import inspect
 import json
 import os
-import functools
-from typing import Callable, Any
+import time
+import typing
 
 from d3m.metadata import problem as problem_module
 
@@ -78,3 +79,34 @@ def get_default_args(f):
 def multiply(l: list) -> float:
     """Multiplies all the elements in a list together"""
     return functools.reduce((lambda x, y: x * y), l)
+
+
+def wait(
+    callback: typing.Callable, timeout: int, interval: int = None, error: Exception = None
+) -> None:
+    """
+    Suspends program execution until `callback` returns True or `timeout` seconds have elapsed.
+    `callback` is queried every `interval` seconds. Optionally raises `error`, if one is provided.
+
+    callback: a callable to check whether to end the waiting period
+        When `callback` returns a truthy value, this method returns.
+        `callback` must not require any arguments.
+
+    timeout: the maximum amount of time in seconds to wait
+        `timeout` prevents infinite looping in the case that callback never returns a truthy value.
+
+    interval: the amount of time to suspend execution between calls to callback
+        `interval` defaults to max(1, int((timeout)**0.5)).
+
+    error: an error to raise if `timeout` seconds have elapsed
+    """
+    if interval is None:
+        interval = max(1, int((timeout)**0.5))
+
+    elapsed_time = 0
+    while not callback() and elapsed_time < timeout:
+        time.sleep(interval)
+        elapsed_time += interval
+
+    if error is not None and not callback():
+        raise error

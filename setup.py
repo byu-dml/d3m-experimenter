@@ -10,6 +10,7 @@ setup(
     packages=find_packages(include=['experimenter']),
     python_requires='>=3.6,<4.0',
     install_requires=[
+        'd3m',  # TODO: add version bounds
         'docker>=4.4.0<4.5.0',
         'redis>=3.5.0<3.6.0',
         'rq>=1.7.0<1.8.0',
