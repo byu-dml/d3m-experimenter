@@ -53,12 +53,14 @@ def configure_queue_parser(parser: argparse.ArgumentParser) -> None:
     subparsers.required = True  # type: ignore
 
     start_parser = subparsers.add_parser('start')
-    start_parser.add_argument('-p', '--port', type=int, default=queue.DEFAULT_HOST_PORT, action='store')
-    start_parser.add_argument('-d', '--data-path', type=str, default=queue.DEFAULT_HOST_DATA_PATH)
+    start_parser.add_argument('-p', '--port', type=int, default=None, action='store')
+    start_parser.add_argument('-d', '--data-path', type=str, default=None)
 
     stop_parser = subparsers.add_parser('stop')
 
     status_parser = subparsers.add_parser('status')
+
+    status_parser = subparsers.add_parser('empty')
 
 
 def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
@@ -70,13 +72,15 @@ def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser
         queue.stop()
     elif queue_command == 'status':
         queue.status()
+    elif queue_command == 'empty':
+        queue.empty()
     else:
         raise exceptions.InvalidStateError('Unknown queue command: {}'.format(queue_command))
 
 
 def configure_generator_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument('-q', '--queue-host', type=str, default='localhost', action='store', help='job queue host name')
-    parser.add_argument('-p', '--queue-port', type=int, default=queue.DEFAULT_HOST_PORT, action='store', help='job queue host port')
+    parser.add_argument('-p', '--queue-port', type=int, default=None, action='store', help='job queue host port')
     parser.add_argument('-j', '--max-jobs', type=int, default=None, action='store', help='maximum number of jobs generated')
     parser.add_argument('-t', '--job-timeout', type=int, default=None, action='store', help='maximum runtime for a single job in seconds')
 
@@ -142,7 +146,7 @@ def update_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParse
 
 def configure_worker_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument('-q', '--queue-host', type=str, default='localhost', action='store', help='job queue host name')
-    parser.add_argument('-p', '--queue-port', type=int, default=queue.DEFAULT_HOST_PORT, action='store', help='job queue host port')
+    parser.add_argument('-p', '--queue-port', type=int, default=None, action='store', help='job queue host port')
     parser.add_argument('-w', '--workers', type=int, default=1, action='store', help='the number of workers to start')
     parser.add_argument('-j', '--max-jobs', type=int, default=None, action='store', help='the maximum number of jobs a worker can execute')
 

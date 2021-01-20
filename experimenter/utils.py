@@ -1,9 +1,13 @@
+import contextlib
 import functools
 import inspect
+import io
 import json
 import os
 import time
 import typing
+
+import docker
 
 from d3m.metadata import problem as problem_module
 
@@ -110,3 +114,34 @@ def wait(
 
     if error is not None and not callback():
         raise error
+
+
+def get_docker_container_by_image(image_name: str, docker_client=None) -> docker.models.containers.Container:
+    if docker_client is None:
+        docker_client = docker.from_env()
+
+    for container in docker_client.containers.list(all=True):
+        if container.attrs['Config']['Image'] == image_name:
+            return container
+
+    return None
+
+
+class DockerClientContext(contextlib.AbstractContextManager):
+
+    def __init__(self):
+        self.client = docker.from_env()
+
+    def __enter__(self):
+        return self.client
+
+    def __exit__(self, *exc):
+        self.client.close()
+
+@contextlib.contextmanager
+def redirect_stdout():
+    with io.StringIO() as buf, contextlib.redirect_stdout(buf):
+        try:
+            yield buf
+        finally:
+            pass
