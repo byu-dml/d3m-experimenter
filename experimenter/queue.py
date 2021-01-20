@@ -58,12 +58,12 @@ def empty() -> None:
         print(_QUEUE_STATUS_STOPPED_MESSAGE)
 
 
-def is_running():
+def is_running() -> bool:
     redis_container = _get_redis_container()
     return redis_container is not None and redis_container.status == 'running'
 
 
-def _get_redis_container():
+def _get_redis_container() -> typing.Optional[docker.models.containers.Container]:
     with utils.DockerClientContext() as docker_client:
         return utils.get_docker_container_by_image(_REDIS_DOCKER_IMAGE_NAME, docker_client)
 
@@ -114,7 +114,7 @@ def _start_redis_server(port: int, data_path: str) -> None:
     )
 
 
-def _check_redis_connection(host='localhost', port=_DEFAULT_HOST_PORT) -> typing.Optional[Exception]:
+def _check_redis_connection(host: str = 'localhost', port: int = _DEFAULT_HOST_PORT) -> typing.Optional[Exception]:
     error = None
     try:
         redis.StrictRedis(host=host, port=port, health_check_interval=1).ping()
@@ -131,7 +131,7 @@ def _stop_redis_server() -> None:
         # TODO: check that the redis container actually stopped
 
 
-def make_job(f, *args, **kwargs):
+def make_job(f: typing.Callable, *args: typing.Any, **kwargs: typing.Any) -> typing.Dict[str, typing.Any]:
     return {'f':f, 'args': args, 'kwargs': kwargs}
 
 
@@ -167,7 +167,7 @@ def _empty_rq_queue() -> None:
     queue.empty()
 
 
-def start_worker(queue_host: str = None, queue_port: int = None, max_jobs: int = None):
+def start_worker(queue_host: str = None, queue_port: int = None, max_jobs: int = None) -> None:
     if queue_host is None:
         queue_host = 'localhost'
     if queue_port is None:

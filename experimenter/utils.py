@@ -116,7 +116,9 @@ def wait(
         raise error
 
 
-def get_docker_container_by_image(image_name: str, docker_client=None) -> docker.models.containers.Container:
+def get_docker_container_by_image(
+    image_name: str, docker_client: docker.DockerClient = None
+) -> docker.models.containers.Container:
     if docker_client is None:
         docker_client = docker.from_env()
 
@@ -129,17 +131,17 @@ def get_docker_container_by_image(image_name: str, docker_client=None) -> docker
 
 class DockerClientContext(contextlib.AbstractContextManager):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = docker.from_env()
 
-    def __enter__(self):
+    def __enter__(self) -> docker.DockerClient:
         return self.client
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc: typing.Any) -> None:
         self.client.close()
 
 @contextlib.contextmanager
-def redirect_stdout():
+def redirect_stdout() -> typing.Generator[io.StringIO, None, None]:
     with io.StringIO() as buf, contextlib.redirect_stdout(buf):
         try:
             yield buf
