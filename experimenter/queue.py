@@ -2,6 +2,7 @@ import os.path
 import subprocess
 import time
 import typing
+import webbrowser
 
 import docker
 import redis
@@ -24,6 +25,8 @@ _QUEUE_STOP_SUCCESS_MESSAGE = 'queue successfully stopped'
 _QUEUE_STATUS_RUNNING_MESSAGE = 'queue is running on port {port}'
 _QUEUE_STATUS_STOPPED_MESSAGE = 'queue is stopped'
 _QUEUE_EMPTIED_MESSAGE = 'queue emptied'
+
+_DEAFULT_DASHBOARD_HOST_PORT = 9181
 
 
 def start(port: int = None, data_path: str = None) -> None:
@@ -58,12 +61,18 @@ def empty() -> None:
         print(_QUEUE_STATUS_STOPPED_MESSAGE)
 
 
-def start_dashboard() -> None:
+def start_dashboard(port: int =  None) -> None:
+    if port is None:
+        port = _DEAFULT_DASHBOARD_HOST_PORT
+
     if not is_running():
         print(_QUEUE_STATUS_STOPPED_MESSAGE)
     else:
-        args = ['rq-dashboard', '-P', str(_get_redis_port())]
-        subprocess.Popen(args).communicate()
+        dashboard_args = ['rq-dashboard', '--port', str(port), '--redis-port', str(_get_redis_port())]
+        dashboard_process = subprocess.Popen(dashboard_args)
+        time.sleep(1)
+        webbrowser.open('http://0.0.0.0:{}'.format(port), new=1)
+        dashboard_process.communicate()
 
 
 def is_running() -> bool:

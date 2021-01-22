@@ -62,10 +62,11 @@ def configure_queue_parser(parser: argparse.ArgumentParser) -> None:
 
     status_parser = subparsers.add_parser('empty')
 
-    status_parser = subparsers.add_parser(
+    start_dashboard_parser = subparsers.add_parser(
         'start-dashboard',
         description='starts a synchronous dashboard server that can be accessed from a web browser'
     )
+    start_dashboard_parser.add_argument('-p', '--port', type=int, default=None, action='store')
 
 
 def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
