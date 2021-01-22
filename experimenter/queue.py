@@ -58,6 +58,14 @@ def empty() -> None:
         print(_QUEUE_STATUS_STOPPED_MESSAGE)
 
 
+def start_dashboard() -> None:
+    if not is_running():
+        print(_QUEUE_STATUS_STOPPED_MESSAGE)
+    else:
+        args = ['rq-dashboard', '-P', str(_get_redis_port())]
+        subprocess.Popen(args).communicate()
+
+
 def is_running() -> bool:
     redis_container = _get_redis_container()
     return redis_container is not None and redis_container.status == 'running'

@@ -62,6 +62,11 @@ def configure_queue_parser(parser: argparse.ArgumentParser) -> None:
 
     status_parser = subparsers.add_parser('empty')
 
+    status_parser = subparsers.add_parser(
+        'start-dashboard',
+        description='starts a synchronous dashboard server that can be accessed from a web browser'
+    )
+
 
 def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     queue_command = arguments.queue_command
@@ -74,6 +79,8 @@ def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser
         queue.status()
     elif queue_command == 'empty':
         queue.empty()
+    elif queue_command == 'start-dashboard':
+        queue.start_dashboard()
     else:
         raise exceptions.InvalidStateError('Unknown queue command: {}'.format(queue_command))
 
