@@ -1,8 +1,13 @@
+import contextlib
+import functools
 import inspect
+import io
 import json
 import os
-import functools
-from typing import Callable, Any
+import time
+import typing
+
+import docker
 
 from d3m.metadata import problem as problem_module
 
@@ -78,3 +83,67 @@ def get_default_args(f):
 def multiply(l: list) -> float:
     """Multiplies all the elements in a list together"""
     return functools.reduce((lambda x, y: x * y), l)
+
+
+def wait(
+    callback: typing.Callable, timeout: int, interval: int = None, error: Exception = None
+) -> None:
+    """
+    Suspends program execution until `callback` returns True or `timeout` seconds have elapsed.
+    `callback` is queried every `interval` seconds. Optionally raises `error`, if one is provided.
+
+    callback: a callable to check whether to end the waiting period
+        When `callback` returns a truthy value, this method returns.
+        `callback` must not require any arguments.
+
+    timeout: the maximum amount of time in seconds to wait
+        `timeout` prevents infinite looping in the case that callback never returns a truthy value.
+
+    interval: the amount of time to suspend execution between calls to callback
+        `interval` defaults to max(1, int((timeout)**0.5)).
+
+    error: an error to raise if `timeout` seconds have elapsed
+    """
+    if interval is None:
+        interval = max(1, int((timeout)**0.5))
+
+    elapsed_time = 0
+    while not callback() and elapsed_time < timeout:
+        time.sleep(interval)
+        elapsed_time += interval
+
+    if error is not None and not callback():
+        raise error
+
+
+def get_docker_container_by_image(
+    image_name: str, docker_client: docker.DockerClient = None
+) -> docker.models.containers.Container:
+    if docker_client is None:
+        docker_client = docker.from_env()
+
+    for container in docker_client.containers.list(all=True):
+        if container.attrs['Config']['Image'] == image_name:
+            return container
+
+    return None
+
+
+class DockerClientContext(contextlib.AbstractContextManager):
+
+    def __init__(self) -> None:
+        self.client = docker.from_env()
+
+    def __enter__(self) -> docker.DockerClient:
+        return self.client
+
+    def __exit__(self, *exc: typing.Any) -> None:
+        self.client.close()
+
+@contextlib.contextmanager
+def redirect_stdout() -> typing.Generator[io.StringIO, None, None]:
+    with io.StringIO() as buf, contextlib.redirect_stdout(buf):
+        try:
+            yield buf
+        finally:
+            pass
