@@ -128,7 +128,7 @@ def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
     #create the subparsers for the different types of modifications
     
     #seed swapper functionality
-    subparser = parser.add_subparsers(dest='modify_type')
+    subparsers = parser.add_subparsers(dest='modify_type')
     subparsers.required = True
     swap_seed_subparser = subparsers.add_parser(
          'random-seed',
@@ -137,7 +137,7 @@ def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
     #subparser arguments
     swap_seed_subparser.add_argument(
          '--pipeline_id',
-         description='The pipeline id to search for in the query, if none, searches all pipelines',
+         help='The pipeline id to search for in the query, if none, searches all pipelines',
          default=None,
          type=str)
     swap_seed_subparser.add_argument(
