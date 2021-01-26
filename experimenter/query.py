@@ -52,7 +52,7 @@ def query_on_primitive(primitive_id: str, limit_indexes=False):
          locs = locs[0]
       
       for problem_id in problem_ids:
-         yield pipeline.to_dict(), build_problem_reference(problem_id), locs, random_seeds
+         yield {'pipeline': pipeline.to_dict(), 'problem_ref': build_problem_reference(problem_id), 'location': locs, 'tested_seeds': random_seeds}
 
 def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu'):
    pipeline_search = Search(using=CONNECTION, index='pipelines')

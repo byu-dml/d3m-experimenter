@@ -158,7 +158,7 @@ def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
     #Primitive swapper functionality
     primitive_swap_subparser = subparsers.add_parser(
         'primitive-swap',
-        description='Searches database for pipeline runs containing a primitive a swaps out primitive for a different given primitive')
+        description='Searches database for pipeline runs containing a primitive and swaps out primitive for a different given primitive')
     #subparser arguments
     primitive_swap_subparser.add_argument(
          '--primitive_id',
@@ -169,16 +169,20 @@ def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
          '--limit_indeces',
          help='Details for primitive swapping',
          default=None)
+    primitive_swap_subparser.add_argument(
+         '--swap_primitive_id',
+         help='The id of the primitve to swap in',
+         default=None
+         type=str)
 
 
 def modify_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     modify_type = arguments.modify_type
     modify_type_parser = parser._subparsers._group_actions[0].choices[modify_type]
     modify_arguments = modify_type_parser.parse_args(argv[1:])
-    modify_generator = ModifyGenerator(modify_type, modify_arguments, arguments.max-jobs)
+    modify_generator = ModifyGenerator(modify_type, arguments.max-jobs, modify_arguments)
     #now run the enqueuer part
-    enqueuer = queue.JobEnqueuer(arguments)
-    enqueuer.enqueue(modify_generator)
+    queue.enqueue_jobs(modify_generator, arguments.queue_host, arguments.queue_port)
 
 
 def configure_update_parser(parser: argparse.ArgumentParser) -> None:

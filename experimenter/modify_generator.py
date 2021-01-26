@@ -1,4 +1,6 @@
 from query import query_on_seeds, query_on_primitive
+from . import queue
+import d3m.metadata.pipeline 
 
 
 class ModifyGenerator:
@@ -19,7 +21,8 @@ class ModifyGenerator:
         #iterate through query results
         for query_result in self.query_results:
             #iterate through modifier results
-            for job in self._modify(query_result, self.args):
+            for job_args in self._modify(query_result, self.args):
+                job = queue.make_job(exectue_pipeline_on_problem, jobs_args)
                 self.num_complete += 1
                 #check to run until the generator stops iterating (if no input for num_pipelines_to_run)
                 if (self.max_jobs):
@@ -31,7 +34,7 @@ class ModifyGenerator:
 
     def __iter__(self):
         return self
-    
+        
             
     def _query(self, *args):
         if (self.modifier_type=='random-seed'):
@@ -46,9 +49,22 @@ class ModifyGenerator:
         if self.modifier_type=='random-seed':
             return self._modify_random_seed(args.seed_limit, query_args)
         if self.modifier_type=='swap-primitive':
-            return self._modifiy_swap_primitive(args.pipeline, args.primitive_loc, args.new_primitive)
+            return self._modifiy_swap_primitive(args.swap_primitive_id ,query_args)
         else:
             raise ValueError("This type of modification is not yet an option")
+    
+ 
+    def _check_for_duplicates(self, pipeline_to_check, problem_ref_to_check):
+        """Pseudo function/method for duplicate checking - this is not complete
+        """
+        #create the pipeline to check for duplicates from the path
+        pipeline_object = d3m.metadata.pipeline.Pipeline.from_json(pipeline_to_check)
+        #query through the database for equal pipelines
+        similar_pipeline_runs_in_database = query.generate_similar_pipeline_runs()
+        for pipeline in similar_pipeline_runs_in_database:
+            if(pipeline_object.equals(pipeline)):
+                return True
+        return False   
     
     
     def _modify_random_seed(self, seed_limit, query_args):
@@ -62,5 +78,10 @@ class ModifyGenerator:
             num_run += 1
             used_seeds.append(new_seed)
             #yield the necessary job requirements
-            yield query_args.pipeline, query_args.problem_ref, new_seed
+            yield query_args.pipeline, query_args.problem_ref, new_seed 
+            
+
+    def _modify_swap_primitive(self, swap_pipeline, query_args):
+        raise ValueError("No functionality for swapping primitives yet")
+        
         
