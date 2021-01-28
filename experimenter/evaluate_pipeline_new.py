@@ -9,7 +9,7 @@ from d3m import cli
 
 from data_preparation_pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_ID, SCORING_PIPELINE_ID
 
-def execute_pipeline_on_problem(
+def evaluate_pipeline_on_problem(
     pipe: Pipeline,
     problem: ProblemReference,
     random_seed: int):
@@ -23,10 +23,10 @@ def execute_pipeline_on_problem(
     output_run_path = '-'
     data_random_seed = random_seed
 
-    execute_pipeline_via_d3m_cli(pipeline_path, problem_path, input_path,
+    evaluate_pipeline_via_d3m_cli(pipeline_path, problem_path, input_path,
         output_run_path, data_random_seed)
 
-def execute_pipeline_via_d3m_cli(pipeline: str,
+def evaluate_pipeline_via_d3m_cli(pipeline: str,
     problem: str,
     input: str,
     output_run: str,
@@ -197,4 +197,4 @@ def is_valid_uuid(uuid_to_test: str, version=4):
 
 if __name__ == '__main__':
     path = 'README.md'
-    execute_pipeline_via_d3m_cli(path,path,path,path,1,[(1,2),(3,4)])
+    evaluate_pipeline_via_d3m_cli(path,path,path,path,1,[(1,2),(3,4)])
