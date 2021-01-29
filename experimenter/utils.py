@@ -10,7 +10,8 @@ import typing
 import docker
 
 from d3m.metadata import problem as problem_module
-
+from experimenter.problem import ProblemReference
+from d3m.utils import get_datasets_and_problems
 
 DEFAULT_DATASET_DIR = "/datasets/training_datasets/LL0"
 
@@ -28,6 +29,25 @@ def get_dataset_doc_path(
         dataset_dir, dataset_name, dataset_name + "_dataset", "datasetDoc.json"
     )
 
+
+def get_problem_parent_dir(problem_id: str):
+    """
+    Getting the problem parent directory based on the given problem id and 
+    DEFAULT_DATASET_DIR
+    """
+    dir_name = problem_id
+    if any([x in problem_id for x in {'_problem', '_solution', '_dataset'}]):
+        dir_name = '_'.join(problem_id.split('_')[:-1])
+    path_chunks = get_problem_path(problem_id).split('/')
+    return '/'.join(path_chunks[:path_chunks.index(dir_name)+1])
+
+    
+def build_problem_reference(problem_id: str):
+   parent_dir = get_problem_parent_dir(problem_id)
+   dir_id = parent_dir.split('/')[-1]
+   enclosing_dir = '/'.join(parent_dir.split('/')[:-1])
+   return ProblemReference(dir_id, '', enclosing_dir)
+   
 
 def get_dataset_doc(dataset_name: str, dataset_dir: str = DEFAULT_DATASET_DIR) -> dict:
     """

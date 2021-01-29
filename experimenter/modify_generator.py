@@ -1,5 +1,5 @@
-from query import query_on_seeds, query_on_primitive
-from . import queue
+from experimenter.query import query_on_seeds, query_on_primitive
+from experimenter import queue
 import d3m.metadata.pipeline 
 
 
@@ -7,14 +7,14 @@ class ModifyGenerator:
     """ Generator to be used for creating modified pipelines based on existing
         pipelines in the database
     """
-    def __init__(self, modify_type: str='random-seed', max_jobs: int=None, *args):
+    def __init__(self, modify_type: str='random-seed', max_jobs: int=None, args=None):
         self.args = args
         #intialize commonly used variables
         self.modifier_type = modify_type
         self.max_jobs = max_jobs
         self.num_complete = 0
         #run the query on initializing to define the query results
-        self.query_results = self._query(self.modifier_type, self.args)
+        self.query_results = self._query(self.args)
 
 
     def __next__(self):
@@ -36,20 +36,20 @@ class ModifyGenerator:
         return self
         
             
-    def _query(self, *args):
+    def _query(self, args):
         if (self.modifier_type=='random-seed'):
-            return query_on_seeds(args.pipeline_id, args.seed_limit, args.submitter):
+            return query_on_seeds(args.pipeline_id, args.seed_limit, args.submitter)
         if (self.modifier_type=='swap-primitive'):
             return query_on_primitive(args.primitive_id, args.limit_indeces)
         else:
             raise ValueError("This type of modification is not yet an option")
     
             
-    def _modify(self, query_args: dict, *args):
+    def _modify(self, query_args: dict, args):
         if self.modifier_type=='random-seed':
             return self._modify_random_seed(args.seed_limit, query_args)
         if self.modifier_type=='swap-primitive':
-            return self._modifiy_swap_primitive(args.swap_primitive_id ,query_args)
+            return self._modifiy_swap_primitive(args.swap_primitive_id, query_args)
         else:
             raise ValueError("This type of modification is not yet an option")
     

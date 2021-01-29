@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
 from tqdm import tqdm
-from experimenter.utils import get_problem_parent_dir, build_problem_reference
+from experimenter.utils import build_problem_reference
 
 HOST = 'https://metalearning.datadrivendiscovery.org/es'
 CONNECTION = Elasticsearch(hosts=[HOST], timeout=300)
@@ -52,6 +52,7 @@ def query_on_primitive(primitive_id: str, limit_indexes=False):
          locs = locs[0]
       
       for problem_id in problem_ids:
+         
          yield {'pipeline': pipeline.to_dict(), 'problem_ref': build_problem_reference(problem_id), 'location': locs, 'tested_seeds': random_seeds}
 
 def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu'):

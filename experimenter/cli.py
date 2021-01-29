@@ -2,6 +2,7 @@ import argparse
 import typing
 
 from experimenter import exceptions, queue
+from experimenter.modify_generator import ModifyGenerator
 
 
 def main(argv: typing.Sequence) -> None:
@@ -172,15 +173,13 @@ def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
     primitive_swap_subparser.add_argument(
          '--swap_primitive_id',
          help='The id of the primitve to swap in',
-         default=None
+         default=None,
          type=str)
 
 
 def modify_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     modify_type = arguments.modify_type
-    modify_type_parser = parser._subparsers._group_actions[0].choices[modify_type]
-    modify_arguments = modify_type_parser.parse_args(argv[1:])
-    modify_generator = ModifyGenerator(modify_type, arguments.max-jobs, modify_arguments)
+    modify_generator = ModifyGenerator(modify_type, arguments.max_jobs, arguments)
     #now run the enqueuer part
     queue.enqueue_jobs(modify_generator, arguments.queue_host, arguments.queue_port)
 
