@@ -13,7 +13,7 @@ def main(argv: typing.Sequence) -> None:
 
 def configure_parser(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest='experimenter_command')
-    subparsers.required = True
+    subparsers.required = True  # type: ignore
 
     queue_parser = subparsers.add_parser(
         'queue',
@@ -50,15 +50,23 @@ def handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> N
 
 def configure_queue_parser(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest='queue_command')
-    subparsers.required = True
+    subparsers.required = True  # type: ignore
 
     start_parser = subparsers.add_parser('start')
-    start_parser.add_argument('--port', type=int, default=queue.DEFAULT_HOST_PORT, action='store')
-    start_parser.add_argument('--data-path', type=str, default=queue.DEFAULT_HOST_DATA_PATH)
+    start_parser.add_argument('-p', '--port', type=int, default=None, action='store')
+    start_parser.add_argument('-d', '--data-path', type=str, default=None)
 
     stop_parser = subparsers.add_parser('stop')
 
     status_parser = subparsers.add_parser('status')
+
+    status_parser = subparsers.add_parser('empty')
+
+    start_dashboard_parser = subparsers.add_parser(
+        'start-dashboard',
+        description='starts a synchronous dashboard server that can be accessed from a web browser'
+    )
+    start_dashboard_parser.add_argument('-p', '--port', type=int, default=None, action='store')
 
 
 def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
@@ -70,15 +78,22 @@ def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser
         queue.stop()
     elif queue_command == 'status':
         queue.status()
+    elif queue_command == 'empty':
+        queue.empty()
+    elif queue_command == 'start-dashboard':
+        queue.start_dashboard()
     else:
         raise exceptions.InvalidStateError('Unknown queue command: {}'.format(queue_command))
 
 
 def configure_generator_parser(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument('--n-max-jobs', type=int, default=None, action='store')  # TODO:, description='the max number of jobs to generate')
+    parser.add_argument('-q', '--queue-host', type=str, default='localhost', action='store', help='job queue host name')
+    parser.add_argument('-p', '--queue-port', type=int, default=None, action='store', help='job queue host port')
+    parser.add_argument('-j', '--max-jobs', type=int, default=None, action='store', help='maximum number of jobs generated')
+    parser.add_argument('-t', '--job-timeout', type=int, default=None, action='store', help='maximum runtime for a single job in seconds')
 
     subparsers = parser.add_subparsers(dest='generator_command')
-    subparsers.required = True
+    subparsers.required = True  # type: ignore
 
     search_subparser = subparsers.add_parser(
         'search',
@@ -138,8 +153,15 @@ def update_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParse
 
 
 def configure_worker_parser(parser: argparse.ArgumentParser) -> None:
-    pass
+    parser.add_argument('-q', '--queue-host', type=str, default='localhost', action='store', help='job queue host name')
+    parser.add_argument('-p', '--queue-port', type=int, default=None, action='store', help='job queue host port')
+    parser.add_argument('-w', '--workers', type=int, default=1, action='store', help='the number of workers to start')
+    parser.add_argument('-j', '--max-jobs', type=int, default=None, action='store', help='the maximum number of jobs a worker can execute')
 
 
 def worker_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
-    raise exceptions.NotImplementedError()
+    if arguments.workers < 1:
+        raise exceptions.InvalidArgumentValueError('the number of workers must be at least 1')
+
+    for _ in range(arguments.workers):
+        queue.start_worker(arguments.queue_host, arguments.queue_port, arguments.max_jobs)
