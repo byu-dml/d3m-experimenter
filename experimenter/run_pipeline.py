@@ -57,7 +57,7 @@ class RunPipeline:
         simimlar to that of `_evaluate` in the Runtime code. The aforementioned
         function does not allow for returning the data, so it did not fit in the
         workflow.
-        
+
         :param pipeline: the pipeline object to be run OR the path to the pipeline file
             to be used
         :param metric_names: if provided, the pipeline will be scored against this custom
