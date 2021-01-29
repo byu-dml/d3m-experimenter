@@ -95,12 +95,12 @@ class QueueTestCase(unittest.TestCase):
         f = time.sleep
 
         for host, port, timeout in itertools.product(hosts, ports, timeouts):
-            generator = (
+            jobs = (
                 queue.make_job(f),
                 queue.make_job(f, 1),
                 queue.make_job(f, secs=1),
             )
-            queue.enqueue_jobs(generator, queue_host=host, queue_port=port, job_timeout=timeout)
+            queue.enqueue_jobs(jobs, queue_host=host, queue_port=port, job_timeout=timeout)
 
         with utils.redirect_stdout():
             queue.empty()
