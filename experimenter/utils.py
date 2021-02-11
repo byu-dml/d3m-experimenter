@@ -5,48 +5,54 @@ import functools
 from typing import Callable, Any
 
 from d3m.metadata import problem as problem_module
+from d3m.utils import get_datasets_and_problems
 
 
 DEFAULT_DATASET_DIR = "/datasets/training_datasets/LL0"
+datasets, problems = None, None
 
 
-def get_dataset_doc_path(
-    dataset_name: str, dataset_dir: str = DEFAULT_DATASET_DIR
-) -> str:
+def get_dataset_doc_path(dataset_id: str, datasets_dir: str=None) -> str:
     """
-    A quick helper function to gather a problem path
-    :param dataset_name: the name of the dataset
-    :param dataset_dir: where the main dataset directory is
-    :return the path of the problem
+    A quick helper function to gather a dataset doc path
+    :param dataset_id: the id of the dataset
+    :param datasets_dir: the main directory holding all the datasets
+    :return the path of the dataset doc
     """
-    return os.path.join(
-        dataset_dir, dataset_name, dataset_name + "_dataset", "datasetDoc.json"
-    )
+    global datasets, problems
+    if datasets is None:
+        if datasets_dir is None:
+            datasets_dir = os.getenv('DATASETS', DEFAULT_DATASET_DIR)
+        datasets, problems = get_datasets_and_problems(datasets_dir)
+    return datasets[dataset_id]
 
 
-def get_dataset_doc(dataset_name: str, dataset_dir: str = DEFAULT_DATASET_DIR) -> dict:
+def get_dataset_doc(dataset_id: str, datasets_dir: str=None) -> dict:
     """
     Gets a dataset doc from a path and loads it
-    :param dataset_name: the name of the dataset
-    :param dataset_dir: the main directory holding all the datasets
+    :param dataset_id: the id of the dataset
+    :param datasets_dir: the main directory holding all the datasets
     :return the dataset description object
     """
-    dataset_doc_path = get_dataset_doc_path(dataset_name, dataset_dir)
+    dataset_doc_path = get_dataset_doc_path(dataset_id, datasets_dir)
     with open(dataset_doc_path, "r") as f:
         dataset_doc = json.load(f)
     return dataset_doc
 
 
-def get_problem_path(problem_name: str, dataset_dir: str = DEFAULT_DATASET_DIR) -> str:
+def get_problem_path(problem_id: str, datasets_dir: str=None) -> str:
     """
     A quick helper function to gather a problem path
-    :param problem_name: the name of the problem
-    :param dataset_dir: where the main dataset directory is
-    :return the path of the problem
+    :param problem_id: the id of the problem
+    :param datasets_dir: the main directory holding all the datasets
+    :return the path of the problem doc
     """
-    return os.path.join(
-        dataset_dir, problem_name, problem_name + "_problem", "problemDoc.json"
-    )
+    global datasets, problems
+    if problems is None:
+        if datasets_dir is None:
+            datasets_dir = os.getenv('DATASETS', DEFAULT_DATASET_DIR)
+        datasets, problems = get_datasets_and_problems(datasets_dir)
+    return problems[problem_id]
 
 
 def get_problem(problem_path: str, *, parse: bool = True) -> dict:
