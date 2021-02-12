@@ -1,6 +1,5 @@
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
-from tqdm import tqdm
 from experimenter.utils import get_problem_path, get_dataset_doc_path
 
 HOST = 'https://metalearning.datadrivendiscovery.org/es'
