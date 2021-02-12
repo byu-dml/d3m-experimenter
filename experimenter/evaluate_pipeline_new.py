@@ -7,24 +7,7 @@ from uuid import UUID
 from d3m.metadata.pipeline import Pipeline
 from d3m import cli
 
-from data_preparation_pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_ID, SCORING_PIPELINE_ID
-
-def evaluate_pipeline_on_problem(
-    pipe: Pipeline,
-    problem: ProblemReference,
-    random_seed: int):
-    """ TODO: function one-liner
-
-    TODO doc
-    """
-    pipeline_path = pipeline.id
-    problem_path = problem.path
-    input_path = problem.dataset_doc_path
-    output_run_path = '-'
-    data_random_seed = random_seed
-
-    evaluate_pipeline_via_d3m_cli(pipeline_path, problem_path, input_path,
-        output_run_path, data_random_seed)
+from experimenter.data_preparation_pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_ID, SCORING_PIPELINE_ID
 
 def evaluate_pipeline_via_d3m_cli(pipeline: str,
     problem: str,
@@ -134,7 +117,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     if (scoring_pipeline):
         if (not isinstance(scoring_pipeline, str)):
             raise TypeError('\'{}\' param not of type \'{}\''.format('scoring_pipeline','str'))
-        if (not os.path.isfile(scoring_pipeline) not is_valid_uuid(scoring_pipeline)):
+        if (not os.path.isfile(scoring_pipeline) and not is_valid_uuid(scoring_pipeline)):
             raise ValueError('\'{}\' param not a file path'.format('scoring_pipeline'))
         args.extend(('--scoring-pipeline', scoring_pipeline))
 

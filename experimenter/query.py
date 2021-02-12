@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
 from tqdm import tqdm
-from experimenter.utils import build_problem_reference
+from experimenter.utils import get_problem_path, get_dataset_doc_path
 
 HOST = 'https://metalearning.datadrivendiscovery.org/es'
 CONNECTION = Elasticsearch(hosts=[HOST], timeout=300)
@@ -43,7 +43,7 @@ def query_on_primitive(primitive_id: str, limit_indexes=False):
    pipeline_search = Search(using=CONNECTION, index='pipelines').query(nested_query)
 
    for pipeline in pipeline_search.scan():
-      problem_ids, random_seeds = scan_pipeline_runs(pipeline.id)
+      results = scan_pipeline_runs(pipeline.id)
 
       locs = [i for i, step in enumerate(pipeline.steps) if primitive_id == step.primitive.id]
       if limit_indexes == 'last':
@@ -51,9 +51,9 @@ def query_on_primitive(primitive_id: str, limit_indexes=False):
       elif limit_indexes == 'first':
          locs = locs[0]
       
-      for problem_id in problem_ids:
+      for (problem_id, dataset_name), random_seeds in results.items():
          
-         yield {'pipeline': pipeline.to_dict(), 'problem_ref': build_problem_reference(problem_id), 'location': locs, 'tested_seeds': random_seeds}
+         yield {'pipeline': pipeline.id, 'problem_path': get_problem_path(problem_id), 'location': locs, 'dataset_doc_path': get_dataset_doc_path(dataset_name), 'tested_seeds': random_seeds}
 
 def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu'):
    pipeline_search = Search(using=CONNECTION, index='pipelines')
@@ -64,10 +64,10 @@ def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu')
    
    for pipeline in pipeline_search.scan():
       results = scan_pipeline_runs(pipeline.id, submitter)
-      for (problem_id, dataset_id), random_seeds in results.items():
+      for (problem_id, dataset_name), random_seeds in results.items():
          if limit and len(random_seeds) > limit:
             continue
-         yield {'pipeline': pipeline.to_dict(), 'problem_ref': build_problem_reference(problem_id), 'tested_seeds': random_seeds}
+         yield {'pipeline': pipeline.id, 'problem_path': get_problem_path(problem_id), 'dataset_doc_path': get_dataset_doc_path(dataset_name), 'tested_seeds': random_seeds}
 
 def scan_pipeline_runs(pipeline_id, submitter=None):
    pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \
@@ -80,7 +80,7 @@ def scan_pipeline_runs(pipeline_id, submitter=None):
    results = dict()
    for pipeline_run in pipeline_run_search.scan():
       for dataset in pipeline_run.datasets:
-         dataset_prob_tuple = (pipeline_run.problem.id, dataset.id)
+         dataset_prob_tuple = (pipeline_run.problem.id, dataset.name)
          results[dataset_prob_tuple] = results.get(dataset_prob_tuple, set())
          results[dataset_prob_tuple].add(pipeline_run.random_seed)
    return results

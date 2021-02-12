@@ -1,7 +1,7 @@
 from experimenter.query import query_on_seeds, query_on_primitive
 from experimenter import queue
 import d3m.metadata.pipeline 
-
+from experimenter.evaluate_pipeline_new import evaluate_pipeline_via_d3m_cli as evaluate_pipeline
 
 class ModifyGenerator:
     """ Generator to be used for creating modified pipelines based on existing
@@ -22,7 +22,7 @@ class ModifyGenerator:
         for query_result in self.query_results:
             #iterate through modifier results
             for job_args in self._modify(query_result, self.args):
-                job = queue.make_job(exectue_pipeline_on_problem, jobs_args)
+                job = queue.make_job(evaluate_pipeline, jobs_args)
                 self.num_complete += 1
                 #check to run until the generator stops iterating (if no input for num_pipelines_to_run)
                 if (self.max_jobs):
@@ -78,7 +78,7 @@ class ModifyGenerator:
             num_run += 1
             used_seeds.append(new_seed)
             #yield the necessary job requirements
-            yield query_args.pipeline, query_args.problem_ref, new_seed 
+            yield query_args.pipeline, query_args.problem_path, query_args.dataset_doc_path, '-', new_seed 
             
 
     def _modify_swap_primitive(self, swap_pipeline, query_args):
