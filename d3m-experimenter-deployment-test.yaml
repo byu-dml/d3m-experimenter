@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: d3m-experimenter-deployment
+spec:
+  replicas: 0
+  restartPolicy: Never
+  selector:
+    matchLabels:
+      app: d3m-experimenter
+  template:
+    metadata:
+      labels:
+        app: d3m-experimenter
+    spec:
+      containers:
+        - name: redis
+          image: redis
+          ports:
+            - containerPort: 6379
+          restartPolicy: Never
