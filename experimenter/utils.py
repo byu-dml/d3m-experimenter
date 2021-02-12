@@ -11,6 +11,8 @@ import docker
 
 from d3m.metadata import problem as problem_module
 
+from experimenter import exceptions
+
 
 DEFAULT_DATASET_DIR = "/datasets/training_datasets/LL0"
 
@@ -116,16 +118,33 @@ def wait(
         raise error
 
 
-def get_docker_container_by_image(
-    image_name: str, docker_client: docker.DockerClient = None
-) -> docker.models.containers.Container:
-    if docker_client is None:
-        docker_client = docker.from_env()
+def start_docker_container_by_image(
+    docker_client: docker.DockerClient, image_name: str, *, ports: typing.Dict = None,
+    volumes: typing.Dict = None, environment: typing.Sequence[str] = None, detach: bool = True,
+    auto_remove: bool = True, timeout: int = 10,
+) -> None:
+    container = get_docker_container_by_image(image_name, docker_client)
 
+    if container is None:
+        container = docker_client.containers.run(
+            image_name, ports=ports, volumes=volumes, environment=environment, detach=detach,
+            auto_remove=auto_remove,
+        )
+    elif container.status != 'running':
+        container.start()
+
+    wait(
+        lambda: container.status == 'running', timeout=timeout, interval=1,
+        error=exceptions.ServerError('failed to start container from image {}'.format(image_name))
+    )
+
+
+def get_docker_container_by_image(
+    image_name: str, docker_client: docker.DockerClient
+) -> docker.models.containers.Container:
     for container in docker_client.containers.list(all=True):
         if container.attrs['Config']['Image'] == image_name:
             return container
-
     return None
 
 
@@ -139,6 +158,7 @@ class DockerClientContext(contextlib.AbstractContextManager):
 
     def __exit__(self, *exc: typing.Any) -> None:
         self.client.close()
+
 
 @contextlib.contextmanager
 def redirect_stdout() -> typing.Generator[io.StringIO, None, None]:

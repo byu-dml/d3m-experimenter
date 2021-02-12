@@ -9,3 +9,4 @@ tests/.cache/
 *.egg-info
 d3m/
 .mypy*
+config.ini
