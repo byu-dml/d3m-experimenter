@@ -22,19 +22,19 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
 
     queue_parser = subparsers.add_parser(
         'queue',
-        description='control the job queue',
+        help='control the job queue',
     )
     configure_queue_parser(queue_parser)
 
     generator_parser = subparsers.add_parser(
         'generator',
-        description='generates new pipelines and queues them to run on available datasets',
+        help='generates new pipelines and queues them to run on available datasets',
     )
     configure_generator_parser(generator_parser)
 
     worker_parser = subparsers.add_parser(
         'worker',
-        description='creates a worker to run jobs on pushed onto the queue by a generator',
+        help='creates a worker to run jobs on pushed onto the queue by a generator',
     )
     configure_worker_parser(worker_parser)
 
@@ -59,13 +59,13 @@ def configure_queue_parser(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest='queue_command')
     subparsers.required = True  # type: ignore
 
-    start_parser = subparsers.add_parser('start')
+    start_parser = subparsers.add_parser('start', help='start the queue server')
 
-    stop_parser = subparsers.add_parser('stop')
+    stop_parser = subparsers.add_parser('stop', help='stop the queue server')
 
-    status_parser = subparsers.add_parser('status')
+    status_parser = subparsers.add_parser('status', help='get queue status (started or stopped)')
 
-    empty_parser = subparsers.add_parser('empty')
+    empty_parser = subparsers.add_parser('empty', help='remove all jobs from the queue')
 
 
 def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
@@ -92,19 +92,19 @@ def configure_generator_parser(parser: argparse.ArgumentParser) -> None:
 
     search_subparser = subparsers.add_parser(
         'search',
-        description='searches for new pipelines not found in the metalearning database',
+        help='searches for new pipelines not found in the metalearning database',
     )
     configure_search_parser(search_subparser)
 
     modify_subparser = subparsers.add_parser(
         'modify',
-        description='modifies existing pipelines in the metalearning database',
+        help='modifies existing pipelines in the metalearning database',
     )
     configure_modify_parser(modify_subparser)
 
     update_subparser = subparsers.add_parser(
         'update',
-        description='updates existing pipeline runs in the metalearning database to use the current versions of datasets and primitives',
+        help='updates existing pipeline runs in the metalearning database to use the current versions of datasets and primitives',
     )
     configure_update_parser(update_subparser)
 

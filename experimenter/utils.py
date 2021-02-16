@@ -7,8 +7,6 @@ import os
 import time
 import typing
 
-import docker
-
 from d3m.metadata import problem as problem_module
 
 from experimenter import exceptions
@@ -116,48 +114,6 @@ def wait(
 
     if error is not None and not callback():
         raise error
-
-
-def start_docker_container_by_image(
-    docker_client: docker.DockerClient, image_name: str, *, ports: typing.Dict = None,
-    volumes: typing.Dict = None, environment: typing.Sequence[str] = None, detach: bool = True,
-    auto_remove: bool = True, timeout: int = 10,
-) -> None:
-    container = get_docker_container_by_image(image_name, docker_client)
-
-    if container is None:
-        container = docker_client.containers.run(
-            image_name, ports=ports, volumes=volumes, environment=environment, detach=detach,
-            auto_remove=auto_remove,
-        )
-    elif container.status != 'running':
-        container.start()
-
-    wait(
-        lambda: container.status == 'running', timeout=timeout, interval=1,
-        error=exceptions.ServerError('failed to start container from image {}'.format(image_name))
-    )
-
-
-def get_docker_container_by_image(
-    image_name: str, docker_client: docker.DockerClient
-) -> docker.models.containers.Container:
-    for container in docker_client.containers.list(all=True):
-        if container.attrs['Config']['Image'] == image_name:
-            return container
-    return None
-
-
-class DockerClientContext(contextlib.AbstractContextManager):
-
-    def __init__(self) -> None:
-        self.client = docker.from_env()
-
-    def __enter__(self) -> docker.DockerClient:
-        return self.client
-
-    def __exit__(self, *exc: typing.Any) -> None:
-        self.client.close()
 
 
 @contextlib.contextmanager
