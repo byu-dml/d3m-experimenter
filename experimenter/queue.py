@@ -41,7 +41,7 @@ def start() -> None:
     )
 
     utils.wait(
-        lambda: _check_redis_connection() is None, timeout=10, interval=1,
+        lambda: _check_redis_connection() is None, timeout=5, interval=1,
         error=exceptions.ServerError('failed to communicate with redis server'),
     )
 
@@ -54,7 +54,7 @@ def is_running():
 
 def stop() -> None:
     docker_utils.stop_container(config.RedisConfig().docker_image_name)
-    print(_STATUS_STOPPED_MESSAGE)
+    print(_STOP_SUCCESS_MESSAGE)
 
 
 def status() -> None:
@@ -63,6 +63,7 @@ def status() -> None:
         print(_STATUS_RUNNING_MESSAGE.format(port=config.RedisConfig().port))
     else:
         print(_STATUS_STOPPED_MESSAGE)
+    # TODO: report number of jobs in each queue
 
 
 def empty(queue_name: str = _DEFAULT_QUEUE) -> None:
@@ -98,7 +99,7 @@ def enqueue_jobs(
     jobs: the jobs to push onto the queue
         Each job must be formatted as a dict with the keys `'f'`, `'args'` (optional), and `'kwargs'` optional.
     """
-    if _check_redis_connection(config.RedisConfig().host, config.RedisConfig().port) is not None:
+    if _check_redis_connection() is not None:
         raise exceptions.ServerError(_STATUS_STOPPED_MESSAGE)
 
     connection = redis.StrictRedis(host=config.RedisConfig().host, port=config.RedisConfig().port)

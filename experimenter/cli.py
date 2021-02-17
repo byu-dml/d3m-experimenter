@@ -1,7 +1,7 @@
 import argparse
 import typing
 
-from experimenter import config, exceptions, queue
+from experimenter import config, dashboard, exceptions, queue
 
 
 def main(argv: typing.Sequence) -> None:
@@ -26,6 +26,12 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     )
     configure_queue_parser(queue_parser)
 
+    dashboard_parser = subparsers.add_parser(
+        'dashboard',
+        help='control the dashboard of the job queue',
+    )
+    configure_dashboard_parser(dashboard_parser)
+
     generator_parser = subparsers.add_parser(
         'generator',
         help='generates new pipelines and queues them to run on available datasets',
@@ -47,6 +53,8 @@ def handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> N
 
     if experimenter_command == 'queue':
         queue_handler(arguments, subparser)
+    elif experimenter_command == 'dashboard':
+        dashboard_handler(arguments, subparser)
     elif experimenter_command == 'generator':
         generator_handler(arguments, subparser)
     elif experimenter_command == 'worker':
@@ -81,6 +89,24 @@ def queue_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser
         queue.empty()
     else:
         raise exceptions.InvalidStateError('Unknown queue command: {}'.format(queue_command))
+
+
+def configure_dashboard_parser(parser: argparse.ArgumentParser) -> None:
+    subparsers = parser.add_subparsers(dest='dashboard_command')
+    subparsers.required = True  # type: ignore
+
+    connect_parser = subparsers.add_parser(
+        'connect', help='open a web browser that connects to a running dashboard server on \'localhost\''
+    )
+
+
+def dashboard_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    dashboard_command = arguments.dashboard_command
+
+    if dashboard_command == 'connect':
+        dashboard.connect()
+    else:
+        raise exceptions.InvalidStateError('Unknown dashboard command: {}'.format(dashboard_command))
 
 
 def configure_generator_parser(parser: argparse.ArgumentParser) -> None:

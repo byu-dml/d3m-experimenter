@@ -29,7 +29,7 @@ def get_container(
 def start_container(
     image_name: str, *, ports: typing.Dict = None, volumes: typing.Dict = None,
     environment: typing.Sequence[str] = None, detach: bool = True, auto_remove: bool = True,
-    timeout: int = 10,
+    timeout: int = 5,
 ) -> None:
     with DockerClientContext() as docker_client:
         container = get_container(image_name, docker_client)
@@ -41,6 +41,8 @@ def start_container(
             )
         elif container.status != 'running':
             container.start()
+
+    # TODO: this often fails on the first attempt, but succeeds on the second
 
     utils.wait(
         lambda: _is_container_running(container), timeout=timeout, interval=1,
