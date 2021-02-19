@@ -220,7 +220,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     if (scoring_pipeline):
         if (not isinstance(scoring_pipeline, str)):
             raise TypeError('\'{}\' param not of type \'{}\''.format('scoring_pipeline','str'))
-        if (not os.path.isfile(scoring_pipeline) not is_valid_uuid(scoring_pipeline)):
+        if (not os.path.isfile(scoring_pipeline) and not is_valid_uuid(scoring_pipeline)):
             raise ValueError('\'{}\' param not a file path or pipeline ID'.format('scoring_pipeline'))
         args.extend(('--scoring-pipeline', scoring_pipeline))
 
