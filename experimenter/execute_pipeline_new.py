@@ -1,4 +1,5 @@
 import itertools as it
+import json
 import os
 
 from typing import Any, List, Tuple
@@ -7,24 +8,76 @@ from uuid import UUID
 from d3m.metadata.pipeline import Pipeline
 from d3m import cli
 
+from experimenter.databases.d3m_mtl import D3MMtLDB
 from data_preparation_pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_ID, SCORING_PIPELINE_ID
 
-def evaluate_pipeline_on_problem(
-    pipe: Pipeline,
-    problem: ProblemReference,
-    random_seed: int):
-    """ TODO: function one-liner
+def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
+    """ TODO: one-liner
 
-    TODO doc
+    TODO: description
+
+    Required Arguments:
+    ---------------------------------
+    pipeline_run_path -- path to pipeline_run doc to save
+
+    Optional Arguments:
+    ---------------------------------
+
+    Raises:
+    ---------------------------------
+    TODO
+    
+    Returns:
+    ---------------------------------
+    TODO
+
     """
-    pipeline_path = pipeline.id
-    problem_path = problem.path
-    input_path = problem.dataset_doc_path
-    output_run_path = '-'
-    data_random_seed = random_seed
+    d3m_db = D3MMtLDB()
 
-    evaluate_pipeline_via_d3m_cli(pipeline_path, problem_path, input_path,
-        output_run_path, data_random_seed)
+    pipeline_run_save_response = D3MMtLDB().save_pipeline_run(pipeline_run_path)
+
+def evaluate_pipeline_on_problem(pipeline_path: str,
+    problem_path: str,
+    input_path: str,
+    data_random_seed: int):
+    """ TODO: one-liner
+
+    TODO: description
+
+    Required Arguments:
+    ---------------------------------
+    pipeline_path -- path to pipeline doc
+    problem_path -- path to problem doc
+    input_path -- path to input full data
+    data_random_seed -- random seed to be used for data preparation
+
+    Optional Arguments:
+    ---------------------------------
+
+    Raises:
+    ---------------------------------
+    TODO
+    
+    Returns:
+    ---------------------------------
+    TODO
+    """
+    output_run_path = []
+
+    with open(pipeline_path, 'r') as pipeline:
+        output_run_path.append(pipeline['properties']['digest'])
+    with open(problem_path, 'r') as problem:
+        output_run_path.append(problem['properties']['digest'])
+    with open(input_path, 'r') as input_f:
+        output_run_path.append(input_f['properties']['digest'])
+
+    output_run_path = '_'.join(output_run_path)
+
+    execute_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
+        input=input_path, output_run=output_run_path,
+        data_random_seed=data_random_seed)
+
+    save_pipeline_run_to_d3m_db(output_run_path)
 
 def evaluate_pipeline_via_d3m_cli(pipeline: str,
     problem: str,
@@ -194,7 +247,3 @@ def is_valid_uuid(uuid_to_test: str, version=4):
     except Exception:
         return False
     return str(uuid_obj) == uuid_to_test
-
-if __name__ == '__main__':
-    path = 'README.md'
-    evaluate_pipeline_via_d3m_cli(path,path,path,path,1,[(1,2),(3,4)])
