@@ -32,7 +32,13 @@ class Config(metaclass=Singleton):
     def get(self, section, key):
         return self._config.get(section, key)
 
-
+class D3MConfig(metaclass=Singleton):
+    def __init__(self):
+        config = Config()
+        self.d3m_submitter = config.get('D3MINFO','D3M_DB_SUBMITTER')
+        self.d3m_token = config.get('D3MINFO', 'D3M_DB_TOKEN')
+        self.save_to_d3m = config.get('D3MINFO', 'SAVE_TO_D3M')=="True"
+        
 class RedisConfig(metaclass=Singleton):
     def __init__(self):
         config = Config()
