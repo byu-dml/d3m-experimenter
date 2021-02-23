@@ -17,10 +17,10 @@ SAVE_TO_D3M = os.getenv("SAVE_TO_D3M") == "True"
 D3M_DB_SUBMITTER = os.getenv("D3M_DB_SUBMITTER")
 D3M_DB_TOKEN = os.getenv("D3M_DB_TOKEN")
 
-try:
-    MONGO_HOST = os.environ["MONGO_HOST"]
-    MONGO_PORT = int(os.environ["MONGO_PORT"])
-    REDIS_HOST = os.environ["REDIS_HOST"]
-    REDIS_PORT = int(os.environ["REDIS_PORT"])
-except Exception:
-    logger.exception("environment variables not set")
+#try:
+#    MONGO_HOST = os.environ["MONGO_HOST"]
+#    MONGO_PORT = int(os.environ["MONGO_PORT"])
+#    REDIS_HOST = os.environ["REDIS_HOST"]
+#    REDIS_PORT = int(os.environ["REDIS_PORT"])
+#except Exception:
+#    logger.exception("environment variables not set")

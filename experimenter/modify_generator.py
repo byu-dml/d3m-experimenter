@@ -1,7 +1,8 @@
 from experimenter.query import query_on_seeds, query_on_primitive
 from experimenter import queue
-import d3m.metadata.pipeline 
-from experimenter.evaluate_pipeline_new import evalute_pipeline_on_problem as evaluate_pipeline
+import d3m.metadata.pipeline
+from random import randint
+from experimenter.evaluate_pipeline_new import evaluate_pipeline_on_problem as evaluate_pipeline
 
 class ModifyGenerator:
     """ Generator to be used for creating modified pipelines based on existing
@@ -22,6 +23,7 @@ class ModifyGenerator:
         for query_result in self.query_results:
             #iterate through modifier results
             for pipeline_path, problem_path, dataset_doc_path, seed in self._modify(query_result, self.args):
+
                 job = queue.make_job(evaluate_pipeline,
                                      pipeline_path=pipeline_path,
                                      problem_path=problem_path,
@@ -30,7 +32,7 @@ class ModifyGenerator:
                 self.num_complete += 1
                 #check to run until the generator stops iterating (if no input for num_pipelines_to_run)
                 if (self.max_jobs):
-                    if (self.num_complete >= self.max_jobs):
+                    if (self.num_complete > self.max_jobs):
                         raise StopIteration
                 return job
         raise StopIteration
@@ -72,7 +74,7 @@ class ModifyGenerator:
     
     
     def _modify_random_seed(self, seed_limit, query_args):
-        used_seeds = query_args.tested_seeds
+        used_seeds = query_args['tested_seeds']
         num_run = len(used_seeds)
         #run until the right number of seeds have been run
         while (num_run < seed_limit):
@@ -80,9 +82,9 @@ class ModifyGenerator:
             if (new_seed in used_seeds):
                 continue
             num_run += 1
-            used_seeds.append(new_seed)
+            used_seeds.add(new_seed)
             #yield the necessary job requirements
-            yield query_args.pipeline, query_args.problem_path, query_args.dataset_doc_path, new_seed 
+            yield query_args['pipeline'], query_args['problem_path'], query_args['dataset_doc_path'], new_seed 
             
 
     def _modify_swap_primitive(self, swap_pipeline, query_args):

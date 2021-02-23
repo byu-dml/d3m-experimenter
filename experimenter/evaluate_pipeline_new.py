@@ -9,7 +9,7 @@ from d3m.metadata.pipeline import Pipeline
 from d3m import cli
 
 from experimenter.databases.d3m_mtl import D3MMtLDB
-from data_preparation_pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_ID, SCORING_PIPELINE_ID
+from experimenter.data_preparation_pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_ID, SCORING_PIPELINE_ID
 
 def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
     """ 
@@ -72,7 +72,7 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
 
     output_run_path = '_'.join(output_run_path) + '.json'
 
-    execute_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
+    evaluate_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
         input=input_path, output_run=output_run_path,
         data_random_seed=data_random_seed)
 

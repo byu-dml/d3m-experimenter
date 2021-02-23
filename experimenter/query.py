@@ -52,7 +52,7 @@ def query_on_primitive(primitive_id: str, limit_indexes=False):
       
       for (problem_id, dataset_name), random_seeds in results.items():
          
-         yield {'pipeline': pipeline.id, 'problem_path': get_problem_path(problem_id), 'location': locs, 'dataset_doc_path': get_dataset_doc_path(dataset_name), 'tested_seeds': random_seeds}
+         yield {'pipeline': pipeline.id, 'problem_path': get_problem_path(problem_id), 'location': locs, 'dataset_doc_path': get_dataset_doc_path(dataset_id), 'tested_seeds': random_seeds}
 
 def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu'):
    pipeline_search = Search(using=CONNECTION, index='pipelines')
@@ -63,10 +63,10 @@ def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu')
    
    for pipeline in pipeline_search.scan():
       results = scan_pipeline_runs(pipeline.id, submitter)
-      for (problem_id, dataset_name), random_seeds in results.items():
+      for (problem_id, dataset_id), random_seeds in results.items():
          if limit and len(random_seeds) > limit:
             continue
-         yield {'pipeline': pipeline.id, 'problem_path': get_problem_path(problem_id), 'dataset_doc_path': get_dataset_doc_path(dataset_name), 'tested_seeds': random_seeds}
+         yield {'pipeline': pipeline.id, 'problem_path': get_problem_path(problem_id), 'dataset_doc_path': get_dataset_doc_path(dataset_id), 'tested_seeds': random_seeds}
 
 def scan_pipeline_runs(pipeline_id, submitter=None):
    pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \
@@ -79,7 +79,7 @@ def scan_pipeline_runs(pipeline_id, submitter=None):
    results = dict()
    for pipeline_run in pipeline_run_search.scan():
       for dataset in pipeline_run.datasets:
-         dataset_prob_tuple = (pipeline_run.problem.id, dataset.name)
+         dataset_prob_tuple = (pipeline_run.problem.id, dataset.id)
          results[dataset_prob_tuple] = results.get(dataset_prob_tuple, set())
          results[dataset_prob_tuple].add(pipeline_run.random_seed)
    return results
