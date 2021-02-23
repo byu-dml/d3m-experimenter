@@ -12,6 +12,7 @@ setup(
     install_requires=[
         'd3m',  # TODO: add version bounds
         'docker>=4.4.0<4.5.0',
+        'mypy==0.812',
         'redis>=3.5.0<3.6.0',
         'rq>=1.7.0<1.8.0'
         'elasticsearch==7.11.0',
