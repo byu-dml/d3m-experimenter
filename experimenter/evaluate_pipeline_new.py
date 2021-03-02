@@ -5,7 +5,7 @@ import os
 from typing import Any, List, Tuple
 from uuid import UUID
 
-from d3m import cli
+from d3m import cli as d3m_cli
 from d3m.d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID, 
     SCORING_PIPELINE_ID)
 
@@ -29,7 +29,9 @@ def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
     TODO
     """
     d3m_db = D3MMtLDB()
-    return D3MMtLDB().save_pipeline_run(pipeline_run_path)
+    with open(pipeline_run_path) as pipeline_data:
+        pipeline_run = json.load(pipeline_data)
+    return D3MMtLDB().save_pipeline_run(pipeline_run)
 
 def evaluate_pipeline_on_problem(pipeline_path: str,
     problem_path: str,
@@ -129,5 +131,5 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--output-run', output_run_path))
     args.extend(('--data-random-seed', data_random_seed))
 
-    cli.main(args)
+    d3m_cli.main(args)
     save_pipeline_run_to_d3m_db(output_run_path)

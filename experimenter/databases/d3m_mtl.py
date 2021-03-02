@@ -23,7 +23,7 @@ class D3MMtLDB:
         self._post_url = D3M_MTL_DB_POST_URL
         # This env var allows code calling this class to be run during
         # unit tests without actually saving to the production DB.
-        self.should_save = config.SAVE_TO_D3M
+        self.should_save = config.D3MConfig().save_to_d3m
         # A reference to a low-level elasticsearch client. This can be
         # used to query the D3M DB, or this classe's `search` method
         # can be used, and is preferred, since its API is more straightforward.
@@ -31,9 +31,9 @@ class D3MMtLDB:
         # certain things though.
         self.es = Elasticsearch(hosts=[D3M_MTL_DB_GET_URL], timeout=30)
         # Our submitter name.
-        self._submitter = config.D3M_DB_SUBMITTER
+        self._submitter = config.D3MConfig().d3m_submitter
         # The secret verifying us as the submitter we say we are.
-        self._x_token = config.D3M_DB_TOKEN
+        self._x_token = config.D3MConfig().d3m_token
         if self._is_identifying_as_submitter():
             logger.info(
                 f"Documents will be saved under submitter name: '{self._submitter}'"
