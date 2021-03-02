@@ -1,4 +1,4 @@
-mport itertools as it
+import itertools as it
 import json
 import os
 
@@ -6,7 +6,7 @@ from typing import Any, List, Tuple
 from uuid import UUID
 
 from d3m import cli as d3m_cli
-from d3m.d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID, 
+from d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID, 
     SCORING_PIPELINE_ID)
 
 from experimenter.databases.d3m_mtl import D3MMtLDB

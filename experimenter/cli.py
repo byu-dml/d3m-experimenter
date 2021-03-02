@@ -210,7 +210,7 @@ def modify_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParse
     modify_type = arguments.modify_type
     modify_generator = ModifyGenerator(modify_type, arguments.max_jobs, arguments)
     #now run the enqueuer part
-    queue.enqueue_jobs(modify_generator, arguments.queue_host, arguments.queue_port,arguments.job_timeout)
+    queue.enqueue_jobs(jobs=modify_generator, job_timeout=arguments.job_timeout)
 
 
 def configure_update_parser(parser: argparse.ArgumentParser) -> None:

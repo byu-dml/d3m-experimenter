@@ -52,4 +52,3 @@ class RedisConfig(metaclass=Singleton):
         self.docker_data_dir = config.get('REDIS', 'DOCKER_DATA_DIR')
         self.dashboard_port = config.get('REDIS', 'DASHBOARD_PORT')
         self.dashboard_docker_image_name = config.get('REDIS', 'DASHBOARD_DOCKER_IMAGE_NAME')
->>>>>>> f8f7e7ac914d104149bf62f9353a4c8a65a4f726
