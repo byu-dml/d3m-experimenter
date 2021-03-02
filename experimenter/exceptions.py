@@ -16,3 +16,7 @@ class NotImplementedError(ExperimenterError):
 
 class InvalidArgumentValueError(ExperimenterError):
     pass
+
+
+class ConfigError(ExperimenterError):
+    pass
