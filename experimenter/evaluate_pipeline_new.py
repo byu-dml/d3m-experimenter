@@ -4,6 +4,7 @@ import os
 
 from typing import Any, List, Tuple
 from uuid import UUID
+from experimenter import config
 
 from d3m import cli as d3m_cli
 from d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID, 
@@ -132,4 +133,6 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--data-random-seed', data_random_seed))
 
     d3m_cli.main(args)
-    save_pipeline_run_to_d3m_db(output_run_path)
+    if (config.D3MConfig().save_to_d3m is True):
+        print("Saving pipeline run to d3m database")
+        save_pipeline_run_to_d3m_db(output_run_path)

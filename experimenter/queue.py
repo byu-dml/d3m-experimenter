@@ -126,7 +126,7 @@ def enqueue_jobs(
 
 def start_worker(max_jobs: int = None, *, queue_name: str = _DEFAULT_QUEUE) -> None:
     args = [
-        'rq', 'worker', queue_name, '--burst', '--url',
+        './env/bin/rq','worker', queue_name, '--burst', '--url',
         'redis://{}:{}'.format(config.RedisConfig().host, config.RedisConfig().port),
     ]
 
