@@ -19,6 +19,7 @@ _START_SUCCESS_MESSAGE = 'queue successfully started on port {port}'
 _STOP_SUCCESS_MESSAGE = 'queue successfully stopped'
 _STATUS_RUNNING_MESSAGE = 'queue is running on port {port}'
 _STATUS_STOPPED_MESSAGE = 'queue is stopped'
+_QUEUE_LENGTH_MESSAGE = 'number of jobs on queue {name}: {num_jobs}'
 _EMPTIED_MESSAGE = 'queue emptied'
 
 
@@ -56,14 +57,28 @@ def stop() -> None:
     docker_utils.stop_container(config.RedisConfig().docker_image_name)
     print(_STOP_SUCCESS_MESSAGE)
 
-
-def status() -> None:
+def get_worker_message(workers, queue_name: str = _DEFAULT_QUEUE) -> str:
+    num_workers = len(workers)
+    message = 'number of workers on queue {}: {}'.format(queue_name, num_workers)
+    for it, worker in enumerate(workers):
+        success = worker.successful_job_count
+        fail = worker.failed_job_count   
+        message = message+'\n worker: {}'.format(it)
+        message = message+'\n\t number of successful jobs: {}'.format(success)
+        message = message+'\n\t number of failed jobs: {}'.format(fail) 
+    return message
+    
+def status(queue_name: str = _DEFAULT_QUEUE) -> None:
     # TODO: report container port instead of config port
     if is_running():
+        connection = redis.StrictRedis(host=config.RedisConfig().host, port=config.RedisConfig().port)
+        queue = rq.Queue(queue_name, connection=connection)
+        workers = rq.Worker.all(queue=queue)
         print(_STATUS_RUNNING_MESSAGE.format(port=config.RedisConfig().port))
+        print(_QUEUE_LENGTH_MESSAGE.format(name=queue_name, num_jobs=len(queue)))
+        print(get_worker_message(workers,queue_name))
     else:
         print(_STATUS_STOPPED_MESSAGE)
-    # TODO: report number of jobs in each queue
 
 
 def empty(queue_name: str = _DEFAULT_QUEUE) -> None:
