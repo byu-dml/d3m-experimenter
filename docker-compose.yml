@@ -1,17 +1,15 @@
-version: '3.3'
-services:
-  d3m:
-    build: .
-    container_name: experimenter
-    stdin_open: true
-    tty: true
-    env_file:
-    - .env
-    entrypoint: /bin/bash
-    volumes:
-      - ${DATASETS}:/datasets
-      - ${EXPERIMENTER}:/d3m-experimenter
+version: '3.9'
 
-networks:
-  host:
-    external: true
+services:
+  database:
+    image: 'redis:alpine'
+
+  rq-dashboard:
+    # TODO: create our own dockerfile
+    image: 'eoranged/rq-dashboard:v0.6.3'
+    command: '--redis-url redis://database'
+    env_file:
+      - ./.env
+    ports:
+      - target: '9181'
+        published: '${DASHBOARD_PORT}'
