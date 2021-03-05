@@ -1,6 +1,7 @@
 import itertools as it
 import json
 import os
+import parser
 
 from typing import Any, List, Tuple
 from uuid import UUID
@@ -66,15 +67,20 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
     """
     output_run_path = []
 
-    with open(pipeline_path, 'r') as pipeline:
-        output_run_path.append(pipeline['properties']['digest'])
-    with open(problem_path, 'r') as problem:
-        output_run_path.append(problem['properties']['digest'])
-    with open(input_path, 'r') as input_f:
-        output_run_path.append(input_f['properties']['digest'])
-
-    output_run_path = '_'.join(output_run_path) + '.json'
-
+    with open(pipeline_path, 'r') as data:
+        pipeline = json.load(data)
+        output_run_path.append(pipeline['id'])
+    with open(problem_path, 'r') as data:
+        problem = json.load(data)
+        output_run_path.append(problem['about']['problemID'])
+    with open(input_path, 'r') as data:
+        input_f = json.load(data)
+        output_run_path.append(input_f['about']['digest'])
+    #get the output run path
+    output_run_path = os.path.abspath(os.path.join(config.Config().get('MAIN','CACHE_DIR'), 'Pipeline_Run', '_'.join(output_run_path) + '.json'))
+    #create the directory
+    os.makedirs(os.path.dirname(output_run_path),exist_ok=True)
+    #evaluate pipeline
     evaluate_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
         input=input_path, output_run=output_run_path,
         data_random_seed=data_random_seed)
@@ -118,7 +124,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args = ['d3m', 'runtime', 'evaluate']
 
     if (not os.path.isfile(pipeline)):
-        raise ValueError('\'{}\' param not a file path or pipeline ID'.format('pipeline'))
+        raise ValueError('\'{}\' param not a file path'.format('pipeline'))
 
     if (not os.path.isfile(problem)): 
         raise ValueError('\'{}\' param not a file path'.format('problem'))
@@ -126,13 +132,13 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     if (not os.path.isfile(input)):
         raise ValueError('\'{}\' param not a file path'.format('input'))
 
-    args.extend(('--pipeline ', pipeline))
+    args.extend(('--pipeline', pipeline))
     args.extend(('--problem', problem))
     args.extend(('--input', input))
-    args.extend(('--output-run', output_run_path))
-    args.extend(('--data-random-seed', data_random_seed))
-
+    args.extend(('--output-run', output_run))
+    args.extend(('--data-random-seed', str(data_random_seed)))
+    args.extend(('--data-pipeline', K_FOLD_TABULAR_SPLIT_PIPELINE_ID))
+    args.extend(('--scoring-pipeline', SCORING_PIPELINE_ID))
     d3m_cli.main(args)
     if (config.D3MConfig().save_to_d3m is True):
-        print("Saving pipeline run to d3m database")
-        save_pipeline_run_to_d3m_db(output_run_path)
+        save_pipeline_run_to_d3m_db(output_run)

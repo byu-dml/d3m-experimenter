@@ -1,5 +1,6 @@
 from experimenter.query import query_on_seeds, query_on_primitive
 from experimenter import queue
+from experimenter.utils import download_from_database
 import d3m.metadata.pipeline
 from random import randint
 from experimenter.evaluate_pipeline_new import evaluate_pipeline_on_problem as evaluate_pipeline
@@ -22,8 +23,9 @@ class ModifyGenerator:
         #iterate through query results
         for query_result in self.query_results:
             #iterate through modifier results
-            for pipeline_path, problem_path, dataset_doc_path, seed in self._modify(query_result, self.args):
-
+            for pipeline, problem_path, dataset_doc_path, seed in self._modify(query_result, self.args):
+                #save the pipeline to path and return pipeline path
+                pipeline_path = download_from_database(pipeline, type_to_download='Pipeline')
                 job = queue.make_job(evaluate_pipeline,
                                      pipeline_path=pipeline_path,
                                      problem_path=problem_path,

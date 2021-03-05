@@ -9,10 +9,22 @@ import typing
 
 from d3m.metadata import problem as problem_module
 from d3m.utils import get_datasets_and_problems
-from experimenter import exceptions
+from experimenter import exceptions, config
 
-DEFAULT_DATASET_DIR = "/datasets/training_datasets/LL0"
+DEFAULT_DATASET_DIR = config.D3MConfig().datasets_directory
 
+def download_from_database(data, type_to_download: str = 'Pipeline'):
+    if (type_to_download == 'Pipeline'):
+        i_d = data['id']
+        save_path = os.path.abspath(os.path.join(config.Config().get('MAIN','CACHE_DIR'), 'Pipeline', i_d+str('.json')))
+        #create the new directory
+        os.makedirs(os.path.dirname(save_path),exist_ok=True)
+        #save the file to the directory
+        with open(save_path, 'w') as to_save:
+            json.dump(data, to_save, indent=4)
+    else:
+        raise ValueError("type: {}, not available for download".format(type_to_download)) 
+    return save_path
 
 def get_dataset_doc_path(
     dataset_name: str, dataset_dir: str = DEFAULT_DATASET_DIR
