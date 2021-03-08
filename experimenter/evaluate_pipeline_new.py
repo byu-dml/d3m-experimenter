@@ -8,6 +8,7 @@ from experimenter import config
 from d3m import cli as d3m_cli
 from d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID, 
     SCORING_PIPELINE_ID)
+from d3m.exceptions import StepFailedError
 
 from experimenter.databases.d3m_mtl import D3MMtLDB
 
@@ -131,7 +132,11 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--output-run', output_run_path))
     args.extend(('--data-random-seed', data_random_seed))
 
-    d3m_cli.main(args)
+    try:
+        d3m_cli.main(args)
+    except StepFailedError e:
+        raise e
+
     if (config.D3MConfig().save_to_d3m is True):
         print("Saving pipeline run to d3m database")
         save_pipeline_run_to_d3m_db(output_run_path)
