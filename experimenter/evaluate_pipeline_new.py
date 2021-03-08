@@ -1,12 +1,12 @@
-mport itertools as it
+import itertools as it
 import json
 import os
 
 from typing import Any, List, Tuple
-from uuid import UUID
+from experimenter import config
 
-from d3m import cli
-from d3m.d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID, 
+from d3m import cli as d3m_cli
+from d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID, 
     SCORING_PIPELINE_ID)
 
 from experimenter.databases.d3m_mtl import D3MMtLDB
@@ -29,7 +29,9 @@ def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
     TODO
     """
     d3m_db = D3MMtLDB()
-    return D3MMtLDB().save_pipeline_run(pipeline_run_path)
+    with open(pipeline_run_path) as pipeline_data:
+        pipeline_run = json.load(pipeline_data)
+    return D3MMtLDB().save_pipeline_run(pipeline_run)
 
 def evaluate_pipeline_on_problem(pipeline_path: str,
     problem_path: str,
@@ -72,7 +74,7 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
 
     output_run_path = '_'.join(output_run_path) + '.json'
 
-    execute_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
+    evaluate_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
         input=input_path, output_run=output_run_path,
         data_random_seed=data_random_seed)
 
@@ -129,5 +131,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--output-run', output_run_path))
     args.extend(('--data-random-seed', data_random_seed))
 
-    cli.main(args)
-    save_pipeline_run_to_d3m_db(output_run_path)
+    d3m_cli.main(args)
+    if (config.D3MConfig().save_to_d3m is True):
+        print("Saving pipeline run to d3m database")
+        save_pipeline_run_to_d3m_db(output_run_path)
