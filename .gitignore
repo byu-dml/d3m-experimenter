@@ -1,5 +1,6 @@
 *.pyc
 .env
+env
 env/*
 *hidden*
 *pycache*

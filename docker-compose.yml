@@ -1,15 +1,53 @@
 version: '3.9'
 
 services:
-  database:
+  redis:
     image: 'redis:alpine'
+    hostname: '${REDIS_HOST}'
+    volumes:
+      - type: bind
+        source: '${DATA_DIR}/${REDIS_DATA_DIR}'
+        target: '/data'
+    networks:
+      - default
 
-  rq-dashboard:
-    # TODO: create our own dockerfile
-    image: 'eoranged/rq-dashboard:v0.6.3'
-    command: '--redis-url redis://database'
+  rq_worker:
+    image: 'd3m-experimenter:latest'
+    command: 'rq worker --url redis://${REDIS_HOST} ${RQ_QUEUES}'
+    networks:
+      - default
+
+  rq_dashboard:
+    image: 'd3m-experimenter:latest'
+    command: 'rq-dashboard --redis-url redis://${REDIS_HOST}'
+    ports:
+      - target: 9181
+        published: '${RQ_DASHBOARD_PORT}'
+    networks:
+      - default
+
+  dev:
+    image: 'd3m-experimenter:latest'
+    stdin_open: true
+    tty: true
     env_file:
       - ./.env
-    ports:
-      - target: '9181'
-        published: '${DASHBOARD_PORT}'
+    volumes:
+      - type: bind
+        source: '${DATASETS_DIR}'
+        target: /datasets
+        read_only: true
+      - type: bind
+        source: '${DATA_DIR}'
+        target: /data
+      - type: bind
+        source: '${EXPERIMENTER_DIR}'
+        target: /d3m-experimenter
+        read_only: true
+    working_dir: /d3m-experimenter
+    networks:
+      - default
+
+networks:
+  default:
+    driver: overlay
