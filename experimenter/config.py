@@ -17,6 +17,7 @@ datasets_dir: str = os.environ.get('DATASETS_DIR', None)
 if datasets_dir is None:
     raise exceptions.ConfigError(_ERROR_MESSAGE.format('DATASETS_DIR'))
 
+# this should have a reasonable default
 data_dir: str = os.environ.get('DATA_DIR', None)
 if data_dir is None:
     raise exceptions.ConfigError(_ERROR_MESSAGE.format('DATA_DIR'))
@@ -25,6 +26,7 @@ redis_host: str = os.environ.get('REDIS_HOST', None)
 if data_dir is None:
     raise exceptions.ConfigError(_ERROR_MESSAGE.format('REDIS_HOST'))
 
+# these are definitely optional
 d3m_db_submitter: str = os.environ.get('D3M_DB_SUBMITTER', None)
 if data_dir is None:
     raise exceptions.ConfigError(_ERROR_MESSAGE.format('D3M_DB_SUBMITTER'))
