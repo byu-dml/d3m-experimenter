@@ -63,3 +63,14 @@ The swarm can be taken down by removing all nodes from the swarm:
 ```bash
 sudo docker swarm leave [--force]
 ```
+
+### Development
+
+To run code inside the swarm, there is a `dev` service.
+This repository is mounted as a `read_only` volume by specifying its path on your host machine in the `.env` file.
+First get the running container's ID and attach to it using:
+
+```bash
+sudo docker ps -f name=dev --quiet
+sudo docker exec -it <dev-container-ID> bash
+```
