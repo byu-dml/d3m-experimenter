@@ -77,7 +77,8 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
         input_f = json.load(data)
         output_run_path.append(input_f['about']['digest'])
     #get the output run path
-    output_run_path = os.path.abspath(os.path.join(config.Config().get('MAIN','CACHE_DIR'), 'Pipeline_Run', '_'.join(output_run_path) + '.json'))
+    output_run_path = os.path.abspath(os.path.join(config.data_dir, 'Pipeline_Run', 
+                                                   '_'.join(output_run_path)+'.json'))
     #create the directory
     os.makedirs(os.path.dirname(output_run_path),exist_ok=True)
     #evaluate pipeline
@@ -140,5 +141,5 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--data-pipeline', K_FOLD_TABULAR_SPLIT_PIPELINE_ID))
     args.extend(('--scoring-pipeline', SCORING_PIPELINE_ID))
     d3m_cli.main(args)
-    if (config.D3MConfig().save_to_d3m is True):
+    if (config.save_to_d3m is True):
         save_pipeline_run_to_d3m_db(output_run)

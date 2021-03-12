@@ -12,10 +12,10 @@ setup(
     install_requires=[
         'docker>=4.4.0<4.5.0',
         'mypy==0.812',
+        'd3m',  # TODO: add version bounds
         'redis>=3.5.0<3.6.0',
         'rq>=1.7.0<1.8.0',
         'rq-dashboard>=0.6.0<0.7.0',
-        'd3m @ git+https://gitlab.com/datadrivendiscovery/d3m@devel#egg=d3m'
         'elasticsearch==7.11.0',
         'elasticsearch_dsl==7.3.0'
     ],
