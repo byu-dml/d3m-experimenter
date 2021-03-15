@@ -2,6 +2,7 @@ import itertools as it
 import json
 import os
 import parser
+import logging
 
 from typing import Any, List, Tuple
 from uuid import UUID
@@ -12,6 +13,7 @@ from d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID,
     SCORING_PIPELINE_ID)
 
 from experimenter.databases.d3m_mtl import D3MMtLDB
+logging.basicConfig(filename='logger.log', level=logging.INFO)
 
 def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
     """ 
@@ -66,7 +68,7 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
         when a file cannot be opened
     """
     output_run_path = []
-
+    logging.info('getting files')
     with open(pipeline_path, 'r') as data:
         pipeline = json.load(data)
         output_run_path.append(pipeline['id'])
@@ -82,6 +84,7 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
     #create the directory
     os.makedirs(os.path.dirname(output_run_path),exist_ok=True)
     #evaluate pipeline
+    logging.info('begin evaluation')
     evaluate_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
         input=input_path, output_run=output_run_path,
         data_random_seed=data_random_seed)
@@ -133,6 +136,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     if (not os.path.isfile(input)):
         raise ValueError('\'{}\' param not a file path'.format('input'))
 
+    logging.info('extending arguments')
     args.extend(('--pipeline', pipeline))
     args.extend(('--problem', problem))
     args.extend(('--input', input))
@@ -140,6 +144,8 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--data-random-seed', str(data_random_seed)))
     args.extend(('--data-pipeline', K_FOLD_TABULAR_SPLIT_PIPELINE_ID))
     args.extend(('--scoring-pipeline', SCORING_PIPELINE_ID))
+    logging.info('evaluating')
     d3m_cli.main(args)
     if (config.save_to_d3m is True):
+
         save_pipeline_run_to_d3m_db(output_run)

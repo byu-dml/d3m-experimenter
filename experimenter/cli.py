@@ -23,6 +23,12 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     )
     configure_queue_parser(queue_parser)
 
+    generator_parser = subparsers.add_parser(
+        'generator',
+        description='generates new pipelines and queues them to run on available datasets',
+    )
+    configure_generator_parser(generator_parser) 
+
 
 def handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     experimenter_command = arguments.experimenter_command
@@ -30,6 +36,8 @@ def handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> N
 
     if experimenter_command == 'queue':
         queue_handler(arguments, subparser)
+    elif experimenter_command == 'generator':
+        generator_handler(arguments, subparser)
     else:
         raise exceptions.InvalidStateError('Unknown experimenter command: {}'.format(experimenter_command))
 

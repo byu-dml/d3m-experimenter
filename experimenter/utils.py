@@ -13,7 +13,7 @@ from d3m.utils import get_datasets_and_problems
 from experimenter import exceptions, config
 
 
-DEFAULT_DATASET_DIR = "/datasets/training_datasets/LL0"
+DEFAULT_DATASET_DIR = "/datasets"
 datasets, problems = None, None
 
 

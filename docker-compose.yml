@@ -43,7 +43,7 @@ services:
       - type: bind
         source: '${EXPERIMENTER_DIR}'
         target: /d3m-experimenter
-        read_only: true
+        read_only: false
     working_dir: /d3m-experimenter
     networks:
       - default
