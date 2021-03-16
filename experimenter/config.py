@@ -12,7 +12,6 @@ _ERROR_MESSAGE = 'environment variable not set: {}'
 
 # TODO: these should not have to be set unless needed
 
-
 datasets_dir: str = os.environ.get('DATASETS_DIR', None)
 if datasets_dir is None:
     raise exceptions.ConfigError(_ERROR_MESSAGE.format('DATASETS_DIR'))

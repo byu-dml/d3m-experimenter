@@ -7,11 +7,26 @@ services:
     volumes:
       - type: bind
         source: '${DATA_DIR}/${REDIS_DATA_DIR}'
-        target: '/data'
+        target: /data
     networks:
       - default
 
   rq_worker:
+    env_file:
+      - ./.env
+    volumes:
+      - type: bind
+        source: '${DATASETS_DIR}'
+        target: /datasets
+        read_only: true
+      - type: bind
+        source: '${DATA_DIR}'
+        target: /data
+      - type: bind
+        source: '${EXPERIMENTER_DIR}'
+        target: /d3m-experimenter
+        read_only: true
+    working_dir: /d3m-experimenter
     image: 'd3m-experimenter:latest'
     command: 'rq worker --url redis://${REDIS_HOST} ${RQ_QUEUES}'
     networks:
@@ -43,7 +58,7 @@ services:
       - type: bind
         source: '${EXPERIMENTER_DIR}'
         target: /d3m-experimenter
-        read_only: false
+        read_only: true
     working_dir: /d3m-experimenter
     networks:
       - default

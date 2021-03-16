@@ -20,7 +20,7 @@ datasets, problems = None, None
 def download_from_database(data, type_to_download: str = 'Pipeline'):
     if (type_to_download == 'Pipeline'):
         i_d = data['id']
-        save_path = os.path.abspath(os.path.join(config.data_dir, 'Pipeline', i_d+str('.json')))
+        save_path = os.path.join('/data', 'Pipeline', i_d+str('.json'))
         #create the new directory
         os.makedirs(os.path.dirname(save_path),exist_ok=True)
         #save the file to the directory
