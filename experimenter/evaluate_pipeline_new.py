@@ -2,14 +2,17 @@ import itertools as it
 import json
 import os
 
+from rq import Queue
+from redis import Redis
+
 from typing import Any, List, Tuple
-from experimenter import config
 
 from d3m import cli as d3m_cli
 from d3m.contrib.pipelines import (K_FOLD_TABULAR_SPLIT_PIPELINE_ID, 
     SCORING_PIPELINE_ID)
 from d3m.exceptions import StepFailedError
 
+from experimenter import config
 from experimenter.databases.d3m_mtl import D3MMtLDB
 
 def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
@@ -135,8 +138,11 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     try:
         d3m_cli.main(args)
     except StepFailedError e:
-        raise e
-
+        # we check for this exception to
+        # still save to D3M DB when pipeline
+        # structure failed
+        if (not os.path.isfile(output_run_path)):
+            raise e
     if (config.D3MConfig().save_to_d3m is True):
         print("Saving pipeline run to d3m database")
         save_pipeline_run_to_d3m_db(output_run_path)
