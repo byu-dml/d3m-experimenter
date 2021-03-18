@@ -7,7 +7,7 @@ setup(
     description='An extension of the D3M machine learning framework for populating the metalearning database.',
     author='Brandon Schoenfeld, Evan Peterson, Orion Weller',
     url='https://github.com/byu-dml/d3m-experimenter',
-    packages=find_packages(include=['experimenter']),
+    packages=find_packages(),
     python_requires='>=3.6,<4.0',
     install_requires=[
         'd3m',  # TODO: add version bounds

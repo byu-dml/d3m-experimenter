@@ -13,6 +13,8 @@ services:
 
   rq_worker:
     image: 'd3m-experimenter:latest'
+    env_file:
+      - ./.env
     command: 'rq worker --url redis://${REDIS_HOST} ${RQ_QUEUES}'
     networks:
       - default
