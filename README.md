@@ -20,6 +20,8 @@ At the very least, `DATASETS_DIR`, `EXPERIMENTER_DIR`, and `DATA_DIR` must be se
 * `EXPERIMENTER_DIR` is the absolute to the root of this repository on your host machine
 * `DATA_DIR` is the absolute path to a directory where the D3M experimenter can write files
 
+These directories must exist on the host machine before the swarm can be started.
+
 ### Running the Swarm
 
 First, [build](https://docs.docker.com/engine/reference/commandline/build/) the local images using (from the root of the repository):
