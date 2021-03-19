@@ -1,14 +1,9 @@
-import os.path
-import socket
-import subprocess
-import time
 import typing
-import webbrowser
 
 import redis
 import rq
 
-from experimenter import config, exceptions, utils
+from experimenter import config, exceptions
 
 
 _DEFAULT_QUEUE = 'default'
@@ -16,7 +11,16 @@ _EMPTIED_MESSAGE = 'queue {} emptied'
 
 
 def get_connection():
+    config.validate_redis_host()
     return redis.StrictRedis(host=config.redis_host)
+
+
+def is_running():
+    try:
+        get_connection().ping()
+        return True
+    except (exceptions.ConfigError, redis.exceptions.ConnectionError):
+        return False
 
 
 def get_queue(queue_name: str = _DEFAULT_QUEUE) -> rq.Queue:
@@ -74,7 +78,12 @@ def status() -> None:
     print(queues_message)
     
 
-def empty(queue_name: str = None, empty_failed_queue: str = 'false') -> None:
+def enqueue(job, queue_name: str = _DEFAULT_QUEUE, job_timeout: int = None) -> rq.job.Job:
+    q = get_queue(queue_name)
+    return q.enqueue(**job, job_timeout=job_timeout)
+
+
+def empty(queue_name: str = None) -> None:
     if queue_name is None:
         queue_name = _DEFAULT_QUEUE
     #empty the failed queue or just the normal one    

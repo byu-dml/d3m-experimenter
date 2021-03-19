@@ -28,6 +28,8 @@ services:
         read_only: true
     working_dir: /d3m-experimenter
     image: 'd3m-experimenter:latest'
+    env_file:
+      - ./.env
     command: 'rq worker --url redis://${REDIS_HOST} ${RQ_QUEUES}'
     networks:
       - default
