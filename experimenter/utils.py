@@ -33,13 +33,16 @@ def download_from_database(data, type_to_download: str = 'Pipeline'):
     if (type_to_download == 'Pipeline'):
         i_d = data['id']
         save_path = os.path.join('/data', 'Pipeline', i_d+str('.json'))
-        #create the new directory
-        os.makedirs(os.path.dirname(save_path),exist_ok=True)
-        #save the file to the directory
-        with open(save_path, 'w') as to_save:
-            json.dump(data, to_save, indent=4)
+    elif (type_to_download == 'Preparation'):
+        save_path = os.path.join('/data', 'DataPreparation', i_d+str('.json'))
     else:
         raise ValueError("type: {}, not available for download".format(type_to_download)) 
+    #create the new directory
+    os.makedirs(os.path.dirname(save_path),exist_ok=True)
+    #save the file to the directory
+    with open(save_path, 'w') as to_save:
+        json.dump(data, to_save, indent=4)
+    #return the location
     return save_path
 
 

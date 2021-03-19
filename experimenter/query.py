@@ -66,7 +66,14 @@ def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu')
       for (problem_id, dataset_id), random_seeds in results.items():
          if limit and len(random_seeds) > limit:
             continue
-         yield {'pipeline': pipeline.to_dict(), 'problem_path': get_problem_path(problem_id), 'dataset_doc_path': get_dataset_doc_path(dataset_id), 'tested_seeds': random_seeds}
+         yield {'pipeline': pipeline.to_dict(), 'problem_path': get_problem_path(problem_id), 
+         'dataset_doc_path':get_dataset_doc_path(dataset_id), 'tested_seeds': random_seeds}
+
+def get_data_preparation_pipeline(data_pred_id: str=None):
+      data_prep_search = Search(using=CONNECTION, index='pipelines')
+      data_prep_search = data_prep_search.query('match', id=data_prep_id)
+      data_prep_pipeline = next(data_prep_search.scan())
+      return data_prep_pipeline
 
 def scan_pipeline_runs(pipeline_id, submitter=None):
    pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \
@@ -75,7 +82,6 @@ def scan_pipeline_runs(pipeline_id, submitter=None):
       .query('match', status__state='SUCCESS')
    if submitter:
       pipeline_run_search = pipeline_run_search.query('match', _submitter=submitter)
-
    results = dict()
    for pipeline_run in pipeline_run_search.scan():
       for dataset in pipeline_run.datasets:

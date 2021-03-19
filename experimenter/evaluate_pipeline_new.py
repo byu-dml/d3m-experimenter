@@ -37,7 +37,9 @@ def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
 def evaluate_pipeline_on_problem(pipeline_path: str,
     problem_path: str,
     input_path: str,
-    random_seed: int):
+    random_seed: int,
+    data_pipeline_path: str=data_split_file,
+    data_random_seed: int=0):
     """ 
     Evaluate pipeline on problem.
     A less verbose form of running d3m's runtime cli 'evaluate' command.
@@ -80,13 +82,16 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
     #evaluate pipeline
     evaluate_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
         input=input_path, output_run=output_run_path,
-        random_seed=random_seed)
+        random_seed=random_seed, data_pipeline_path = data_pipeline_path,
+        data_random_seed=data_random_seed)
 
 def evaluate_pipeline_via_d3m_cli(pipeline: str,
     problem: str,
     input: str,
     output_run: str,
-    random_seed: int):
+    random_seed: int,
+    data_pipeline_path: str=data_split_file,
+    data_random_seed: int=0):
     """ 
     Evaluate pipeline on problem using d3m's runtime cli. 
     Wrapper function to execute d3m's runtime cli 'evaluate' command.
@@ -107,6 +112,10 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     random_seed : int
         random seed to used for
         pipeline run
+    data_pipeline_path: str
+        path to data prepation pipeline
+    data_random_seed: int
+        random_seed to be used in data preparation
 
     Return:
     -------
@@ -117,7 +126,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     ValueError
         when parameter value is
         invalid
-    """
+    """    
     args = ['d3m', 'runtime','--random-seed', str(random_seed), 'evaluate']
 
     if (not os.path.isfile(pipeline)):
@@ -129,7 +138,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     if (not os.path.isfile(input)):
         raise ValueError('\'{}\' param not a file path'.format('input'))
     
-    if (not os.path.isfile(data_split_file)):
+    if (not os.path.isfile(data_pipeline_path)):
         raise ValueError('\'{}\' pipeline not a file path'.format('data split'))
     
             
@@ -137,7 +146,8 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--problem', problem))
     args.extend(('--input', input))
     args.extend(('--output-run', output_run))
-    args.extend(('--data-pipeline', data_split_file))
+    args.extend(('--data-pipeline', data_pipeline_path))
+    args.extend(('--data-random-seed', data_random_seed))
     d3m_cli.main(args)
     if (config.save_to_d3m is True):
         save_pipeline_run_to_d3m_db(output_run)

@@ -50,7 +50,7 @@ def configure_queue_parser(parser: argparse.ArgumentParser) -> None:
 
     empty_parser = subparsers.add_parser('empty', help='remove all jobs from a queue')
     empty_parser.add_argument('-q', '--queue-name', help='the name of the queue to empty')
-    empty_parser.add_argument('-f', '--failed', default='false', help='remove the failed queue')
+    empty_parser.add_argument('-f', '--failed', help='remove the failed queue', action='store_true')
     
     #save a failed traceback parser
     save_failed_parser = subparsers.add_parser('save-failed', help='save failed job error output')
@@ -141,15 +141,14 @@ def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
          default=None,
          type=str)
     swap_seed_subparser.add_argument(
-         '--seed_limit',
+         '--seed-limit',
          help='The amount of random seeds that each ran pipeline will have at the end of the test',
          default=2,
          type=int)
     swap_seed_subparser.add_argument(
          '--test',
          help='run the test instead of random pipeline generation',
-         default='false',
-         type=str)
+         action='store_true')
          
     #Primitive swapper functionality
     primitive_swap_subparser = subparsers.add_parser(
