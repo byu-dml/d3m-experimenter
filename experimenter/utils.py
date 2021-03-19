@@ -16,6 +16,18 @@ from experimenter import exceptions, config
 DEFAULT_DATASET_DIR = "/datasets"
 datasets, problems = None, None
 
+def save_to_not_exist_file(filename:str = 'dataset_dne.txt', save_id:str = None):
+    #create the directory
+    os.makedirs(os.path.join('/data','DoesNotExist'),exist_ok=True)
+    #get the tag to write or append
+    if (os.path.exists(os.path.join('/data','DoesNotExist',filename))):
+       tag = 'a' # append to file
+    else:
+       tag = 'w' # write and create
+    #append the non existing value to the file
+    with open(os.path.join('/data','DoesNotExist',filename),tag) as to_save:
+        to_save.write(save_id+'\n')    
+
 
 def download_from_database(data, type_to_download: str = 'Pipeline'):
     if (type_to_download == 'Pipeline'):
@@ -43,7 +55,12 @@ def get_dataset_doc_path(dataset_id: str, datasets_dir: str=None) -> str:
         if datasets_dir is None:
             datasets_dir = os.getenv('DATASETS', DEFAULT_DATASET_DIR)
         datasets, problems = get_datasets_and_problems(datasets_dir)
-    return datasets[dataset_id]
+    try:
+        return datasets[dataset_id]
+    except:
+        #save to dataset id does not exist file
+        save_to_not_exist_file('dataset_dne.txt', dataset_id)
+        return None
 
 
 def get_dataset_doc(dataset_id: str, datasets_dir: str=None) -> dict:
@@ -71,7 +88,12 @@ def get_problem_path(problem_id: str, datasets_dir: str=None) -> str:
         if datasets_dir is None:
             datasets_dir = os.getenv('DATASETS', DEFAULT_DATASET_DIR)
         datasets, problems = get_datasets_and_problems(datasets_dir)
-    return problems[problem_id]
+    try:
+        return problems[problem_id]
+    except:
+        #save to problem id does not exist file
+        save_to_not_exist_file('problem_dne.txt', problem_id)
+        return None
 
 
 def get_problem(problem_path: str, *, parse: bool = True) -> dict:

@@ -8,8 +8,7 @@ from uuid import UUID
 from experimenter import config, utils
 
 from d3m import cli as d3m_cli
-from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH as TSPP
-from d3m.contrib.pipelines import SCORING_PIPELINE_PATH as SPP
+from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH as data_split_file
 from experimenter.databases.d3m_mtl import D3MMtLDB
 
 
@@ -38,7 +37,7 @@ def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
 def evaluate_pipeline_on_problem(pipeline_path: str,
     problem_path: str,
     input_path: str,
-    data_random_seed: int):
+    random_seed: int):
     """ 
     Evaluate pipeline on problem.
     A less verbose form of running d3m's runtime cli 'evaluate' command.
@@ -53,8 +52,8 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
         path to problem doc
     input_path : path_like str
         path to input full data
-    data_random_seed : int   
-        random seed to be used for data preparation
+    random_seed : int   
+        random seed to be used for pipeline run
 
     Returns:
     ----------
@@ -72,24 +71,22 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
     with open(problem_path, 'r') as data:
         problem = json.load(data)
         output_run_path.append(problem['about']['problemID'])
-    with open(input_path, 'r') as data:
-        input_f = json.load(data)
-        output_run_path.append(input_f['about']['digest'])
+    output_run_path.append(str(random_seed))
     #get the output run path
-    output_run_path = os.path.abspath(os.path.join(os.getenv('DATA_DIR'), 'Pipeline_Run', 
+    output_run_path = os.path.abspath(os.path.join('/data', 'Pipeline_Run', 
                                                    '_'.join(output_run_path)+'.json'))
     #create the directory
     os.makedirs(os.path.dirname(output_run_path),exist_ok=True)
     #evaluate pipeline
     evaluate_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
         input=input_path, output_run=output_run_path,
-        data_random_seed=data_random_seed)
+        random_seed=random_seed)
 
 def evaluate_pipeline_via_d3m_cli(pipeline: str,
     problem: str,
     input: str,
     output_run: str,
-    data_random_seed: int):
+    random_seed: int):
     """ 
     Evaluate pipeline on problem using d3m's runtime cli. 
     Wrapper function to execute d3m's runtime cli 'evaluate' command.
@@ -107,9 +104,9 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
         path where pipeline_run doc
         will be saved.
         use '-' for stdin
-    data_random_seed : int
-        random seed to use for
-        data preparation
+    random_seed : int
+        random seed to used for
+        pipeline run
 
     Return:
     -------
@@ -121,7 +118,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
         when parameter value is
         invalid
     """
-    args = ['d3m', 'runtime', 'evaluate']
+    args = ['d3m', 'runtime','--random-seed', str(random_seed), 'evaluate']
 
     if (not os.path.isfile(pipeline)):
         raise ValueError('\'{}\' param not a file path'.format('pipeline'))
@@ -132,19 +129,15 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     if (not os.path.isfile(input)):
         raise ValueError('\'{}\' param not a file path'.format('input'))
     
-    if (not os.path.isfile(TSPP)):
+    if (not os.path.isfile(data_split_file)):
         raise ValueError('\'{}\' pipeline not a file path'.format('data split'))
     
-    if (not os.path.isfile(SPP)):
-        raise ValueError('\'{}\' pipeline not a file path'.format('scoring'))
             
     args.extend(('--pipeline', pipeline))
     args.extend(('--problem', problem))
     args.extend(('--input', input))
     args.extend(('--output-run', output_run))
-    args.extend(('--data-random-seed', str(data_random_seed)))
-    args.extend(('--data-pipeline', TSPP))
-    args.extend(('--scoring-pipeline', SPP))
+    args.extend(('--data-pipeline', data_split_file))
     d3m_cli.main(args)
     if (config.save_to_d3m is True):
         save_pipeline_run_to_d3m_db(output_run)

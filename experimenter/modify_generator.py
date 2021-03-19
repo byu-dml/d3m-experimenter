@@ -47,13 +47,15 @@ class ModifyGenerator:
             for pipeline, problem_path, dataset_doc_path, seed in self._modify(query_result,self.args):
                 #save the pipeline to path and return pipeline path
                 pipeline_path = download_from_database(pipeline, type_to_download='Pipeline')
-                evaluate_pipeline(pipeline_path=pipeline_path, problem_path=problem_path,
-                                  input_path=dataset_doc_path, data_random_seed=seed)
+                #catch error returning none for file paths
+                if (problem_path is None or dataset_doc_path is None):
+                    continue
+                #create the job if file paths are returned from query
                 job = queue.make_job(evaluate_pipeline,
                                      pipeline_path=pipeline_path,
                                      problem_path=problem_path,
                                      input_path=dataset_doc_path,
-                                     data_random_seed=seed)
+                                     random_seed=seed)
                 self.num_complete += 1
                 yield job
         
@@ -98,7 +100,7 @@ class ModifyGenerator:
             if (new_seed in used_seeds):
                 continue
             num_run += 1
-            used_seeds.append(new_seed)
+            used_seeds.add(new_seed)
             #yield the necessary job requirements
             yield query_args['pipeline'], query_args['problem_path'], query_args['dataset_doc_path'], new_seed 
             
@@ -108,7 +110,7 @@ class ModifyGenerator:
             pipeline = json.load(pipeline_file) 
         dataset_path = utils.get_dataset_doc_path('185_baseball_MIN_METADATA_dataset')
         problem_path = utils.get_problem_path('185_baseball_MIN_METADATA_problem')
-        used_seeds = [2,15]
+        used_seeds = {2,15}
         yield {'pipeline': pipeline, 'problem_path': problem_path, 'dataset_doc_path': dataset_path, 
                'tested_seeds': used_seeds }
 

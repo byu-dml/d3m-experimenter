@@ -83,7 +83,7 @@ def enqueue(job, queue_name: str = _DEFAULT_QUEUE, job_timeout: int = None) -> r
     return q.enqueue(**job, job_timeout=job_timeout)
 
 
-def empty(queue_name: str = None) -> None:
+def empty(queue_name: str = None, empty_failed_queue: str = 'false') -> None:
     if queue_name is None:
         queue_name = _DEFAULT_QUEUE
     #empty the failed queue or just the normal one    
