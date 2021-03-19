@@ -2,6 +2,7 @@ import typing
 
 import redis
 import rq
+import os
 
 from experimenter import config, exceptions
 
