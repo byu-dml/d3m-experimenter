@@ -30,8 +30,8 @@ def save_to_not_exist_file(filename:str = 'dataset_dne.txt', save_id:str = None)
 
 
 def download_from_database(data, type_to_download: str = 'Pipeline'):
+    i_d = data['id']
     if (type_to_download == 'Pipeline'):
-        i_d = data['id']
         save_path = os.path.join('/data', 'Pipeline', i_d+str('.json'))
     elif (type_to_download == 'Preparation'):
         save_path = os.path.join('/data', 'DataPreparation', i_d+str('.json'))

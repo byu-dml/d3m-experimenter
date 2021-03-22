@@ -76,7 +76,7 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
     output_run_path.append(str(random_seed))
     #get the output run path
     output_run_path = os.path.abspath(os.path.join('/data', 'Pipeline_Run', 
-                                                   '_'.join(output_run_path)+'.json'))
+                                                   '_'.join(output_run_path)+'.yaml'))
     #create the directory
     os.makedirs(os.path.dirname(output_run_path),exist_ok=True)
     #evaluate pipeline
@@ -96,6 +96,8 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     Evaluate pipeline on problem using d3m's runtime cli. 
     Wrapper function to execute d3m's runtime cli 'evaluate' command.
     Arguments mirror the same arguments using the cli.
+    Only handles cases with a data preparation pipeline in the 
+    pipeline run.
 
     Parameters
     ----------
@@ -116,6 +118,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
         path to data prepation pipeline
     data_random_seed: int
         random_seed to be used in data preparation
+    input_run: path to pipeline run file
 
     Return:
     -------
@@ -127,8 +130,6 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
         when parameter value is
         invalid
     """    
-    args = ['d3m', 'runtime','--random-seed', str(random_seed), 'evaluate']
-
     if (not os.path.isfile(pipeline)):
         raise ValueError('\'{}\' param not a file path'.format('pipeline'))
 
@@ -138,10 +139,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     if (not os.path.isfile(input)):
         raise ValueError('\'{}\' param not a file path'.format('input'))
     
-    if (not os.path.isfile(data_pipeline_path)):
-        raise ValueError('\'{}\' pipeline not a file path'.format('data split'))
-    
-            
+    args = ['d3m', 'runtime','--random-seed', str(random_seed), 'evaluate']
     args.extend(('--pipeline', pipeline))
     args.extend(('--problem', problem))
     args.extend(('--input', input))
