@@ -5,6 +5,7 @@ import d3m.metadata.pipeline
 from random import randint
 from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH as data_split_file
 import json
+import os
 import yaml
 from experimenter.evaluate_pipeline_new import evaluate_pipeline_on_problem as evaluate_pipeline
 
@@ -50,20 +51,13 @@ class ModifyGenerator:
                 #save the pipeline to path and return pipeline path
                 data_prep_pipeline, data_random_seed = prep
                 pipeline_path = download_from_database(pipeline, type_to_download='Pipeline')
-                if (data_prep_pipeline is not None):
-                    if (~os.path.exist(data_prep_pipeline)):
-                        data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='Preparation')
-                print(data_prep_pipeline)
                 #catch error returning none for file paths or preparation pipeline
                 #TODO get data preparation pipeline even when it is not explicitly defined
                 if (problem_path is None or dataset_doc is None or data_prep_pipeline is None):     
                     continue
-                evaluate_pipeline(pipeline_path=pipeline_path,
-                                    problem_path=problem_path,
-                                     input_path=dataset_doc,
-                                     random_seed=random_seed,
-                                     data_pipeline_path=data_prep_pipeline,
-                                     data_random_seed=data_random_seed)
+                #check if query returned a path or an id
+                if (os.path.exists(data_prep_pipeline) is False):
+                    data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='Preparation')
                 job = queue.make_job(evaluate_pipeline,
                                      pipeline_path=pipeline_path,
                                      problem_path=problem_path,

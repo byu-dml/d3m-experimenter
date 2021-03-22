@@ -84,7 +84,7 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
     #evaluate pipeline
     evaluate_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
         input=input_path, output_run=output_run_path,
-        random_seed=random_seed, data_pipeline_path = data_pipeline_path,
+        random_seed=random_seed, data_pipeline_path=data_pipeline_path,
         data_random_seed=data_random_seed)
 
 def evaluate_pipeline_via_d3m_cli(pipeline: str,
