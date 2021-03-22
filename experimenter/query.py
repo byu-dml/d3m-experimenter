@@ -1,6 +1,7 @@
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
-from experimenter.utils import get_problem_path, get_dataset_doc_path
+from experimenter.utils import get_problem_path, get_dataset_doc_path, get_data_prep_from_d3m
+
 
 HOST = 'https://metalearning.datadrivendiscovery.org/es'
 CONNECTION = Elasticsearch(hosts=[HOST], timeout=300)
@@ -33,10 +34,13 @@ def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu')
 def get_data_preparation_pipeline(data_prep_id: str=None):
       if (data_prep_id is None):
           return None
-      arguments = {'submitter': None, 'id': data_prep_id}
-      data_prep_search = get_search_query(arguments=arguments)
-      data_prep_pipeline = next(data_prep_search.scan())
-      data_prep_pipeline = data_prep_pipeline.to_dict()
+      data_prep_pipeline = get_data_prep_from_d3m(data_prep_id)
+      #get from database if not in d3m module
+      if (data_prep_pipeline is None):
+          arguments = {'submitter': None, 'id': data_prep_id}
+          data_prep_search = get_search_query(arguments=arguments)
+          data_prep_pipeline = next(data_prep_search.scan())
+          data_prep_pipeline = data_prep_pipeline.to_dict()
       return data_prep_pipeline
 
 

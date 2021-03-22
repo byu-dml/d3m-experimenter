@@ -9,12 +9,39 @@ import typing
 
 from d3m.metadata import problem as problem_module
 from d3m.utils import get_datasets_and_problems
+from d3m.contrib import pipelines
 
 from experimenter import exceptions, config
 
 
 DEFAULT_DATASET_DIR = "/datasets"
 datasets, problems = None, None
+
+def get_dict_data_prep_pipelines():
+    data_prep_dict = dict()
+    data_prep_id_list = list()
+    #save the relevant paths and ids for data preparation
+    data_prep_id_list.append(pipelines.NO_SPLIT_TABULAR_SPLIT_PIPELINE_ID)
+    data_prep_dict[pipelines.NO_SPLIT_TABULAR_SPLIT_PIPELINE_ID] = pipelines.NO_SPLIT_TABULAR_SPLIT_PIPELINE_PATH
+    data_prep_id_list.append(pipelines.FIXED_SPLIT_TABULAR_SPLIT_PIPELINE_ID)
+    data_prep_dict[pipelines.FIXED_SPLIT_TABULAR_SPLIT_PIPELINE_ID] = pipelines.FIXED_SPLIT_TABULAR_SPLIT_PIPELINE_PATH 
+    data_prep_id_list.append(pipelines.TRAIN_TEST_TABULAR_SPLIT_PIPELINE_ID)
+    data_prep_dict[pipelines.TRAIN_TEST_TABULAR_SPLIT_PIPELINE_ID] = pipelines.TRAIN_TEST_TABULAR_SPLIT_PIPELINE_PATH 
+    data_prep_id_list.append(pipelines.K_FOLD_TABULAR_SPLIT_PIPELINE_ID)
+    data_prep_dict[pipelines.K_FOLD_TABULAR_SPLIT_PIPELINE_ID] = pipelines.K_FOLD_TABULAR_SPLIT_PIPELINE_PATH
+    return data_prep_dict, data_prep_id_list
+
+
+def get_data_prep_from_d3m(pipeline_id: str = None):
+    """Checks if data preparation pipeline is in d3m module,
+    if not, return None
+    
+    """
+    data_prep_dict, data_prep_id_list = get_dict_data_prep_pipelines()
+    if (pipeline_id in data_prep_id_list):
+        return data_prep_dict[pipeline_id]
+    else:
+        return None
 
 def save_to_not_exist_file(filename:str = 'dataset_dne.txt', save_id:str = None):
     #create the directory

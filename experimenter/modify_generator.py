@@ -51,7 +51,9 @@ class ModifyGenerator:
                 data_prep_pipeline, data_random_seed = prep
                 pipeline_path = download_from_database(pipeline, type_to_download='Pipeline')
                 if (data_prep_pipeline is not None):
-                    data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='Preparation')
+                    if (~os.path.exist(data_prep_pipeline)):
+                        data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='Preparation')
+                print(data_prep_pipeline)
                 #catch error returning none for file paths or preparation pipeline
                 #TODO get data preparation pipeline even when it is not explicitly defined
                 if (problem_path is None or dataset_doc is None or data_prep_pipeline is None):     

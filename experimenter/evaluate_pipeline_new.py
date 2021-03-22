@@ -146,7 +146,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--problem', problem))
     args.extend(('--input', input))
     args.extend(('--output-run', output_run))
-    args.extend(('--data-pipeline', fixed_split_path))
+    args.extend(('--data-pipeline', data_pipeline_path))
     args.extend(('--data-random-seed', data_random_seed))
     d3m_cli.main(args)
     if (config.save_to_d3m is True):
