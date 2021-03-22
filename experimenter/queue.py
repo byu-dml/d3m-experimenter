@@ -9,7 +9,7 @@ from experimenter import config, exceptions
 
 _DEFAULT_QUEUE = 'default'
 _EMPTIED_MESSAGE = 'queue {} emptied'
-
+_SAVE_FAILED_MESSAGE = 'Failed job output saved to {}'
 
 def get_connection():
     config.validate_redis_host()
@@ -46,16 +46,21 @@ def get_failed_job(queue_name:str = _DEFAULT_QUEUE, job_num:int = 0):
     job_ids = reg.get_job_ids()
     if (len(job_ids)<=0):
         return "None", reg
-    job = job_ids[0]
-    job = rq.job.Job.fetch(job, connection=get_connection())
-    return job.exc_info, reg
+    job_id = job_ids[0]
+    return job_id, reg
     
     
 def save_failed_job(queue_name:str = _DEFAULT_QUEUE, job_num:int = 0):
     if (queue_name is None):
         queue_name = _DEFAULT_QUEUE
+    job_id, failed_queue = get_failed_job()
+    job = rq.job.Job.fetch(job_id, connection=get_connection())
     with open (os.path.join('/data',"failed_job_{}.txt".format(job_num)), 'w') as job_file:
-        job_file.write(get_failed_job(queue_name=queue_name, job_num=job_num)[0])
+        job_file.write(job.exc_info)
+    #remove the job
+    failed_queue.remove(job_id, delete_job=True)
+    print(_SAVE_FAILED_MESSAGE.format(os.path.join('/data',
+                              "failed_job_{}.txt".format(job_num))))
 
 
 def get_queue_message(queues: list):

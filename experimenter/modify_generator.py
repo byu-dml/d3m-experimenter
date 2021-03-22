@@ -54,8 +54,14 @@ class ModifyGenerator:
                     data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='Preparation')
                 #catch error returning none for file paths or preparation pipeline
                 #TODO get data preparation pipeline even when it is not explicitly defined
-                if (problem_path is None or dataset_doc is None or data_prep_pipeline is None):
+                if (problem_path is None or dataset_doc is None or data_prep_pipeline is None):     
                     continue
+                evaluate_pipeline(pipeline_path=pipeline_path,
+                                    problem_path=problem_path,
+                                     input_path=dataset_doc,
+                                     random_seed=random_seed,
+                                     data_pipeline_path=data_prep_pipeline,
+                                     data_random_seed=data_random_seed)
                 job = queue.make_job(evaluate_pipeline,
                                      pipeline_path=pipeline_path,
                                      problem_path=problem_path,

@@ -1,5 +1,6 @@
 import itertools as it
 import json
+import yaml
 import os
 import parser
 
@@ -8,7 +9,8 @@ from uuid import UUID
 from experimenter import config, utils
 
 from d3m import cli as d3m_cli
-from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH as data_split_file
+from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH as k_fold_split_path
+from d3m.contrib.pipelines import FIXED_SPLIT_TABULAR_SPLIT_PIPELINE_PATH as fixed_split_path
 from experimenter.databases.d3m_mtl import D3MMtLDB
 
 
@@ -31,14 +33,14 @@ def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
     """
     d3m_db = D3MMtLDB()
     with open(pipeline_run_path) as pipeline_data:
-        pipeline_run = json.load(pipeline_data)
+        pipeline_run = yaml.full_load(pipeline_data)
     return D3MMtLDB().save_pipeline_run(pipeline_run)
 
 def evaluate_pipeline_on_problem(pipeline_path: str,
     problem_path: str,
     input_path: str,
     random_seed: int,
-    data_pipeline_path: str=data_split_file,
+    data_pipeline_path: str=k_fold_split_path,
     data_random_seed: int=0):
     """ 
     Evaluate pipeline on problem.
@@ -90,7 +92,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     input: str,
     output_run: str,
     random_seed: int,
-    data_pipeline_path: str=data_split_file,
+    data_pipeline_path: str=k_fold_split_path,
     data_random_seed: int=0):
     """ 
     Evaluate pipeline on problem using d3m's runtime cli. 
@@ -144,7 +146,7 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--problem', problem))
     args.extend(('--input', input))
     args.extend(('--output-run', output_run))
-    args.extend(('--data-pipeline', data_pipeline_path))
+    args.extend(('--data-pipeline', fixed_split_path))
     args.extend(('--data-random-seed', data_random_seed))
     d3m_cli.main(args)
     if (config.save_to_d3m is True):

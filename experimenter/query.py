@@ -23,17 +23,20 @@ def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu')
         for (problem_id, dataset_id, data_prep), random_seeds in results.items():
             if limit and len(random_seeds) > limit:
                 continue
-            #data_prep_pipeline, data_prep_seed = data_prep
-            input_run = data_prep[0]
+            data_prep_id, data_prep_seed = data_prep
+            data_prep_pipeline = get_data_preparation_pipeline(data_prep_id)
             yield {'pipeline': pipeline.to_dict(), 'problem_path': get_problem_path(problem_id), 
                    'dataset_doc_path':get_dataset_doc_path(dataset_id), 'tested_seeds': random_seeds,
                    'data_prep_pipeline': data_prep_pipeline, 'data_prep_seed': data_prep_seed}
 
 
-def get_data_preparation_pipeline(data_pred_id: str=None):
+def get_data_preparation_pipeline(data_prep_id: str=None):
+      if (data_prep_id is None):
+          return None
       arguments = {'submitter': None, 'id': data_prep_id}
       data_prep_search = get_search_query(arguments=arguments)
       data_prep_pipeline = next(data_prep_search.scan())
+      data_prep_pipeline = data_prep_pipeline.to_dict()
       return data_prep_pipeline
 
 
@@ -42,7 +45,7 @@ def check_for_data_prep(pipeline_run=None):
     in the pipeline run
     """
     data_prep = None
-    data_prep_pipeline = None
+    data_prep_id = None
     data_prep_seed = None
     try:
         data_prep = pipeline_run.run.data_preparation
@@ -51,8 +54,8 @@ def check_for_data_prep(pipeline_run=None):
         data_prep_seed = None
     if (data_prep is not None):
         data_prep_seed = data_prep.random_seed
-        data_prep_pipeline = get_data_preparation_pipeline(data_prep.pipeline.id)
-    return data_prep_pipeline, data_prep_seed
+        data_prep_id = data_prep.pipeline.id
+    return data_prep_id, data_prep_seed
 
 
 def scan_pipeline_runs(pipeline_id, submitter=None):
@@ -62,11 +65,11 @@ def scan_pipeline_runs(pipeline_id, submitter=None):
       .query('match', status__state='SUCCESS')
     if submitter:
         pipeline_run_search = pipeline_run_search.query('match', _submitter=submitter)
-        results = dict()
+    results = dict()
     for pipeline_run in pipeline_run_search.scan():
-        data_prep_pipeline, data_prep_seed = check_for_data_prep(pipeline_run=pipeline_run)
+        data_prep_id, data_prep_seed = check_for_data_prep(pipeline_run=pipeline_run)
         for dataset in pipeline_run.datasets:
-            dataset_prob_tuple = (pipeline_run.problem.id, dataset.id, (data_prep_pipeline, data_prep_seed))
+            dataset_prob_tuple = (pipeline_run.problem.id, dataset.id, (data_prep_id, data_prep_seed))
             results[dataset_prob_tuple] = results.get(dataset_prob_tuple, set())
             results[dataset_prob_tuple].add(pipeline_run.random_seed)
     return results
