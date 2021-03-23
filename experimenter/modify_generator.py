@@ -1,13 +1,16 @@
-from experimenter.query import query_on_seeds
-from experimenter import queue, utils
-from experimenter.utils import download_from_database
-import d3m.metadata.pipeline
 from random import randint
-from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH as data_split_file
 import json
 import os
 import yaml
+
+from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH as data_split_file
+from d3m.contrib.pipelines import SCORING_PIPELINE_PATH as scoring_file
+
+from experimenter.query import query_on_seeds
+from experimenter import queue, utils
+from experimenter.utils import download_from_database
 from experimenter.evaluate_pipeline_new import evaluate_pipeline_on_problem as evaluate_pipeline
+
 
 class ModifyGenerator:
     """ Generator to be used for creating modified pipelines based on existing
@@ -25,7 +28,8 @@ class ModifyGenerator:
         else:
             self.query_results = self._query(self.args)
         self.generator = self._get_generator()
-            
+
+
     def __iter__(self):
         return self
 
@@ -47,24 +51,41 @@ class ModifyGenerator:
         """
         for query_result in self.query_results:
             #iterate through modifier results
-            for pipeline, problem_path, dataset_doc, random_seed, prep in self._modify(query_result,self.args):
+            for pipeline, problem_path, dataset_doc, seed, data, score in self._modify(query_result,self.args):
                 #save the pipeline to path and return pipeline path
-                data_prep_pipeline, data_random_seed = prep
+                data_prep_pipeline, data_random_seed, data_params = data
+                scoring_pipeline, scoring_random_seed, scoring_params = score
                 pipeline_path = download_from_database(pipeline, type_to_download='Pipeline')
+                #TODO - catch when there is no data preparation pipeline and pass it further to evaluate
                 #catch error returning none for file paths or preparation pipeline
-                #TODO get data preparation pipeline even when it is not explicitly defined
                 if (problem_path is None or dataset_doc is None or data_prep_pipeline is None):     
                     continue
                 #check if query returned a path or an id
                 if (os.path.exists(data_prep_pipeline) is False):
-                    data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='Preparation')
+                    data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='Data Preparation')
+                if (os.path.exists(scoring_pipeline) is False):
+                    scoring_pipeline = download_from_database(scoring_pipeline, type_to_download='Scoring')
+                evaluate_pipeline(pipeline=pipeline_path,
+                                  problem=problem_path,
+                                  input=dataset_doc,
+                                  random_seed=seed,
+                                  data_pipeline_path=data_prep_pipeline,
+                                  data_random_seed=data_random_seed,
+                                  data_params=data_params,
+                                  scoring_pipeline=scoring_pipeline,
+                                  scoring_random_seed=scoring_random_seed,
+                                  scoring_params=scoring_params)
                 job = queue.make_job(evaluate_pipeline,
-                                     pipeline_path=pipeline_path,
-                                     problem_path=problem_path,
-                                     input_path=dataset_doc,
-                                     random_seed=random_seed,
+                                     pipeline=pipeline_path,
+                                     problem=problem_path,
+                                     input=dataset_doc,
+                                     random_seed=seed,
                                      data_pipeline_path=data_prep_pipeline,
-                                     data_random_seed=data_random_seed)
+                                     data_random_seed=data_random_seed,
+                                     data_params=data_params,
+                                     scoring_pipeline=scoring_pipeline,
+                                     scoring_random_seed=scoring_random_seed,
+                                     scoring_params=scoring_params)
                 self.num_complete += 1
                 yield job
         
@@ -119,7 +140,9 @@ class ModifyGenerator:
             num_run += 1
             used_seeds.add(new_seed)
             #yield the necessary job requirements
-            yield query_args['pipeline'], query_args['problem_path'], query_args['dataset_doc_path'], new_seed, (query_args['data_prep_pipeline'], query_args['data_prep_seed']) 
+            yield (query_args['pipeline'], query_args['problem_path'], query_args['dataset_doc_path'], new_seed, 
+                  (query_args['data_prep_pipeline'], query_args['data_prep_seed'], query_args['data_params']), 
+                  (query_args['scoring_pipeline'], query_args['scoring_seed'], query_args['scoring_params'])) 
             
             
     def _run_seed_test(self,args):
@@ -131,13 +154,20 @@ class ModifyGenerator:
         dataset_path = utils.get_dataset_doc_path('185_baseball_MIN_METADATA_dataset')
         problem_path = utils.get_problem_path('185_baseball_MIN_METADATA_problem')
         data_prep_seed = 0
-        with open(data_split_file, 'r') as pipeline_file:
-            data_prep_pipeline = yaml.full_load(pipeline_file)
-        data_prep_pipeline = data_prep_pipeline
+        #with open(data_split_file, 'r') as pipeline_file:
+        #    data_prep_pipeline = yaml.full_load(pipeline_file)
+        #with open(scoring_file, 'r') as pipeline_file:
+        #    scoring_pipeline = yaml.full_load(pipeline_file)
+        data_prep_seed = 0
+        data_prep_pipeline = data_split_file
+        scoring_pipeline = scoring_file
+        scoring_seed = 0
         used_seeds = {2,15}
         yield {'pipeline': pipeline, 'problem_path': problem_path, 'dataset_doc_path': dataset_path, 
-               'tested_seeds': used_seeds, 'data_prep_pipeline': 
-               data_prep_pipeline, 'data_prep_seed': data_prep_seed}
+               'tested_seeds': used_seeds, 'data_prep_pipeline': data_prep_pipeline, 
+               'data_prep_seed': data_prep_seed, 'data_params': None,
+               'scoring_pipeline': scoring_pipeline, 'scoring_seed': scoring_seed,
+               'scoring_params': None}
 
 
     def _modify_swap_primitive(self, swap_pipeline, query_args):

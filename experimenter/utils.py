@@ -17,7 +17,11 @@ from experimenter import exceptions, config
 DEFAULT_DATASET_DIR = "/datasets"
 datasets, problems = None, None
 
-def get_dict_data_prep_pipelines():
+
+def get_data_prep_pipelines():
+    """
+    Get data preparation pipelines that are already in the d3m module
+    """
     data_prep_dict = dict()
     data_prep_id_list = list()
     #save the relevant paths and ids for data preparation
@@ -30,18 +34,32 @@ def get_dict_data_prep_pipelines():
     data_prep_id_list.append(pipelines.K_FOLD_TABULAR_SPLIT_PIPELINE_ID)
     data_prep_dict[pipelines.K_FOLD_TABULAR_SPLIT_PIPELINE_ID] = pipelines.K_FOLD_TABULAR_SPLIT_PIPELINE_PATH
     return data_prep_dict, data_prep_id_list
+    
 
+def get_scoring_pipelines():
+    """
+    Get the scoring pipelines that are already in the d3m module
+    """
+    scoring_dict = dict()
+    scoring_id_list = list()
+    #save relevant paths and ids for scoring pipelines
+    scoring_id_list.append(pipelines.SCORING_PIPELINE_ID)
+    scoring_dict[pipelines.SCORING_PIPELINE_ID] = pipelines.SCORING_PIPELINE_PATH 
+    return scoring_dict, scoring_id_list
 
-def get_data_prep_from_d3m(pipeline_id: str = None):
+ 
+def get_pipelines_from_d3m(pipeline_id: str = None, types='Data'):
     """Checks if data preparation pipeline is in d3m module,
     if not, return None
-    
     """
-    data_prep_dict, data_prep_id_list = get_dict_data_prep_pipelines()
-    if (pipeline_id in data_prep_id_list):
-        return data_prep_dict[pipeline_id]
-    else:
-        return None
+    if (types=='Data'):
+        dict_ids, id_list = get_data_prep_pipelines()
+    elif (types=='Scoring'):
+        dict_ids, id_list = get_scoring_pipelines()
+    if (pipeline_id in id_list):
+        return dict_ids[pipeline_id]
+    return None
+
 
 def save_to_not_exist_file(filename:str = 'dataset_dne.txt', save_id:str = None):
     #create the directory
@@ -58,12 +76,7 @@ def save_to_not_exist_file(filename:str = 'dataset_dne.txt', save_id:str = None)
 
 def download_from_database(data, type_to_download: str = 'Pipeline'):
     i_d = data['id']
-    if (type_to_download == 'Pipeline'):
-        save_path = os.path.join('/data', 'Pipeline', i_d+str('.json'))
-    elif (type_to_download == 'Preparation'):
-        save_path = os.path.join('/data', 'DataPreparation', i_d+str('.json'))
-    else:
-        raise ValueError("type: {}, not available for download".format(type_to_download)) 
+    save_path = os.path.join('/data', type_to_download, i_d+str('.json')) 
     #create the new directory
     os.makedirs(os.path.dirname(save_path),exist_ok=True)
     #save the file to the directory

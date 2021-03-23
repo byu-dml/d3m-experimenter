@@ -36,12 +36,16 @@ def save_pipeline_run_to_d3m_db(pipeline_run_path: str):
         pipeline_run = yaml.full_load(pipeline_data)
     return D3MMtLDB().save_pipeline_run(pipeline_run)
 
-def evaluate_pipeline_on_problem(pipeline_path: str,
-    problem_path: str,
-    input_path: str,
-    random_seed: int,
+def evaluate_pipeline_on_problem(pipeline: str=None,
+    problem: str=None,
+    input: str=None,
+    random_seed: int=0,
     data_pipeline_path: str=k_fold_split_path,
-    data_random_seed: int=0):
+    data_random_seed: int=0,
+    data_params=None,
+    scoring_pipeline: str=None,
+    scoring_params=None,
+    scoring_random_seed: int=0):
     """ 
     Evaluate pipeline on problem.
     A less verbose form of running d3m's runtime cli 'evaluate' command.
@@ -58,6 +62,18 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
         path to input full data
     random_seed : int   
         random seed to be used for pipeline run
+    data_pipeline_path: str
+        path to data prepation pipeline
+    data_random_seed: int
+        random_seed to be used in data preparation
+    data_params:
+        parameters for data preparation
+    scoring_params:
+        parameters for scoring pipeline
+    scoring_random_seed: int
+        random seed for scoring
+    scoring_pipeline: str
+        path to scoring pipeline
 
     Returns:
     ----------
@@ -69,12 +85,12 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
         when a file cannot be opened
     """
     output_run_path = []
-    with open(pipeline_path, 'r') as data:
-        pipeline = json.load(data)
-        output_run_path.append(pipeline['id'])
-    with open(problem_path, 'r') as data:
-        problem = json.load(data)
-        output_run_path.append(problem['about']['problemID'])
+    with open(pipeline, 'r') as data:
+        pipe = json.load(data)
+        output_run_path.append(pipe['id'])
+    with open(problem, 'r') as data:
+        prob = json.load(data)
+        output_run_path.append(prob['about']['problemID'])
     output_run_path.append(str(random_seed))
     #get the output run path
     output_run_path = os.path.abspath(os.path.join('/data', 'Pipeline_Run', 
@@ -82,18 +98,24 @@ def evaluate_pipeline_on_problem(pipeline_path: str,
     #create the directory
     os.makedirs(os.path.dirname(output_run_path),exist_ok=True)
     #evaluate pipeline
-    evaluate_pipeline_via_d3m_cli(pipeline=pipeline_path, problem=problem_path,
-        input=input_path, output_run=output_run_path,
+    evaluate_pipeline_via_d3m_cli(pipeline=pipeline, problem=problem,
+        input=input, output_run=output_run_path,
         random_seed=random_seed, data_pipeline_path=data_pipeline_path,
-        data_random_seed=data_random_seed)
+        data_random_seed=data_random_seed, data_params=data_params, 
+        scoring_pipeline=scoring_pipeline, scoring_params=scoring_params,
+        scoring_random_seed=scoring_random_seed)
 
-def evaluate_pipeline_via_d3m_cli(pipeline: str,
-    problem: str,
-    input: str,
-    output_run: str,
-    random_seed: int,
+def evaluate_pipeline_via_d3m_cli(pipeline: str=None,
+    problem: str=None,
+    input: str=None,
+    output_run: str=None,
+    random_seed: int=0,
     data_pipeline_path: str=k_fold_split_path,
-    data_random_seed: int=0):
+    data_random_seed: int=0,
+    data_params=None,
+    scoring_pipeline: str=None,
+    scoring_params=None,
+    scoring_random_seed: int=0):
     """ 
     Evaluate pipeline on problem using d3m's runtime cli. 
     Wrapper function to execute d3m's runtime cli 'evaluate' command.
@@ -120,8 +142,14 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
         path to data prepation pipeline
     data_random_seed: int
         random_seed to be used in data preparation
-    input_run: path to pipeline run file
-
+    data_params:
+        parameters for data preparation
+    scoring_params:
+        parameters for scoring pipeline
+    scoring_random_seed: int
+        random seed for scoring
+    scoring_pipeline: str
+        path to scoring pipeline
     Return:
     -------
     None
@@ -140,7 +168,14 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
 
     if (not os.path.isfile(input)):
         raise ValueError('\'{}\' param not a file path'.format('input'))
-    
+        
+    if (not os.path.isfile(data_pipeline_path)):
+        raise ValueError('\'{}\' param not a file path'.format('input'))
+        
+    if (not os.path.isfile(scoring_pipeline)):
+        raise ValueError('\'{}\' param not a file path'.format('input'))
+        
+    #TODO - call fit-score when the data pipeline is not defined in the pipeline run
     args = ['d3m', 'runtime','--random-seed', str(random_seed), 'evaluate']
     args.extend(('--pipeline', pipeline))
     args.extend(('--problem', problem))
@@ -148,6 +183,13 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str,
     args.extend(('--output-run', output_run))
     args.extend(('--data-pipeline', data_pipeline_path))
     args.extend(('--data-random-seed', data_random_seed))
+    if (data_params is not None):
+        args.extend(('--data-param', data_params))
+    args.extend(('--scoring-pipeline', scoring_pipeline))
+    args.extend(('--scoring-random-seed', scoring_random_seed))
+    if (scoring_params is not None):
+        args.extend(('--scoring-param', scoring_params))
     d3m_cli.main(args)
     if (config.save_to_d3m is True):
         save_pipeline_run_to_d3m_db(output_run)
+        
