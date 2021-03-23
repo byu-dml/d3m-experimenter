@@ -22,11 +22,14 @@ def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu')
     pipeline_search = get_search_query(arguments=arguments, index='pipelines')
     for pipeline in pipeline_search.scan():
         results = scan_pipeline_runs(pipeline.id, submitter)
-        for (problem_id, dataset_id, data_prep, scoring), random_seeds in results.items():
+        for (problem_id, dataset_id, data_prep, scoring), params_dict in results.items():
             if limit and len(random_seeds) > limit:
                 continue
-            data_prep_id, data_prep_seed, data_params = data_prep
-            scoring_id, scoring_seed, scoring_params = scoring
+            data_prep_id, data_prep_seed = data_prep
+            scoring_id, scoring_seed = scoring
+            random_seeds = params_dict['random_seeds']
+            data_params = params_dict['data_params']
+            scoring_params = params_dict['scoring_params']
             data_prep_pipeline = get_pipeline(data_prep_id, types='Data')
             scoring_pipeline = get_pipeline(scoring_id, types='Scoring')
             yield {'pipeline': pipeline.to_dict(), 'problem_path': get_problem_path(problem_id), 
@@ -64,18 +67,25 @@ def check_for_data_prep(pipeline_run=None):
     if (data_prep is not None):
         data_prep_seed = data_prep.random_seed
         data_prep_id = data_prep.pipeline.id
+        data_prep = data_prep.to_dict()
         data_params = _data_score_params(data_prep.get('steps', []))
         
-    return data_prep_id, data_prep_seed, data_params
+    return (data_prep_id, data_prep_seed), data_params
     
     
 def get_scoring_pipeline(pipeline_run=None):
     scoring = pipeline_run.run.scoring
     scoring_seed = scoring.random_seed
-    scoring_params = _data_score_params(scoring.get('steps', []))
-    
-    return scoring.pipeline.id, scoring_seed, scoring_params
+    scoring_id = scoring.pipeline.id
+    scoring = scoring.to_dict()
+    scoring_params = _data_score_params(scoring.get('steps', [])) 
+    return (scoring_id, scoring_seed), scoring_params
      
+
+def get_unique_results(results: dict = None):
+    #function for getting unique results from the result dictionary 
+    pass
+
 
 def scan_pipeline_runs(pipeline_id, submitter=None):
     pipeline_run_search = Search(using=CONNECTION, index='pipeline_runs') \
@@ -86,11 +96,12 @@ def scan_pipeline_runs(pipeline_id, submitter=None):
         pipeline_run_search = pipeline_run_search.query('match', _submitter=submitter)
     results = dict()
     for pipeline_run in pipeline_run_search.scan():
-        data_prep = check_for_data_prep(pipeline_run=pipeline_run)
-        scoring = get_scoring_pipeline(pipeline_run)
+        data_prep, data_params = check_for_data_prep(pipeline_run=pipeline_run)
+        scoring, scoring_params = get_scoring_pipeline(pipeline_run)
         for dataset in pipeline_run.datasets:
             dataset_prob_tuple = (pipeline_run.problem.id, dataset.id, data_prep, scoring)
-            results[dataset_prob_tuple] = results.get(dataset_prob_tuple, set())
-            results[dataset_prob_tuple].add(pipeline_run.random_seed)
+            results[dataset_prob_tuple] = results.get(dataset_prob_tuple, list())
+            result_add_dict = {'random_seed': pipeline_run.random_seed, 'data_params': data_params, 'scoring_params': scoring_params}
+            results[dataset_prob_tuple].append(results_add_dict) 
     return results
     
