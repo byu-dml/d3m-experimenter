@@ -154,10 +154,6 @@ class ModifyGenerator:
         dataset_path = utils.get_dataset_doc_path('185_baseball_MIN_METADATA_dataset')
         problem_path = utils.get_problem_path('185_baseball_MIN_METADATA_problem')
         data_prep_seed = 0
-        #with open(data_split_file, 'r') as pipeline_file:
-        #    data_prep_pipeline = yaml.full_load(pipeline_file)
-        #with open(scoring_file, 'r') as pipeline_file:
-        #    scoring_pipeline = yaml.full_load(pipeline_file)
         data_prep_seed = 0
         data_prep_pipeline = data_split_file
         scoring_pipeline = scoring_file
