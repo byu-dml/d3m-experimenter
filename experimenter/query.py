@@ -22,21 +22,26 @@ def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu')
     pipeline_search = get_search_query(arguments=arguments, index='pipelines')
     for pipeline in pipeline_search.scan():
         results = scan_pipeline_runs(pipeline.id, submitter)
-        for (problem_id, dataset_id, data_prep, scoring), params_dict in results.items():
-            if limit and len(random_seeds) > limit:
-                continue
+        for dataset_prob_tuple, results_dict in results.items():
+            unique_items = get_unique_results(results_dict)
+            #unpack values from tuple
+            problem_id, dataset_id, data_prep, scoring = dataset_prob_tuple
+            scoring_id, scoring_random_seed = scoring
             data_prep_id, data_prep_seed = data_prep
-            scoring_id, scoring_seed = scoring
-            random_seeds = params_dict['random_seeds']
-            data_params = params_dict['data_params']
-            scoring_params = params_dict['scoring_params']
+            #get preparation and scoring pipelines
             data_prep_pipeline = get_pipeline(data_prep_id, types='Data')
             scoring_pipeline = get_pipeline(scoring_id, types='Scoring')
-            yield {'pipeline': pipeline.to_dict(), 'problem_path': get_problem_path(problem_id), 
-                   'dataset_doc_path':get_dataset_doc_path(dataset_id), 'tested_seeds': random_seeds,
-                   'data_prep_pipeline': data_prep_pipeline, 'data_prep_seed': data_prep_seed,
-                   'scoring_pipeline': scoring_pipeline, 'scoring_seed': scoring_random_seed,
-                   'scoring_params': scoring_params, 'data_params': data_params}
+            for params in unique_items:
+                data_params = params['data_params']
+                scoring_params = params['scoring_params']
+                random_seeds = params['random_seeds']    
+                if limit and len(random_seeds) > limit:
+                    continue
+                yield {'pipeline': pipeline.to_dict(), 'problem_path': get_problem_path(problem_id), 
+                       'dataset_doc_path':get_dataset_doc_path(dataset_id), 'tested_seeds': random_seeds,
+                       'data_prep_pipeline': data_prep_pipeline, 'data_prep_seed': data_prep_seed,
+                       'scoring_pipeline': scoring_pipeline, 'scoring_seed': scoring_random_seed,
+                       'scoring_params': scoring_params, 'data_params': data_params}
 
 
 def get_pipeline(pipeline_id: str=None, types: str='Data'):
@@ -59,6 +64,7 @@ def check_for_data_prep(pipeline_run=None):
     data_prep = None
     data_prep_id = None
     data_prep_seed = None
+    data_params = None
     try:
         data_prep = pipeline_run.run.data_preparation
     except:
@@ -82,9 +88,41 @@ def get_scoring_pipeline(pipeline_run=None):
     return (scoring_id, scoring_seed), scoring_params
      
 
+def get_list_duplicates(params_list, match_item):
+    start_loc = -1
+    locs = []
+    while True:
+        try:
+            loc = params_list.index(match_item,start_loc+1)
+        except ValueError:
+            break
+        else:
+            locs.append(loc)
+            start_loc = loc
+    return locs
+
+
 def get_unique_results(results: dict = None):
     #function for getting unique results from the result dictionary 
-    pass
+    random_seeds_list = results['random_seeds']
+    params_list = results['params']
+    final_list = list()
+    location_dict = dict()
+    #loop through the values
+    for it, param in enumerate(params_list):
+        #get matching pairs of each value 
+        location_dict[it] = get_list_duplicates(params_list, param)
+    skip = set()
+    for loc, values in location_dict.items():
+        if loc in skip:
+            continue
+        random_seeds = set()
+        for value in values:
+            random_seeds.add(random_seeds_list[value])
+            skip.add(value)
+        data_params, scoring_params = params_list[loc]
+        final_list.append({'data_params': data_params, 'scoring_params': scoring_params, 'random_seeds': random_seeds})
+    return final_list
 
 
 def scan_pipeline_runs(pipeline_id, submitter=None):
@@ -100,8 +138,10 @@ def scan_pipeline_runs(pipeline_id, submitter=None):
         scoring, scoring_params = get_scoring_pipeline(pipeline_run)
         for dataset in pipeline_run.datasets:
             dataset_prob_tuple = (pipeline_run.problem.id, dataset.id, data_prep, scoring)
-            results[dataset_prob_tuple] = results.get(dataset_prob_tuple, list())
-            result_add_dict = {'random_seed': pipeline_run.random_seed, 'data_params': data_params, 'scoring_params': scoring_params}
-            results[dataset_prob_tuple].append(results_add_dict) 
+            results[dataset_prob_tuple] = results.get(dataset_prob_tuple, dict())
+            results[dataset_prob_tuple]['random_seeds'] = results[dataset_prob_tuple].get('random_seed', list())
+            results[dataset_prob_tuple]['params'] = results[dataset_prob_tuple].get('params', list())
+            results[dataset_prob_tuple]['random_seeds'].append(pipeline_run.random_seed)
+            results[dataset_prob_tuple]['params'].append((data_params, scoring_params))
     return results
     

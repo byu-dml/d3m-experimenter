@@ -182,13 +182,17 @@ def evaluate_pipeline_via_d3m_cli(pipeline: str=None,
     args.extend(('--input', input))
     args.extend(('--output-run', output_run))
     args.extend(('--data-pipeline', data_pipeline_path))
-    args.extend(('--data-random-seed', data_random_seed))
-    if (data_params is not None):
-        args.extend(('--data-param', data_params))
+    args.extend(('--data-random-seed', str(data_random_seed)))
     args.extend(('--scoring-pipeline', scoring_pipeline))
-    args.extend(('--scoring-random-seed', scoring_random_seed))
+    args.extend(('--scoring-random-seed', str(scoring_random_seed)))
+    #add the data parameters to the cli arguments
+    if (data_params is not None):
+        for name, value in data_params.items():
+            args.extend(('--data-param', name, value))
+    #add the scoring parameters to the cli arguments
     if (scoring_params is not None):
-        args.extend(('--scoring-param', scoring_params))
+        for name, value in scoring_params.items():
+            args.extend(('--scoring-param', name, value))
     d3m_cli.main(args)
     if (config.save_to_d3m is True):
         save_pipeline_run_to_d3m_db(output_run)
