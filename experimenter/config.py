@@ -46,3 +46,8 @@ def validate_save():
     if save_to_d3m is None:
         raise exceptions.ConfigError(_ERROR_MESSAGE.format('SAVE_TO_D3M'))
 
+
+output_run_path: str = os.path.abspath(os.path.join('/data', 'pipeline_runs'))
+if (not os.path.exists(output_run_path))
+    #create the directory
+    os.makedirs(os.path.dirname(output_run_path), exist_ok=True)

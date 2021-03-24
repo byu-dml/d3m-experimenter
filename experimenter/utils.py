@@ -47,6 +47,23 @@ def get_scoring_pipelines():
     scoring_dict[pipelines.SCORING_PIPELINE_ID] = pipelines.SCORING_PIPELINE_PATH 
     return scoring_dict, scoring_id_list
 
+
+def get_pipeline_run_output_path(pipeline_path: str, dataset_path: str):
+    """
+    get the output path of the pipeline run
+    """
+    output_run_path = []
+    #get the digests from the dataset and problem paths
+    with open(pipeline_path, 'r') as data:
+        pipeline = json.load(data)
+        output_run_path.append(pipeline['digest'])
+    with open(dataset_path, 'r') as data:
+        dataset = json.load(data)
+        output_run_path.append(dataset['digest'])
+    output_run_path.append(str(random_seed))
+    output_run_path = os.path.abspath(os.path.join(config.output_run_path, '_'.join(output_run_path)+'.yaml'))
+    return output_run_path
+     
  
 def get_pipelines_from_d3m(pipeline_id: str = None, types='Data'):
     """Checks if data preparation pipeline is in d3m module,

@@ -3,13 +3,13 @@ import json
 import os
 import yaml
 
-from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH as data_split_file
+from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH
 from d3m.contrib.pipelines import SCORING_PIPELINE_PATH as scoring_file
 
 from experimenter.query import query_on_seeds
 from experimenter import queue, utils
 from experimenter.utils import download_from_database
-from experimenter.evaluate_pipeline_new import evaluate_pipeline_on_problem as evaluate_pipeline
+from experimenter.runtime import evaluate
 
 
 class ModifyGenerator:
