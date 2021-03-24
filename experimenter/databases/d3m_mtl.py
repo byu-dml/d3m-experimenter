@@ -1,5 +1,6 @@
 import logging
 import json
+import yaml
 
 import requests
 from d3m.primitive_interfaces.base import PrimitiveBase
@@ -105,7 +106,15 @@ class D3MMtLDB:
             .count()
         )
         return num_pipeline_matches > 0
-
+        
+    def save_pipeline_runs_from_path(self, pipeline_run_path: str) -> requests.Response:
+        responses = list()
+        with open(pipeline_run_path, 'r') as pipeline_data:
+            pipeline_runs = yaml.safe_load_all(pipeline_data)
+            for pipeline_run in pipeline_runs:
+                responses.append(self.save_pipeline_run(pipeline_run).content)
+        return responses
+               
     def save_pipeline_run(self, pipeline_run: dict) -> requests.Response:
         return self._save(pipeline_run, "pipeline-run")
 
@@ -156,7 +165,7 @@ class D3MMtLDB:
         response.status_code = 200
         response._content = (
             b'{ "result" : "No request was made to the D3M DB API to save a record, '
-            b'since the SAVE_TO_D3M environment variable is not set." }'
+            b'since the SAVE_TO_D3M environment variable is not set to true." }'
         )
         return response
 

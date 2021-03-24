@@ -48,6 +48,6 @@ def validate_save():
 
 
 output_run_path: str = os.path.abspath(os.path.join('/data', 'pipeline_runs'))
-if (not os.path.exists(output_run_path))
+if (not os.path.exists(output_run_path)):
     #create the directory
-    os.makedirs(os.path.dirname(output_run_path), exist_ok=True)
+    os.makedirs(output_run_path, exist_ok=True)

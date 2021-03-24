@@ -48,7 +48,7 @@ def get_scoring_pipelines():
     return scoring_dict, scoring_id_list
 
 
-def get_pipeline_run_output_path(pipeline_path: str, dataset_path: str):
+def get_pipeline_run_output_path(pipeline_path: str, dataset_path: str, random_seed: int):
     """
     get the output path of the pipeline run
     """
@@ -59,7 +59,7 @@ def get_pipeline_run_output_path(pipeline_path: str, dataset_path: str):
         output_run_path.append(pipeline['digest'])
     with open(dataset_path, 'r') as data:
         dataset = json.load(data)
-        output_run_path.append(dataset['digest'])
+        output_run_path.append(dataset['about']['digest'])
     output_run_path.append(str(random_seed))
     output_run_path = os.path.abspath(os.path.join(config.output_run_path, '_'.join(output_run_path)+'.yaml'))
     return output_run_path
@@ -91,7 +91,7 @@ def save_to_not_exist_file(filename:str = 'dataset_dne.txt', save_id:str = None)
         to_save.write(save_id+'\n')    
 
 
-def download_from_database(data, type_to_download: str = 'Pipeline'):
+def download_from_database(data, type_to_download: str = 'pipeline'):
     i_d = data['id']
     save_path = os.path.join('/data', type_to_download, i_d+str('.json')) 
     #create the new directory

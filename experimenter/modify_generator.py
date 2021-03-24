@@ -55,17 +55,29 @@ class ModifyGenerator:
                 #save the pipeline to path and return pipeline path
                 data_prep_pipeline, data_random_seed, data_params = data
                 scoring_pipeline, scoring_random_seed, scoring_params = score
-                pipeline_path = download_from_database(pipeline, type_to_download='Pipeline')
+                pipeline_path = download_from_database(pipeline, type_to_download='pipelines')
                 #TODO - catch when there is no data preparation pipeline and pass it further to evaluate
                 #catch error returning none for file paths or preparation pipeline
                 if (problem_path is None or dataset_doc is None or data_prep_pipeline is None):     
                     continue
                 #check if query returned a path or an id
                 if (os.path.exists(data_prep_pipeline) is False):
-                    data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='Data Preparation')
+                    data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='data-preparation-pipelines')
                 if (os.path.exists(scoring_pipeline) is False):
-                    scoring_pipeline = download_from_database(scoring_pipeline, type_to_download='Scoring')
-                job = queue.make_job(evaluate_pipeline,
+                    scoring_pipeline = download_from_database(scoring_pipeline, type_to_download='scoring-pipelines')
+                evaluate(pipeline=pipeline_path,
+                                  problem=problem_path,
+                                  input=dataset_doc,
+                                  random_seed=seed,
+                                  data_pipeline=data_prep_pipeline,
+                                  data_random_seed=data_random_seed,
+                                  data_params=data_params,
+                                  scoring_pipeline=scoring_pipeline,
+                                  scoring_random_seed=scoring_random_seed,
+                                  scoring_params=scoring_params,
+                                  runtime_arg='evaluate')
+                
+                job = queue.make_job(evaluate,
                                      pipeline=pipeline_path,
                                      problem=problem_path,
                                      input=dataset_doc,
@@ -75,7 +87,8 @@ class ModifyGenerator:
                                      data_params=data_params,
                                      scoring_pipeline=scoring_pipeline,
                                      scoring_random_seed=scoring_random_seed,
-                                     scoring_params=scoring_params)
+                                     scoring_params=scoring_params,
+                                     runtime_arg='evaluate')
                 self.num_complete += 1
                 yield job
         
@@ -137,7 +150,7 @@ class ModifyGenerator:
             
     def _run_seed_test(self,args):
         """ Test designed for development and functionality purposes.
-            It uses and dataset and pipeline that is saved in d3m-experimenter
+            It uses a dataset and pipeline that is saved in the d3m-experimenter
         """
         with open('experimenter/pipelines/bagging_classification.json', 'r') as pipeline_file:
             pipeline = json.load(pipeline_file) 
@@ -145,7 +158,7 @@ class ModifyGenerator:
         problem_path = utils.get_problem_path('185_baseball_MIN_METADATA_problem')
         data_prep_seed = 0
         data_prep_seed = 0
-        data_prep_pipeline = data_split_file
+        data_prep_pipeline = K_FOLD_TABULAR_SPLIT_PIPELINE_PATH
         scoring_pipeline = scoring_file
         scoring_seed = 0
         used_seeds = {2,15}
