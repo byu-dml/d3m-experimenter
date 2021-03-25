@@ -6,8 +6,7 @@ import yaml
 from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH
 from d3m.contrib.pipelines import SCORING_PIPELINE_PATH as scoring_file
 
-from experimenter.query import query_on_seeds
-from experimenter import queue, utils
+from experimenter import queue, utils, query
 from experimenter.utils import download_from_database
 from experimenter.runtime import evaluate
 
@@ -23,11 +22,7 @@ class ModifyGenerator:
         self.max_jobs = max_jobs
         self.num_complete = 0
         #run the query on initializing to define the query results
-        if (args.test is True):
-            self.query_results = self._run_seed_test(self.args)
-        else:
-            self.query_results = self._query(self.args)
-        self.generator = self._get_generator()
+        self.query_results = None
 
 
     def __iter__(self):
@@ -36,7 +31,7 @@ class ModifyGenerator:
 
     def __next__(self):
         #iterate through query results
-        job = next(self.generator)
+        job = next(self._get_generator())
         if (self.max_jobs):
             if (self.num_complete > self.max_jobs):
                 raise StopIteration
@@ -49,6 +44,8 @@ class ModifyGenerator:
         Can only handle cases where there is a data preparation
         pipeline in the pipeline run
         """
+        if (self.query_results is None):
+            self.query_results = self._query(self.args)
         for query_result in self.query_results:
             #iterate through modifier results
             for pipeline, problem_path, dataset_doc, seed, data, score in self._modify(query_result,self.args):
@@ -74,8 +71,7 @@ class ModifyGenerator:
                                   data_params=data_params,
                                   scoring_pipeline=scoring_pipeline,
                                   scoring_random_seed=scoring_random_seed,
-                                  scoring_params=scoring_params,
-                                  runtime_arg='evaluate')
+                                  scoring_params=scoring_params)
                 
                 job = queue.make_job(evaluate,
                                      pipeline=pipeline_path,
@@ -87,8 +83,7 @@ class ModifyGenerator:
                                      data_params=data_params,
                                      scoring_pipeline=scoring_pipeline,
                                      scoring_random_seed=scoring_random_seed,
-                                     scoring_params=scoring_params,
-                                     runtime_arg='evaluate')
+                                     scoring_params=scoring_params)
                 self.num_complete += 1
                 yield job
         
@@ -146,30 +141,33 @@ class ModifyGenerator:
             yield (query_args['pipeline'], query_args['problem_path'], query_args['dataset_doc_path'], new_seed, 
                   (query_args['data_prep_pipeline'], query_args['data_prep_seed'], query_args['data_params']), 
                   (query_args['scoring_pipeline'], query_args['scoring_seed'], query_args['scoring_params'])) 
-            
-            
-    def _run_seed_test(self,args):
-        """ Test designed for development and functionality purposes.
-            It uses a dataset and pipeline that is saved in the d3m-experimenter
-        """
-        with open('experimenter/pipelines/bagging_classification.json', 'r') as pipeline_file:
-            pipeline = json.load(pipeline_file) 
-        dataset_path = utils.get_dataset_doc_path('185_baseball_MIN_METADATA_dataset')
-        problem_path = utils.get_problem_path('185_baseball_MIN_METADATA_problem')
-        data_prep_seed = 0
-        data_prep_seed = 0
-        data_prep_pipeline = K_FOLD_TABULAR_SPLIT_PIPELINE_PATH
-        scoring_pipeline = scoring_file
-        scoring_seed = 0
-        used_seeds = {2,15}
-        yield {'pipeline': pipeline, 'problem_path': problem_path, 'dataset_doc_path': dataset_path, 
-               'tested_seeds': used_seeds, 'data_prep_pipeline': data_prep_pipeline, 
-               'data_prep_seed': data_prep_seed, 'data_params': None,
-               'scoring_pipeline': scoring_pipeline, 'scoring_seed': scoring_seed,
-               'scoring_params': None}
 
 
     def _modify_swap_primitive(self, swap_pipeline, query_args):
         raise ValueError("No functionality for swapping primitives yet")
         
         
+def query_on_seeds(pipeline_id: str=None, limit: int=None, submitter: str='byu'):
+    """
+    Helper function for generating jobs to be used in the random-seed swapping 
+    generator
+    """
+    arguments = {'id': pipeline_id, '_submitter': submitter}
+    pipeline_search = query.match_query(index='pipelines', arguments=arguments)
+    for pipeline in pipeline_search.scan():
+        pipeline_run_query = query.scan_pipeline_runs(pipeline.id, submitter)
+        pipeline = pipeline.to_dict()
+        for run_tuple, pipeline_run_params in pipeline_run_query.items():
+            #get the unqiue params from the params list
+            unique_run_params = query.combine_unique_params(pipeline_run_params)
+            #unpack values from tuple
+            query_arg_dict = query.unpack_run_tuple_args(run_tuple)
+            for params in unique_run_params:
+                query_args = query_arg_dict.copy()
+                query_args['data_params'] = params['data_params']
+                query_args['scoring_params'] = params['scoring_params']
+                query_args['tested_seeds'] = params['random_seeds']
+                query_args['pipeline'] = pipeline    
+                if limit and len(query_args['tested_seeds']) > limit:
+                    continue
+                yield query_args

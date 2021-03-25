@@ -94,8 +94,6 @@ def save_to_not_exist_file(filename:str = 'dataset_dne.txt', save_id:str = None)
 def download_from_database(data, type_to_download: str = 'pipeline'):
     i_d = data['id']
     save_path = os.path.join('/data', type_to_download, i_d+str('.json')) 
-    #create the new directory
-    os.makedirs(os.path.dirname(save_path),exist_ok=True)
     #save the file to the directory
     with open(save_path, 'w') as to_save:
         json.dump(data, to_save, indent=4)
