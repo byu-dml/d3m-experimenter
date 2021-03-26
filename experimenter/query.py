@@ -2,7 +2,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
 from experimenter.utils import get_problem_path, get_dataset_doc_path, get_pipelines_from_d3m
 from d3m.runtime import _get_data_and_scoring_params_from_pipeline_run as _data_score_params
-from experimenter import config
+from experimenter import config, exceptions
 
 CONNECTION = Elasticsearch(hosts=[config.query_host], timeout=config.query_timeout)
 
@@ -61,7 +61,8 @@ def check_for_data_prep(pipeline_run=None):
         data_prep_id = data_prep.pipeline.id
         data_prep = data_prep.to_dict()
         data_params = _data_score_params(data_prep.get('steps', []))
-    except:
+    except KeyError:
+        #no data preparation pipeline in pipeline run, return none
         data_prep, data_prep_seed, data_prep_id, data_params = None
         
     return (data_prep_id, data_prep_seed), data_params

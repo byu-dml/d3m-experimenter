@@ -1,5 +1,6 @@
 import unittest
 from experimenter import modify_generator, queue, exceptions, utils
+from experimenter.databases.d3m_mtl import D3MMtLDB
 from d3m.contrib.pipelines import K_FOLD_TABULAR_SPLIT_PIPELINE_PATH
 from d3m.contrib.pipelines import SCORING_PIPELINE_PATH as scoring_file
 
@@ -11,7 +12,7 @@ class GeneratorModifierTestCase(unittest.TestCase):
         args = {'seed_limit':35, 'submitter':None, 'pipeline_id':None}
         num_test = 5
         modifier = modify_generator.ModifyGenerator('random-seed', num_test, {'seed_limit':25})
-        modifier.query_args = get_seed_test_args
+        modifier.query_args = self.get_seed_test_args
         #start the counter to make sure there are the right amount of jobs
         counter = 0
         seed_old = 12.1
@@ -31,8 +32,17 @@ class GeneratorModifierTestCase(unittest.TestCase):
         for i in range(10):
             query = next(query_results)
             self.assertTrue(len(query['tested_seeds']) < seed_limit)   
+          
        
-            
+    def test_d3m_interface_init(self):
+        init_fail = False
+        try:
+            d3m_db = D3MMtLDB()
+        except:
+            init_fail = True
+        self.assertFalse(init, "D3M Interface Failed")    
+    
+               
     def get_seed_test_args(self,args):
         """ returns args for testing modify generator random-seed
             functionality purposes.  It uses a dataset and pipeline 
