@@ -23,10 +23,6 @@ services:
       - type: bind
         source: '${DATA_DIR}'
         target: /data
-      - type: bind
-        source: '${EXPERIMENTER_DIR}'
-        target: /d3m-experimenter
-        read_only: true
     command: 'rq worker --url redis://${REDIS_HOST} ${RQ_QUEUES}'
     networks:
       - default

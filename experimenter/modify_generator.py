@@ -62,23 +62,12 @@ class ModifyGenerator:
                     data_prep_pipeline = download_from_database(data_prep_pipeline, type_to_download='data-preparation-pipelines')
                 if (os.path.exists(scoring_pipeline) is False):
                     scoring_pipeline = download_from_database(scoring_pipeline, type_to_download='scoring-pipelines')
-                evaluate(pipeline=pipeline_path,
-                                  problem=problem_path,
-                                  input=dataset_doc,
-                                  random_seed=seed,
-                                  data_pipeline=data_prep_pipeline,
-                                  data_random_seed=data_random_seed,
-                                  data_params=data_params,
-                                  scoring_pipeline=scoring_pipeline,
-                                  scoring_random_seed=scoring_random_seed,
-                                  scoring_params=scoring_params)
-                
                 job = queue.make_job(evaluate,
                                      pipeline=pipeline_path,
                                      problem=problem_path,
                                      input=dataset_doc,
                                      random_seed=seed,
-                                     data_pipeline_path=data_prep_pipeline,
+                                     data_pipeline=data_prep_pipeline,
                                      data_random_seed=data_random_seed,
                                      data_params=data_params,
                                      scoring_pipeline=scoring_pipeline,
