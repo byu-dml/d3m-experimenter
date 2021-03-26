@@ -15,14 +15,18 @@ class ModifyGenerator:
     """ Generator to be used for creating modified pipelines based on existing
         pipelines in the database
     """
-    def __init__(self, modify_type: str='random-seed', max_jobs: int=None, args=None):
-        self.args = args
+    def __init__(self, modify_type: str='random-seed', 
+                 max_jobs: int=None, seed_limit = None,
+                 submitter = None, pipeline_id = None):
         #intialize commonly used variables
         self.modifier_type = modify_type
         self.max_jobs = max_jobs
+        self.seed_limit = seed_limit
+        self.submitter = submitter
+        self.pipeline_id = pipeline_id
         self.num_complete = 0
         #run the query on initializing to define the query results
-        self.query_results = None
+        self._set_query_results()
 
 
     def __iter__(self):
@@ -31,12 +35,19 @@ class ModifyGenerator:
 
     def __next__(self):
         #iterate through query results
-        job = next(self._get_generator())
+        job = next(self.generator)
         if (self.max_jobs):
             if (self.num_complete > self.max_jobs):
                 raise StopIteration
         return job
 
+             
+    def _set_query_results(self, query_results=None):
+        self.query_results = query_results
+        if query_results is None:
+            self.query_results = self._query()
+        self.generator = self._get_generator()
+             
              
     def _get_generator(self):
         """
@@ -44,11 +55,9 @@ class ModifyGenerator:
         Can only handle cases where there is a data preparation
         pipeline in the pipeline run
         """
-        if (self.query_results is None):
-            self.query_results = self._query(self.args)
         for query_result in self.query_results:
             #iterate through modifier results
-            for pipeline, problem_path, dataset_doc, seed, data, score in self._modify(query_result,self.args):
+            for pipeline, problem_path, dataset_doc, seed, data, score in self._modify(query_result):
                 #save the pipeline to path and return pipeline path
                 data_prep_pipeline, data_random_seed, data_params = data
                 scoring_pipeline, scoring_random_seed, scoring_params = score
@@ -77,24 +86,24 @@ class ModifyGenerator:
                 yield job
         
         
-    def _query(self, args):
+    def _query(self):
         """method for querying database according to pipeline modification type
         """
         if (self.modifier_type=='random-seed'):
-            return query_on_seeds(args.pipeline_id, args.seed_limit, args.submitter)
+            return query_on_seeds(self.pipeline_id, self.seed_limit, self.submitter)
         if (self.modifier_type=='swap-primitive'):
-            return query_on_primitive(args.primitive_id, args.limit_indeces)
+            return query_on_primitive(self.primitive_id, self.limit_indeces)
         else:
             raise ValueError("This type of modification is not yet an option")
     
             
-    def _modify(self, query_args: dict, args):
+    def _modify(self, query_args):
         """Handler for different types of pipeline modification tasks
         """
         if self.modifier_type=='random-seed':
-            return self._modify_random_seed(args.seed_limit, query_args)
+            return self._modify_random_seed(self.seed_limit, query_args)
         if self.modifier_type=='swap-primitive':
-            return self._modify_swap_primitive(args.swap_primitive_id, query_args)
+            return self._modify_swap_primitive(self.swap_primitive_id, query_args)
         else:
             raise ValueError("This type of modification is not yet an option")
     
@@ -120,7 +129,7 @@ class ModifyGenerator:
         used_seeds = query_args['tested_seeds']
         num_run = len(used_seeds)
         #run until the right number of seeds have been run
-        while (num_run < seed_limit):
+        while (num_run < self.seed_limit):
             new_seed = randint(1,100000)
             if (new_seed in used_seeds):
                 continue

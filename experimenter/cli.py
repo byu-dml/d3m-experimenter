@@ -173,7 +173,11 @@ def configure_modify_parser(parser: argparse.ArgumentParser) -> None:
 
 def modify_handler(arguments: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     modify_type = arguments.modify_type
-    modify_generator = ModifyGenerator(modify_type, arguments.max_jobs, arguments)
+    modify_generator = ModifyGenerator(modify_type = modify_type, 
+                                       max_jobs = arguments.max_jobs, 
+                                       seed_limit = arguments.seed_limit, 
+                                       submitter = arguments.submitter,
+                                       pipeline_id = arguments.pipeline_id)
     #now run the enqueuer part
     queue.enqueue_jobs(jobs=modify_generator, job_timeout=arguments.job_timeout)
 
