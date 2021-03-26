@@ -1,5 +1,6 @@
-import logging
 import json
+import logging
+import typing
 
 import requests
 from d3m.primitive_interfaces.base import PrimitiveBase
@@ -11,7 +12,83 @@ from experimenter.constants import D3M_MTL_DB_POST_URL, D3M_MTL_DB_GET_URL
 from experimenter.problem import ProblemReference
 from experimenter import config
 
+
 logger = logging.getLogger(__name__)
+
+# TODO: handle connection errors and failed queries
+# TODO: what should the timeout be? how do we handle read timeouts?
+ES = Elasticsearch(config.d3m_db_host, timeout=10)
+
+
+D3M_INDEXES = ['primitives', 'datasets', 'problems', 'pipelines', 'pipeline_runs']
+D3M_TIMESTAMP_FIELD = '_ingest_timestamp'
+D3M_TIMESTAMP_FORMAT = ''
+
+
+def ping():
+    # return ES.ping()  # see https://gitlab.com/datadrivendiscovery/metalearning/-/issues/162
+    try:
+        ES.transport.perform_request('GET', '/')
+    except elasticsearch.exceptions.TransportError:
+        return False
+    return True
+
+
+def get_index_timestamp_range(index: str, as_string: bool = True) -> typing.Tuple:
+    min_key = '{}_min_{}'.format(index, D3M_TIMESTAMP_FIELD)
+    max_key = '{}_max_{}'.format(index, D3M_TIMESTAMP_FIELD)
+
+    value_key = 'value'
+    if as_string:
+        value_key += '_as_string'
+
+    query_body = {
+        'size': 0,
+        'aggs': {
+            min_key: {
+                'min': {
+                    'field': D3M_TIMESTAMP_FIELD
+                }
+            },
+            max_key: {
+                'max': {
+                    'field': D3M_TIMESTAMP_FIELD
+                }
+            }
+        }
+    }
+
+    result = ES.search(query_body, index)
+
+    min_value = result['aggregations'][min_key][value_key]
+    max_value = result['aggregations'][max_key][value_key]
+
+    return min_value, max_value
+
+
+def count(
+    index: str, start: str = None, end: str = None, start_inclusive: bool = True, end_inclusive: bool = False
+) -> int:
+    start_key = 'gt'
+    if start_inclusive:
+        start_key += 'e'
+
+    end_key = 'lt'
+    if end_inclusive:
+        end_key += 'e'
+
+    query_body = {
+        'query': {
+            'range': {
+                D3M_TIMESTAMP_FIELD: {
+                    start_key: start,
+                    end_key: end,
+                }
+            }
+        }
+    }
+
+    return ES.count(index=index, body=query_body)['count']
 
 
 class D3MMtLDB:

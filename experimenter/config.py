@@ -39,3 +39,6 @@ d3m_db_token: str = os.environ.get('D3M_DB_TOKEN', None)
 def validate_d3m_db_token():
     if d3m_db_token is None:
         raise exceptions.ConfigError(_ERROR_MESSAGE.format('D3M_DB_TOKEN'))
+
+
+d3m_db_host: str = 'https://metalearning.datadrivendiscovery.org/es'

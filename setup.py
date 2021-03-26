@@ -14,5 +14,12 @@ setup(
         'redis>=3.5.0<3.6.0',
         'rq>=1.7.0<1.8.0',
         'rq-dashboard>=0.6.0<0.7.0',
+        'elasticsearch>=7.0.0<8.0.0',
+        'elasticsearch-dsl>=7.0.0<8.0.0',
     ],
+    extras_require={
+        'tests': [
+            'parameterized==0.8.1',
+        ]
+    }
 )
