@@ -1,4 +1,6 @@
 import contextlib
+import datetime
+import dateutil
 import functools
 import inspect
 import io
@@ -9,6 +11,7 @@ import typing
 
 from d3m.metadata import problem as problem_module
 from d3m.utils import get_datasets_and_problems
+from d3m import utils as d3m_utils
 
 from experimenter import exceptions
 
@@ -129,3 +132,18 @@ def redirect_stdout() -> typing.Generator[io.StringIO, None, None]:
             yield buf
         finally:
             pass
+
+
+def format_job(f: typing.Callable, *args: typing.Any, **kwargs: typing.Any) -> typing.Dict[str, typing.Any]:
+    return {'f':f, 'args': args, 'kwargs': kwargs}
+
+
+def timestamp_add_epsilon(timestamp: str, **kwargs):
+    """
+    Takes a timestamp in D3M format and adds a datetime.timedelta to it.
+    """
+    return d3m_utils.datetime_for_json(dateutil.parser.parse(timestamp) + datetime.timedelta(**kwargs))
+
+
+def timestamp_range_midpoint(start: str, end: str):
+    return d3m_utils.datetime_for_json(dateutil.parser.parse(start) + (dateutil.parser.parse(end) - dateutil.parser.parse(start)) / 2)

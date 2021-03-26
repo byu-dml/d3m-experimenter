@@ -54,10 +54,6 @@ def _check_redis_connection() -> typing.Optional[Exception]:
     return error
 
 
-def make_job(f: typing.Callable, *args: typing.Any, **kwargs: typing.Any) -> typing.Dict[str, typing.Any]:
-    return {'f':f, 'args': args, 'kwargs': kwargs}
-
-
 def enqueue_jobs(
     jobs: typing.Union[typing.Generator, typing.Iterator, typing.Sequence], *,
     job_timeout: int = None, queue_name: str = _DEFAULT_QUEUE,
