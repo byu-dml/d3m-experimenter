@@ -1,5 +1,6 @@
 import logging
 import json
+import yaml
 
 import requests
 from d3m.primitive_interfaces.base import PrimitiveBase
@@ -23,7 +24,7 @@ class D3MMtLDB:
         self._post_url = D3M_MTL_DB_POST_URL
         # This env var allows code calling this class to be run during
         # unit tests without actually saving to the production DB.
-        self.should_save = config.SAVE_TO_D3M
+        self.should_save = config.save_to_d3m
         # A reference to a low-level elasticsearch client. This can be
         # used to query the D3M DB, or this classe's `search` method
         # can be used, and is preferred, since its API is more straightforward.
@@ -31,9 +32,9 @@ class D3MMtLDB:
         # certain things though.
         self.es = Elasticsearch(hosts=[D3M_MTL_DB_GET_URL], timeout=30)
         # Our submitter name.
-        self._submitter = config.D3M_DB_SUBMITTER
+        self._submitter = config.d3m_db_submitter
         # The secret verifying us as the submitter we say we are.
-        self._x_token = config.D3M_DB_TOKEN
+        self._x_token = config.d3m_db_token
         if self._is_identifying_as_submitter():
             logger.info(
                 f"Documents will be saved under submitter name: '{self._submitter}'"
@@ -105,7 +106,15 @@ class D3MMtLDB:
             .count()
         )
         return num_pipeline_matches > 0
-
+        
+    def save_pipeline_runs_from_path(self, pipeline_run_path: str) -> requests.Response:
+        responses = list()
+        with open(pipeline_run_path, 'r') as pipeline_data:
+            pipeline_runs = yaml.safe_load_all(pipeline_data)
+            for pipeline_run in pipeline_runs:
+                responses.append(self.save_pipeline_run(pipeline_run).content)
+        return responses
+               
     def save_pipeline_run(self, pipeline_run: dict) -> requests.Response:
         return self._save(pipeline_run, "pipeline-run")
 
@@ -156,7 +165,7 @@ class D3MMtLDB:
         response.status_code = 200
         response._content = (
             b'{ "result" : "No request was made to the D3M DB API to save a record, '
-            b'since the SAVE_TO_D3M environment variable is not set." }'
+            b'since the SAVE_TO_D3M environment variable is not set to true." }'
         )
         return response
 
